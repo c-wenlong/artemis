@@ -1,0 +1,17 @@
+{
+  "name": "@artemis/repo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.19.0",
+  "scripts": {
+    "dev": "pnpm --filter @artemis/desktop dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "rm -rf apps/*/dist packages/*/dist"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

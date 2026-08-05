@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Local data
+*.sqlite
+*.sqlite3
+*.db
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

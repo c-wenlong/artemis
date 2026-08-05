@@ -1,0 +1,143 @@
+.project-launcher {
+  display: grid;
+  gap: 14px;
+  max-width: 1180px;
+}
+
+.launcher-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.launcher-head p {
+  margin: 0 0 4px;
+  color: #68716b;
+  font-size: 12px;
+}
+
+.launcher-head h2 {
+  margin: 0;
+  color: #171d1a;
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.launcher-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.launcher-actions button,
+.open-chat,
+.workspace-chip {
+  border: 1px solid #d7ddd4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #26302a;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.launcher-actions button {
+  padding: 8px 10px;
+}
+
+.launcher-actions button:hover,
+.open-chat:hover,
+.workspace-chip:hover,
+.workspace-chip.active {
+  border-color: #9da99f;
+  background: #eef1eb;
+}
+
+.launcher-notice {
+  margin: 0;
+  color: #657069;
+  font-size: 12px;
+}
+
+.project-table {
+  display: grid;
+  border-top: 1px solid #dfe4dc;
+}
+
+.project-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid #dfe4dc;
+}
+
+.project-main {
+  min-width: 0;
+}
+
+.project-main h3 {
+  margin: 0;
+  color: #1f2523;
+  font-size: 15px;
+}
+
+.project-main p {
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: #6b746d;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-workspaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.workspace-chip {
+  padding: 6px 8px;
+}
+
+.workspace-chip.active {
+  color: #111713;
+}
+
+.project-stats {
+  display: flex;
+  gap: 10px;
+  color: #68716b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.open-chat {
+  padding: 8px 10px;
+  background: #1f2523;
+  color: #f5f7f0;
+}
+
+.open-chat:hover {
+  background: #2c342f;
+  color: #ffffff;
+}
+
+@media (max-width: 980px) {
+  .project-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .launcher-head {
+    flex-direction: column;
+  }
+
+  .launcher-actions {
+    justify-content: flex-start;
+  }
+}
