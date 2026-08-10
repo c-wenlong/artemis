@@ -44,6 +44,14 @@
   --diff-added: #1a7f37;
   --diff-removed: #b3261e;
 
+  /*
+   * Citations. A file reference is the one thing in prose that names something
+   * outside the conversation, so it gets its own warm tint rather than the
+   * accent — the accent is for controls, and a chip is not a control yet.
+   */
+  --citation-text: #9a5b3d;
+  --citation-surface: #f6efe9;
+
   /* ---- Elevation ---- */
   --shadow-sm: 0 1px 2px #1a171410;
   --shadow-md: 0 4px 16px #1a171414;
@@ -122,6 +130,9 @@
 
     --diff-added: #4bab7f;
     --diff-removed: #e26d63;
+
+    --citation-text: #d9a184;
+    --citation-surface: #2b2320;
 
     --shadow-sm: 0 1px 2px #00000059;
     --shadow-md: 0 4px 16px #00000066;

@@ -146,6 +146,10 @@ export function createTauriHostClient(): ArtemisHostClient {
 
     replayChatSession(sessionId: string): Promise<RuntimeEvent[]> {
       return invoke("replay_chat_session", { sessionId });
+    },
+
+    forkChatSession(sessionId: string, throughTurnId: string): Promise<ChatSession> {
+      return invoke("fork_chat_session", { sessionId, throughTurnId });
     }
   };
 }

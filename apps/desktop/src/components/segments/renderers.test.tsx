@@ -5,7 +5,7 @@ import type { ChatMessage } from "@artemis/core";
 import type { TurnRecord } from "../../chat/reduce";
 import { MessageList } from "../Conversation/MessageList";
 import { ReasoningSegment, ToolSegment } from "./BlockSegments";
-import { TurnFooter } from "./TurnFooters";
+import { TurnHeader } from "../Conversation/MessageChrome";
 
 function assistant(blocks: ChatMessage["blocks"], turnId = "t1"): ChatMessage {
   return {
@@ -110,33 +110,53 @@ describe("ReasoningSegment", () => {
   });
 });
 
-describe("TurnFooter", () => {
+describe("TurnHeader", () => {
   it("formats durations over a minute", () => {
     render(
-      <TurnFooter
+      <TurnHeader
         completedAt="2026-08-10T12:02:05.000Z"
+        expanded
+        hasActivity={false}
+        onToggle={() => {}}
         startedAt="2026-08-10T12:00:00.000Z"
       />
     );
-    expect(screen.getByTestId("turn-footer")).toHaveTextContent("Worked for 2m 5s");
+    expect(screen.getByTestId("turn-header")).toHaveTextContent("Worked for 2m 5s");
   });
 
   it("renders nothing when either end of the turn is unknown", () => {
-    const { rerender } = render(<TurnFooter startedAt="2026-08-10T12:00:00.000Z" />);
-    expect(screen.queryByTestId("turn-footer")).toBeNull();
+    const { rerender } = render(
+      <TurnHeader
+        expanded
+        hasActivity={false}
+        onToggle={() => {}}
+        startedAt="2026-08-10T12:00:00.000Z"
+      />
+    );
+    expect(screen.queryByTestId("turn-header")).toBeNull();
 
-    rerender(<TurnFooter completedAt="2026-08-10T12:00:00.000Z" />);
-    expect(screen.queryByTestId("turn-footer")).toBeNull();
+    rerender(
+      <TurnHeader
+        completedAt="2026-08-10T12:00:00.000Z"
+        expanded
+        hasActivity={false}
+        onToggle={() => {}}
+      />
+    );
+    expect(screen.queryByTestId("turn-header")).toBeNull();
   });
 
   it("refuses to invent a duration from a negative interval", () => {
     render(
-      <TurnFooter
+      <TurnHeader
         completedAt="2026-08-10T12:00:00.000Z"
+        expanded
+        hasActivity={false}
+        onToggle={() => {}}
         startedAt="2026-08-10T12:05:00.000Z"
       />
     );
-    expect(screen.queryByTestId("turn-footer")).toBeNull();
+    expect(screen.queryByTestId("turn-header")).toBeNull();
   });
 });
 
@@ -161,7 +181,7 @@ describe("live footer placement", () => {
     );
     expect(screen.queryByTestId("streaming-footer")).toBeNull();
     // Nor a duration, which is unknown for a turn that never ended.
-    expect(screen.queryByTestId("turn-footer")).toBeNull();
+    expect(screen.queryByTestId("turn-header")).toBeNull();
   });
 
   it("animates only the turn that is actually streaming", () => {
@@ -185,7 +205,7 @@ describe("live footer placement", () => {
 
     // One heartbeat, on the live turn; the earlier turn keeps its duration.
     expect(screen.getAllByTestId("streaming-footer")).toHaveLength(1);
-    expect(screen.getByTestId("turn-footer")).toHaveTextContent("Worked for 4s");
+    expect(screen.getByTestId("turn-header")).toHaveTextContent("Worked for 4s");
   });
 
   it("gives the user's own message no footer", () => {

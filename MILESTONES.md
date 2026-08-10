@@ -444,6 +444,20 @@ header, prose carrying file chips and code pills, and a summary of what was
 edited — without any of it being clickable yet.
 **Depends:** M3, M4.
 
+**Shipped with one gap.** The edit summary derives from tool calls, and against
+a real recorded opencode session those calls arrive with **no `input` at all**
+and a generic name of `tool`. So the card is correct and unit-tested but will
+not appear on live output yet. `chat/parser.rs` reads `state` as a string when
+opencode sends it as an object carrying `status`, `input` and `output` — that is
+the likely cause and the first thing to check. Needs a live capture of the raw
+frames to fix, not a guess.
+
+**Fork ships with a real limitation.** The transcript is copied; the opencode
+session id is not, because reusing it would make the fork an alias rather than a
+branch — both sides appending to one server-side conversation. So a fork reads
+back correctly and its next turn starts a model with no memory of it. Closing
+that needs opencode to support seeding a session from a transcript.
+
 ## M8b. File diffs, undo and review
 
 The rest of the old M8. Split out because M8 renders the *summary* of an edit

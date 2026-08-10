@@ -251,6 +251,23 @@ async fn replay_chat_session(session_id: String) -> Result<Vec<RuntimeEvent>, St
         .map_err(|error| error.to_string())
 }
 
+/// Branches a conversation: a new session carrying every turn up to this one.
+#[tauri::command]
+async fn fork_chat_session(
+    store: State<'_, Arc<ChatStore>>,
+    session_id: String,
+    through_turn_id: String,
+) -> Result<ChatSession, String> {
+    let store = store.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        store
+            .fork_session(&session_id, &through_turn_id)
+            .ok_or_else(|| format!("Nothing to fork at turn {through_turn_id}"))
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[tauri::command]
 async fn open_terminal(
     store: State<'_, Arc<PtyStore>>,
@@ -360,6 +377,7 @@ pub fn run() {
             send_chat_message,
             cancel_chat_turn,
             replay_chat_session,
+            fork_chat_session,
             open_terminal,
             list_terminals,
             subscribe_terminal,

@@ -202,6 +202,7 @@ export function App({ host }: AppProps = {}) {
             harnessLabel={selectedHarness?.label ?? null}
             isStreaming={chat.isRunning}
             messages={chat.transcript.messages}
+            onFork={(turnId) => void chat.fork(turnId)}
             turns={chat.transcript.turns}
           />
         }

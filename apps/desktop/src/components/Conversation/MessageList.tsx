@@ -1,9 +1,19 @@
-import type { ChatMessage } from "@artemis/core";
+import { useState } from "react";
+import type { ChatBlock, ChatMessage } from "@artemis/core";
 import { buildTimeline } from "../../chat/activityGroups";
+import { deriveFileEdits } from "../../chat/fileEdits";
 import type { TurnRecord } from "../../chat/reduce";
 import { ActivityGroupSegment } from "../segments/ActivityGroupSegment";
 import { BlockSegment } from "../segments/BlockSegments";
-import { StreamingFooter, TurnFooter } from "../segments/TurnFooters";
+import { StreamingFooter } from "../segments/TurnFooters";
+import {
+  CopyButton,
+  EditSummaryCard,
+  ForkButton,
+  MessageTime,
+  Truncate,
+  TurnHeader
+} from "./MessageChrome";
 import "./MessageList.css";
 
 interface MessageListProps {
@@ -11,14 +21,23 @@ interface MessageListProps {
   turns: Record<string, TurnRecord>;
   /** Whether a turn is actually streaming right now. */
   isStreaming?: boolean;
+  /** Start a new session carrying everything up to this turn. */
+  onFork?(turnId: string): void;
 }
 
-/**
- * A transcript as typed segments.
- *
- * Dispatch lives in `BlockSegment`; this owns the per-turn framing — the user's
- * prompt as a bordered box, and the footer that closes a turn.
- */
+/** Prose is the answer; everything else is how it was reached. */
+function isProse(block: ChatBlock): boolean {
+  return block.type === "text" || block.type === "error";
+}
+
+function plainText(blocks: readonly ChatBlock[]): string {
+  return blocks
+    .filter((block): block is Extract<ChatBlock, { type: "text" }> => block.type === "text")
+    .map((block) => block.text)
+    .join("\n\n")
+    .trim();
+}
+
 function Timeline({ blocks }: { blocks: ChatMessage["blocks"] }) {
   return (
     <>
@@ -33,10 +52,82 @@ function Timeline({ blocks }: { blocks: ChatMessage["blocks"] }) {
   );
 }
 
+/**
+ * One assistant turn: a header saying how long it took, the answer, a summary
+ * of what it changed, and the actions that close it out.
+ *
+ * The header is what gives the mechanics somewhere to go. Superset and Traycer
+ * both lead with the tool trace, and reading either means scrolling past the
+ * work to find the answer; folding it away is the difference.
+ */
+function AssistantTurn({
+  isLive,
+  message,
+  onFork,
+  turn
+}: {
+  isLive: boolean;
+  message: ChatMessage;
+  onFork?(turnId: string): void;
+  turn?: TurnRecord;
+}) {
+  // Expanded by default. Codex collapses, and so should we — but the default
+  // is exactly what M8c makes a setting, and shipping the mechanics hidden
+  // before the control that brings them back exists is the wrong order.
+  const [expanded, setExpanded] = useState(true);
+
+  const prose = message.blocks.filter(isProse);
+  const hasActivity = prose.length !== message.blocks.length;
+  const edits = deriveFileEdits(message.blocks);
+  const isFinished = turn?.status === "completed" || turn?.status === "failed";
+
+  // A bare filename is only safe to chip once something else confirms it is a
+  // file. Having been edited this turn is that confirmation.
+  const known = new Set(edits?.files.map((file) => file.path) ?? []);
+
+  return (
+    <article
+      className="message"
+      data-role="assistant"
+      data-testid="message-assistant"
+    >
+      {!isLive && isFinished ? (
+        <TurnHeader
+          completedAt={turn?.completedAt}
+          expanded={expanded}
+          hasActivity={hasActivity}
+          onToggle={() => setExpanded((open) => !open)}
+          startedAt={turn?.startedAt}
+        />
+      ) : null}
+
+      {expanded || isLive ? (
+        <Timeline blocks={message.blocks} />
+      ) : (
+        prose.map((block) => (
+          <BlockSegment block={block} key={block.id} known={known} />
+        ))
+      )}
+
+      {edits ? <EditSummaryCard summary={edits} /> : null}
+
+      {isLive ? <StreamingFooter turnId={message.turnId} /> : null}
+      {!isLive && isFinished ? (
+        <div className="turn-actions" data-testid="turn-actions">
+          <CopyButton label="Copy answer" text={plainText(prose)} />
+          {onFork ? <ForkButton onFork={() => onFork(message.turnId)} /> : null}
+          <MessageTime at={turn?.completedAt} />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export function MessageList({
   messages,
   turns,
-  isStreaming = false
+  isStreaming = false,
+  onFork
 }: MessageListProps) {
   const lastTurnId = messages.at(-1)?.turnId;
 
@@ -44,8 +135,9 @@ export function MessageList({
     <div className="message-list">
       {messages.map((message) => {
         const turn = turns[message.turnId];
-        // The footer belongs to the assistant half of a turn.
+
         if (message.role !== "assistant") {
+          const text = plainText(message.blocks);
           return (
             <article
               className="message"
@@ -53,7 +145,13 @@ export function MessageList({
               data-testid={`message-${message.role}`}
               key={message.id}
             >
-              <Timeline blocks={message.blocks} />
+              <Truncate text={text}>
+                <Timeline blocks={message.blocks} />
+              </Truncate>
+              <div className="message-meta">
+                <MessageTime at={message.createdAt} />
+                <CopyButton label="Copy message" text={text} />
+              </div>
             </article>
           );
         }
@@ -62,23 +160,14 @@ export function MessageList({
         // merely a turn record that says "running". A log whose terminal event
         // was never written replays as an unfinished turn, and animating a
         // ticking timer for work that stopped hours ago is a lie.
-        const isLive = isStreaming && message.turnId === lastTurnId;
-        const isFinished = turn?.status === "completed" || turn?.status === "failed";
-
         return (
-          <article
-            className="message"
-            data-role={message.role}
-            data-testid="message-assistant"
+          <AssistantTurn
+            isLive={isStreaming && message.turnId === lastTurnId}
             key={message.id}
-          >
-            <Timeline blocks={message.blocks} />
-
-            {isLive ? <StreamingFooter turnId={message.turnId} /> : null}
-            {!isLive && isFinished ? (
-              <TurnFooter completedAt={turn?.completedAt} startedAt={turn?.startedAt} />
-            ) : null}
-          </article>
+            message={message}
+            onFork={onFork}
+            turn={turn}
+          />
         );
       })}
     </div>

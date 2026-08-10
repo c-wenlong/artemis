@@ -1,0 +1,176 @@
+/* ---- Folding a long message ---- */
+
+.truncatable[data-expanded="false"] {
+  position: relative;
+  max-height: 15rem;
+  overflow: hidden;
+}
+
+/* Fades the cut rather than slicing a line in half. */
+.truncatable[data-expanded="false"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 3rem;
+  background: linear-gradient(transparent, var(--surface-sunken));
+  pointer-events: none;
+}
+
+.message[data-role="assistant"] .truncatable[data-expanded="false"]::after {
+  background: linear-gradient(transparent, var(--surface-base));
+}
+
+.truncate-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}
+
+.truncate-toggle:hover {
+  color: var(--text-primary);
+}
+
+.chrome-chevron {
+  flex: none;
+  transition: transform var(--transition-fast);
+}
+
+.chrome-chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+/* ---- Message metadata ---- */
+
+.message-meta,
+.turn-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+}
+
+/* The user's own metadata trails their bubble, which is right-aligned. */
+.message-meta {
+  justify-content: flex-end;
+}
+
+.message-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.chrome-action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+}
+
+.chrome-action:hover {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+}
+
+.chrome-action-flash {
+  position: absolute;
+  bottom: calc(100% + var(--space-1));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: var(--text-ui-xs);
+  white-space: nowrap;
+}
+
+/* ---- Turn header ---- */
+
+.turn-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  margin: 0 0 var(--space-3);
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-sm);
+  text-align: left;
+}
+
+.turn-header--toggle:hover {
+  color: var(--text-primary);
+}
+
+/* ---- Edit summary ---- */
+
+.edit-summary {
+  margin: var(--space-4) 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.edit-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.edit-summary-title {
+  font-size: var(--text-ui);
+  font-weight: 500;
+}
+
+.edit-summary-total,
+.edit-summary-counts {
+  font-size: var(--text-ui-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.edit-added {
+  color: var(--diff-added);
+}
+
+.edit-removed {
+  color: var(--diff-removed);
+}
+
+.edit-summary-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edit-summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+}
+
+.edit-summary-row + .edit-summary-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.edit-summary-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-ui-sm);
+}

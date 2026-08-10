@@ -162,6 +162,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   closedTerminals: string[];
   savedPresets: Array<{ workspaceId: string; harnessId: string; model: string | null }>;
   appliedIcons: string[];
+  forks: Array<{ sessionId: string; throughTurnId: string }>;
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -183,6 +184,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     model: string | null;
   }> = [];
   const appliedIcons: string[] = [];
+  const forks: Array<{ sessionId: string; throughTurnId: string }> = [];
 
   // Mirrors the Rust catalog in appicon.rs.
   const iconCatalog: AppIcon[] = [
@@ -214,6 +216,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     closedTerminals,
     savedPresets,
     appliedIcons,
+    forks,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => projects,
@@ -377,6 +380,23 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
 
     cancelChatTurn: async (sessionId: string): Promise<void> => {
       cancelled.add(sessionId);
+    },
+
+    forkChatSession: async (
+      sessionId: string,
+      throughTurnId: string
+    ): Promise<ChatSession> => {
+      forks.push({ sessionId, throughTurnId });
+      return {
+        createdAt: "2026-08-11T09:40:00.000Z",
+        harnessId: "opencode",
+        id: `${sessionId}-fork-${forks.length}`,
+        lastEventAt: "2026-08-11T09:40:00.000Z",
+        status: "idle",
+        title: "Fork of Test chat",
+        workspaceId: "ws-artemis",
+        workspacePath: "/work/artemis"
+      };
     },
 
     replayChatSession: async (sessionId: string): Promise<RuntimeEvent[]> => {

@@ -189,6 +189,14 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
       ).catch(() => []);
     },
 
+    /**
+     * Forking writes to the event log, which only the Rust host owns. The
+     * browser reference client can read a transcript but not branch one.
+     */
+    forkChatSession(): Promise<ChatSession> {
+      return Promise.reject(new Error("Forking a session requires the desktop app."));
+    },
+
     getRuntimeSettings(): Promise<RuntimeSettings> {
       return getJson(`${basePath}/settings`);
     },

@@ -5,7 +5,7 @@ pub mod parser;
 pub mod stream;
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use crate::db::Db;
@@ -132,6 +132,70 @@ impl ChatStore {
     /// Everything previously recorded for a session — the replay path.
     pub fn replay(session_id: &str) -> Vec<RuntimeEvent> {
         EventLog::for_session(session_id).read()
+    }
+
+    /// Copy a conversation up to `through_turn_id` into a new session.
+    ///
+    /// What carries over is the transcript. What does not is
+    /// `opencode_session_id`: reusing it would make the fork an alias rather
+    /// than a branch, with both sides appending to one server-side
+    /// conversation. So the fork reads back identically and the *next* turn
+    /// starts a fresh opencode session, which the model has no memory of. That
+    /// is a real limitation, not an oversight — closing it needs opencode to
+    /// support seeding a session from a transcript.
+    pub fn fork_session(&self, session_id: &str, through_turn_id: &str) -> Option<ChatSession> {
+        self.fork_session_in(&log::sessions_dir(), session_id, through_turn_id)
+    }
+
+    /// Fork against an explicit log directory, so tests do not touch the real one.
+    pub fn fork_session_in(
+        &self,
+        dir: &Path,
+        session_id: &str,
+        through_turn_id: &str,
+    ) -> Option<ChatSession> {
+        let source = self.session(session_id)?;
+        let events = EventLog::in_dir(dir.to_path_buf(), session_id).read();
+
+        // Everything through the *last* event of that turn, so the turn arrives
+        // complete rather than cut off mid-stream.
+        let end = events
+            .iter()
+            .rposition(|event| event.turn_id() == through_turn_id)?;
+
+        let id = self.next_fork_id(session_id);
+        let mut copied = events[..=end].to_vec();
+        for event in &mut copied {
+            event.set_session_id(&id);
+        }
+        EventLog::in_dir(dir.to_path_buf(), &id).append(&copied);
+
+        let timestamp = now();
+        let forked = ChatSession {
+            created_at: timestamp.clone(),
+            harness_id: source.harness_id,
+            harness_kind: source.harness_kind,
+            id,
+            last_event_at: timestamp,
+            model: source.model,
+            opencode_session_id: None,
+            start_path: source.start_path,
+            status: ChatSessionStatus::Idle,
+            title: format!("Fork of {}", source.title),
+            workspace_id: source.workspace_id,
+            workspace_path: source.workspace_path,
+        };
+        let _ = self.db.save_session(&forked);
+        Some(forked)
+    }
+
+    /// Lowest unused `-fork-N`. Counting rather than timestamping keeps the id
+    /// deterministic, which matters because the event log is keyed by it.
+    fn next_fork_id(&self, session_id: &str) -> String {
+        (1..)
+            .map(|n| format!("{session_id}-fork-{n}"))
+            .find(|candidate| self.session(candidate).is_none())
+            .expect("an unused fork id exists")
     }
 
     /// Run a turn to completion, streaming into `sink`. Blocking.

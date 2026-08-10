@@ -8,10 +8,16 @@ import "./BlockSegments.css";
  * app cannot name is a bug worth seeing, not something to paper over.
  */
 
-export function TextSegment({ text }: { text: string }) {
+export function TextSegment({
+  known,
+  text
+}: {
+  known?: ReadonlySet<string>;
+  text: string;
+}) {
   return (
     <div className="segment-text" data-testid="segment-text">
-      <Markdown>{text}</Markdown>
+      <Markdown known={known}>{text}</Markdown>
     </div>
   );
 }
@@ -121,10 +127,16 @@ export function ErrorSegment({ message }: { message: string }) {
   );
 }
 
-export function BlockSegment({ block }: { block: ChatBlock }) {
+export function BlockSegment({
+  block,
+  known
+}: {
+  block: ChatBlock;
+  known?: ReadonlySet<string>;
+}) {
   switch (block.type) {
     case "text":
-      return <TextSegment text={block.text} />;
+      return <TextSegment known={known} text={block.text} />;
     case "reasoning":
       return <ReasoningSegment text={block.text} />;
     case "tool_call":

@@ -198,6 +198,11 @@ export function createLocalHostService(
       return [];
     },
 
+    /** The seed service has no event log, so there is nothing to branch. */
+    async forkChatSession(): Promise<ChatSession> {
+      throw new Error("Forking a session requires the desktop app.");
+    },
+
     async getRuntimeSettings(): Promise<RuntimeSettings> {
       await wait(latencyMs);
       return {};

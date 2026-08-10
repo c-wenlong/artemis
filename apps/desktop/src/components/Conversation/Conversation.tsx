@@ -10,6 +10,8 @@ interface ConversationProps {
   messages?: ChatMessage[];
   turns?: Record<string, TurnRecord>;
   isStreaming?: boolean;
+  /** Start a new session carrying everything up to a turn. */
+  onFork?(turnId: string): void;
   children?: ReactNode;
 }
 
@@ -25,6 +27,7 @@ export function Conversation({
   messages = [],
   turns = {},
   isStreaming = false,
+  onFork,
   children
 }: ConversationProps) {
   const isEmpty = messages.length === 0 && (children === undefined || children === null);
@@ -43,6 +46,7 @@ export function Conversation({
           <MessageList
             isStreaming={isStreaming}
             messages={messages}
+            onFork={onFork}
             turns={turns}
           />
         ) : null}

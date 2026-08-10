@@ -40,26 +40,3 @@ export function StreamingFooter({ turnId }: { turnId: string }) {
     </p>
   );
 }
-
-/**
- * Quiet closing line on a finished turn — Cursor Web's `Worked for 27s`.
- * Rendered only when both ends of the turn are known; a truncated log should
- * not produce an invented duration.
- */
-export function TurnFooter({
-  startedAt,
-  completedAt
-}: {
-  startedAt?: string;
-  completedAt?: string;
-}) {
-  if (!startedAt || !completedAt) return null;
-  const duration = Date.parse(completedAt) - Date.parse(startedAt);
-  if (!Number.isFinite(duration) || duration < 0) return null;
-
-  return (
-    <p className="turn-footer" data-testid="turn-footer">
-      Worked for {formatDuration(duration)}
-    </p>
-  );
-}

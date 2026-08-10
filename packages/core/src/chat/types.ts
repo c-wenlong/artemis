@@ -189,4 +189,14 @@ export interface ChatRuntime {
   cancelChatTurn(sessionId: string): Promise<void>;
   /** Every event recorded for a session, for rebuilding it on reopen. */
   replayChatSession(sessionId: string): Promise<RuntimeEvent[]>;
+  /**
+   * Branch a conversation: a new session carrying every turn through
+   * `throughTurnId`.
+   *
+   * The transcript is copied; the harness-side context is not. Reusing the
+   * opencode session id would make the fork an alias rather than a branch, with
+   * both sides appending to one server-side conversation, so the fork's next
+   * turn starts a fresh opencode session that has no memory of what it shows.
+   */
+  forkChatSession(sessionId: string, throughTurnId: string): Promise<ChatSession>;
 }

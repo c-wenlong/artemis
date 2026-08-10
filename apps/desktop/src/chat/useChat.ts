@@ -17,6 +17,11 @@ export interface ChatController {
   error: string | null;
   send(prompt: string): Promise<void>;
   stop(): Promise<void>;
+  /**
+   * Branch the conversation at a turn. Resolves to the new session, or null if
+   * there was nothing to branch or the host refused.
+   */
+  fork(turnId: string): Promise<ChatSession | null>;
 }
 
 /**
@@ -119,5 +124,25 @@ export function useChat({
     await host.cancelChatTurn(session.id);
   }, [host]);
 
-  return { transcript, isRunning, error, send, stop };
+  /**
+   * Branch the conversation at a turn.
+   *
+   * The fork is created and reported; switching the view to it is the caller's
+   * decision, because the rail owns which session is open.
+   */
+  const fork = useCallback(
+    async (turnId: string) => {
+      const session = sessionRef.current;
+      if (!session) return null;
+      try {
+        return await host.forkChatSession(session.id, turnId);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+        return null;
+      }
+    },
+    [host]
+  );
+
+  return { transcript, isRunning, error, send, stop, fork };
 }

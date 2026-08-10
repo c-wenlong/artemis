@@ -124,7 +124,7 @@ describe("transcript rendering", () => {
     await screen.findByRole("button", { name: /^artemis$/i });
 
     await waitFor(() =>
-      expect(screen.getByTestId("turn-footer")).toHaveTextContent("Worked for 27s")
+      expect(screen.getByTestId("turn-header")).toHaveTextContent("Worked for 27s")
     );
   });
 

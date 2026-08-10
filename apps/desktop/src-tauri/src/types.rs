@@ -373,6 +373,37 @@ impl RuntimeEvent {
         }
     }
 
+    pub fn session_id(&self) -> &str {
+        match self {
+            RuntimeEvent::TurnStarted { session_id, .. }
+            | RuntimeEvent::UserMessage { session_id, .. }
+            | RuntimeEvent::TextDelta { session_id, .. }
+            | RuntimeEvent::ReasoningDelta { session_id, .. }
+            | RuntimeEvent::ToolCallStarted { session_id, .. }
+            | RuntimeEvent::ToolCallCompleted { session_id, .. }
+            | RuntimeEvent::ToolCallErrored { session_id, .. }
+            | RuntimeEvent::TurnCompleted { session_id, .. }
+            | RuntimeEvent::TurnErrored { session_id, .. } => session_id,
+        }
+    }
+
+    /// Re-home a copied event. Used by forking, where an event that still names
+    /// the source session would replay into the wrong conversation.
+    pub fn set_session_id(&mut self, value: &str) {
+        let slot = match self {
+            RuntimeEvent::TurnStarted { session_id, .. }
+            | RuntimeEvent::UserMessage { session_id, .. }
+            | RuntimeEvent::TextDelta { session_id, .. }
+            | RuntimeEvent::ReasoningDelta { session_id, .. }
+            | RuntimeEvent::ToolCallStarted { session_id, .. }
+            | RuntimeEvent::ToolCallCompleted { session_id, .. }
+            | RuntimeEvent::ToolCallErrored { session_id, .. }
+            | RuntimeEvent::TurnCompleted { session_id, .. }
+            | RuntimeEvent::TurnErrored { session_id, .. } => session_id,
+        };
+        *slot = value.to_string();
+    }
+
     /// True for the events that end a turn — the signal a consumer waits on.
     pub fn is_terminal(&self) -> bool {
         matches!(

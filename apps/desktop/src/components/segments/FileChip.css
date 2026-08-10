@@ -1,0 +1,33 @@
+.file-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  /* Sits inside a line of prose, so it must not disturb the leading. */
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--citation-text);
+  white-space: nowrap;
+}
+
+.file-chip-glyph {
+  align-self: center;
+  flex: none;
+  opacity: 0.85;
+}
+
+.file-chip-name {
+  font-weight: 500;
+}
+
+.file-chip-line {
+  color: var(--citation-text);
+  opacity: 0.75;
+}
+
+/*
+ * A chip in the user's own prompt sits on a filled bubble, so it needs a
+ * surface of its own to separate from it.
+ */
+.message[data-role="user"] .file-chip {
+  background: var(--citation-surface);
+}
