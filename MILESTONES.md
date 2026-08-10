@@ -282,16 +282,46 @@ Bugs found:
 
 # Phase 2 — Workspaces and terminal
 
-## M5. Projects and worktrees
+## M5. Projects and worktrees ✅
 
-- Real project scanning, replacing the seeded rows
-- Git worktree create / adopt / delete with visible progress and failure recovery
-- Workspace status: branch, diffstat, attention state — the rail's status dots
-- Fix the current silent-fallback bug: a non-repo directory must read as "not a
-  repo", not inherit a seeded `main`
+- [x] Real project scanning, replacing the seeded rows *(landed early, in M0)*
+- [x] Git worktree create / adopt / delete with visible progress and failure
+      recovery
+- [x] Workspace status: branch, diffstat, attention state — the rail's status
+      dots *(landed in M2)*
+- [x] Fix the silent-fallback bug: a non-repo directory reads as "not a git
+      repository" *(landed early, in M0)*
 
-**Exit:** create a worktree, run an agent in it, delete it — no seeded data left
-in the workspace path.
+**Exit:** met. `tests/workspace_lifecycle.rs` drives the whole round trip
+against a real repository — create, appear in the list under the id create
+returned, refuse a dirty delete, force it, and fail cleanly on a duplicate
+branch.
+
+Design decisions worth keeping:
+
+- **Git's list is the source of truth, not a registry.** A registry drifts:
+  worktrees made with `git worktree add` on the command line would be invisible
+  and ones deleted by hand would linger. Reading `git worktree list --porcelain`
+  means adoption needs no code at all.
+- **Worktrees live outside the repository** (`~/.artemis/worktrees/<project>/`).
+  Inside, they show up in the repo's own `git status`, in editor file trees, and
+  in every glob the agent runs.
+- **Deleting refuses uncommitted work by default.** This is the one operation
+  Artemis has that can destroy something with no copy anywhere else. The host
+  refuses, the UI relays the refusal, and discarding is a *separate* button —
+  never an automatic retry with `--force`, which would turn a safety check into
+  a speed bump.
+- **A failed create prunes.** A half-finished `worktree add` otherwise leaves
+  metadata pointing at a directory that does not exist, and every later call has
+  to work around it.
+- **"Is this the project's own checkout" is decided by path**, not by an id
+  convention. An id convention is invisible coupling — the host could change how
+  it builds ids and the UI would quietly start offering to delete repositories.
+
+One thing tightened along the way: rail rows announced as
+"artemis: ready artemis 4" — the status dot's label, the name, and the change
+count concatenated. The row now carries just the name; the dot keeps its own.
+
 **Depends:** M0.
 
 ## M6. Terminal dock

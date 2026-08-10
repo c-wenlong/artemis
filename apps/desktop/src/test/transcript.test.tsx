@@ -80,7 +80,7 @@ function recordedTurn(): RuntimeEvent[] {
 describe("transcript rendering", () => {
   it("renders the answer as markdown, not as escaped source", async () => {
     render(<App host={createFakeHost({ replay: recordedTurn() })} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Summary" })).toBeInTheDocument()
@@ -95,7 +95,7 @@ describe("transcript rendering", () => {
   it("collapses reasoning behind a header", async () => {
     const user = userEvent.setup();
     render(<App host={createFakeHost({ replay: recordedTurn() })} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     const reasoning = await screen.findByTestId("segment-reasoning");
     expect(reasoning).not.toHaveTextContent("The scanner walks PATH.");
@@ -107,7 +107,7 @@ describe("transcript rendering", () => {
   it("collapses a tool call to a one-line summary naming what ran", async () => {
     const user = userEvent.setup();
     render(<App host={createFakeHost({ replay: recordedTurn() })} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     const tool = await screen.findByTestId("segment-tool_call");
     expect(tool).toHaveTextContent("read");
@@ -121,7 +121,7 @@ describe("transcript rendering", () => {
 
   it("shows how long a finished turn took", async () => {
     render(<App host={createFakeHost({ replay: recordedTurn() })} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     await waitFor(() =>
       expect(screen.getByTestId("turn-footer")).toHaveTextContent("Worked for 27s")
@@ -130,7 +130,7 @@ describe("transcript rendering", () => {
 
   it("renders the user's prompt as a bordered box, not a bubble", async () => {
     render(<App host={createFakeHost({ replay: recordedTurn() })} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     const user = await screen.findByTestId("message-user");
     expect(user).toHaveTextContent("explain the scanner");
@@ -150,7 +150,7 @@ describe("streaming state", () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const host = createFakeHost({ holdUntilCancelled: true });
     render(<App host={host} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     await user.type(screen.getByRole("textbox", { name: /prompt/i }), "go");
     await user.click(screen.getByRole("button", { name: /^run$/i }));
@@ -197,7 +197,7 @@ describe("streaming state", () => {
       ]
     });
     render(<App host={host} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     await user.type(screen.getByRole("textbox", { name: /prompt/i }), "go");
     await user.click(screen.getByRole("button", { name: /^run$/i }));

@@ -39,6 +39,14 @@ export function createTauriHostClient(): ArtemisHostClient {
       return invoke("list_sessions", { workspaceId: workspaceId ?? null });
     },
 
+    createWorkspace(projectId: string, branch: string): Promise<WorkspaceSummary> {
+      return invoke("create_workspace", { projectId, branch });
+    },
+
+    deleteWorkspace(workspaceId: string, force: boolean): Promise<void> {
+      return invoke("delete_workspace", { workspaceId, force });
+    },
+
     getReviewSnapshot(workspaceId: string): Promise<ReviewSnapshot> {
       return invoke("get_review_snapshot", { workspaceId });
     },

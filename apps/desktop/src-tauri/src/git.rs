@@ -6,13 +6,16 @@
 //! callers must handle it.
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::proc::{run, RunOptions};
 use crate::types::{ChangeKind, ChangedFile};
 
 const GIT_TIMEOUT: Duration = Duration::from_millis(1_500);
+/// Creating a worktree copies a whole tree; a large repository needs longer
+/// than a status query.
+const WORKTREE_TIMEOUT: Duration = Duration::from_secs(60);
 
 fn git(args: &[&str], cwd: &Path) -> Option<String> {
     let captured = run(
@@ -25,6 +28,37 @@ fn git(args: &[&str], cwd: &Path) -> Option<String> {
         },
     )?;
     captured.ok().then_some(captured.stdout)
+}
+
+/// Run git, keeping stderr on failure — worktree errors are the ones a user has
+/// to read and act on ("branch already checked out", "contains modified files").
+fn git_checked(args: &[&str], cwd: &Path, timeout: Duration) -> Result<String, String> {
+    let captured = run(
+        "git",
+        args,
+        RunOptions {
+            cwd: Some(cwd),
+            timeout,
+            ..Default::default()
+        },
+    )
+    .ok_or_else(|| "Could not run git.".to_string())?;
+
+    if captured.timed_out {
+        return Err(format!("git {} timed out.", args.join(" ")));
+    }
+    if captured.exit_code == Some(0) {
+        return Ok(captured.stdout);
+    }
+
+    let message = captured
+        .stderr
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .unwrap_or("git failed")
+        .to_string();
+    Err(message)
 }
 
 pub fn is_repo(cwd: &Path) -> bool {
@@ -123,4 +157,178 @@ pub fn base_branch(cwd: &Path) -> String {
         }
     }
     "main".to_string()
+}
+
+// ---------------------------------------------------------------- worktrees
+
+#[derive(Debug, Clone)]
+pub struct Worktree {
+    pub path: PathBuf,
+    /// `None` when detached — a detached worktree has no branch, and naming one
+    /// anyway would be a guess.
+    pub branch: Option<String>,
+    pub is_main: bool,
+}
+
+/// Every worktree git knows about, main checkout first.
+///
+/// Git's own list is the source of truth rather than a registry Artemis keeps.
+/// A registry drifts: worktrees created with `git worktree add` on the command
+/// line would be invisible, and ones deleted by hand would linger. Reading
+/// git means adoption is automatic.
+pub fn list_worktrees(repo: &Path) -> Vec<Worktree> {
+    let Some(output) = git(&["worktree", "list", "--porcelain"], repo) else {
+        return Vec::new();
+    };
+
+    let mut worktrees = Vec::new();
+    let mut path: Option<PathBuf> = None;
+    let mut branch: Option<String> = None;
+    let mut detached = false;
+
+    // Porcelain output is stanzas separated by blank lines.
+    let mut flush =
+        |path: &mut Option<PathBuf>, branch: &mut Option<String>, detached: &mut bool| {
+            if let Some(found) = path.take() {
+                let is_main = worktrees.is_empty();
+                worktrees.push(Worktree {
+                    path: found,
+                    branch: if *detached { None } else { branch.take() },
+                    is_main,
+                });
+            }
+            *branch = None;
+            *detached = false;
+        };
+
+    for line in output.lines() {
+        if let Some(value) = line.strip_prefix("worktree ") {
+            flush(&mut path, &mut branch, &mut detached);
+            path = Some(PathBuf::from(value));
+        } else if let Some(value) = line.strip_prefix("branch ") {
+            branch = Some(
+                value
+                    .strip_prefix("refs/heads/")
+                    .unwrap_or(value)
+                    .to_string(),
+            );
+        } else if line.trim() == "detached" {
+            detached = true;
+        }
+    }
+    flush(&mut path, &mut branch, &mut detached);
+
+    worktrees
+}
+
+/// Directory name for a branch. Branch names carry slashes; paths must not
+/// gain extra levels from them.
+fn worktree_dir_name(branch: &str) -> String {
+    let cleaned: String = branch
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    let trimmed = cleaned.trim_matches('-').to_string();
+    if trimmed.is_empty() {
+        "worktree".to_string()
+    } else {
+        trimmed
+    }
+}
+
+/// Create a worktree for `branch` under `root`.
+///
+/// Uses an existing branch when there is one and creates it otherwise, so the
+/// caller does not have to know which. On failure the metadata is pruned:
+/// a half-finished `worktree add` otherwise leaves an entry pointing at a
+/// directory that does not exist, and every later call has to work around it.
+pub fn create_worktree(repo: &Path, root: &Path, branch: &str) -> Result<Worktree, String> {
+    let branch = branch.trim();
+    if branch.is_empty() {
+        return Err("A branch name is required.".to_string());
+    }
+
+    let mut path = root.join(worktree_dir_name(branch));
+    // Two branches can sanitise to the same directory name.
+    let mut suffix = 2;
+    while path.exists() {
+        path = root.join(format!("{}-{suffix}", worktree_dir_name(branch)));
+        suffix += 1;
+    }
+
+    std::fs::create_dir_all(root).map_err(|error| format!("create {root:?}: {error}"))?;
+
+    let branch_exists = git(
+        &[
+            "show-ref",
+            "--verify",
+            "--quiet",
+            &format!("refs/heads/{branch}"),
+        ],
+        repo,
+    )
+    .is_some();
+
+    let path_arg = path.to_string_lossy().into_owned();
+    let args: Vec<&str> = if branch_exists {
+        vec!["worktree", "add", &path_arg, branch]
+    } else {
+        vec!["worktree", "add", "-b", branch, &path_arg]
+    };
+
+    match git_checked(&args, repo, WORKTREE_TIMEOUT) {
+        Ok(_) => Ok(Worktree {
+            path,
+            branch: Some(branch.to_string()),
+            is_main: false,
+        }),
+        Err(error) => {
+            // Leave nothing half-made behind.
+            prune_worktrees(repo);
+            let _ = std::fs::remove_dir_all(&path);
+            Err(error)
+        }
+    }
+}
+
+/// True when the worktree has staged, unstaged, or untracked changes.
+pub fn has_uncommitted_changes(worktree: &Path) -> bool {
+    git(&["status", "--porcelain"], worktree)
+        .map(|output| !output.trim().is_empty())
+        .unwrap_or(false)
+}
+
+/// Remove a worktree.
+///
+/// Refuses by default when the worktree holds uncommitted work. This is the one
+/// operation in Artemis that can destroy something with no copy anywhere else,
+/// so discarding it has to be asked for explicitly rather than assumed.
+pub fn remove_worktree(repo: &Path, worktree: &Path, force: bool) -> Result<(), String> {
+    if !force && has_uncommitted_changes(worktree) {
+        return Err(
+            "This worktree has uncommitted changes. Commit them, or delete it again \
+             to discard them."
+                .to_string(),
+        );
+    }
+
+    let path_arg = worktree.to_string_lossy().into_owned();
+    let mut args = vec!["worktree", "remove"];
+    if force {
+        args.push("--force");
+    }
+    args.push(&path_arg);
+
+    git_checked(&args, repo, WORKTREE_TIMEOUT).map(|_| ())
+}
+
+/// Drop metadata for worktrees whose directories are gone.
+pub fn prune_worktrees(repo: &Path) {
+    let _ = git(&["worktree", "prune"], repo);
 }

@@ -125,6 +125,11 @@ export interface FakeHostOptions {
   streamScript?(turnId: string, prompt: string): RuntimeEvent[][];
   /** Events a reopened session replays. */
   replay?: RuntimeEvent[];
+  projects?: ProjectRef[];
+  /** Holds worktree creation open so a test can observe the progress state. */
+  holdWorktreeCreate?: boolean;
+  /** Message the host rejects worktree creation with. */
+  worktreeError?: string;
   /**
    * Keep the turn open until it is cancelled — models a long-running turn, so
    * a test can click Stop without racing the stream to completion.
@@ -141,6 +146,8 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   launches: AgentLaunchRequest[];
   streamed: string[];
   replayedIds: string[];
+  created: Array<{ projectId: string; branch: string }>;
+  deleted: Array<{ workspaceId: string; force: boolean }>;
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -150,21 +157,58 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   const streamed: string[] = [];
   const cancelled = new Set<string>();
   const replayedIds: string[] = [];
-  const workspaces = options.workspaces ?? fakeWorkspaces;
+  const created: Array<{ projectId: string; branch: string }> = [];
+  const deleted: Array<{ workspaceId: string; force: boolean }> = [];
+  const projects = options.projects ?? fakeProjects;
+  // Mutable so create and delete are observable through listWorkspaces, the
+  // way they are against the real host.
+  let workspaces = [...(options.workspaces ?? fakeWorkspaces)];
 
   return {
     savedSettings,
     launches,
     streamed,
     replayedIds,
+    created,
+    deleted,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
-    listProjects: async (): Promise<ProjectRef[]> => fakeProjects,
+    listProjects: async (): Promise<ProjectRef[]> => projects,
     listWorkspaces: async (projectId?: string): Promise<WorkspaceSummary[]> =>
       projectId
         ? workspaces.filter((workspace) => workspace.projectId === projectId)
         : workspaces,
     listSessions: async (): Promise<AgentSessionSummary[]> => fakeSessions,
+
+    createWorkspace: async (
+      projectId: string,
+      branch: string
+    ): Promise<WorkspaceSummary> => {
+      if (options.holdWorktreeCreate) {
+        await new Promise(() => {});
+      }
+      if (options.worktreeError) throw new Error(options.worktreeError);
+
+      created.push({ projectId, branch });
+      const workspace: WorkspaceSummary = {
+        id: `ws-${projectId}-${branch.replace(/[^a-zA-Z0-9-_]/g, "-")}`,
+        projectId,
+        name: branch,
+        branch,
+        worktreePath: `/worktrees/${projectId}/${branch}`,
+        status: "ready",
+        activeSessionIds: [],
+        changedFileCount: 0,
+        lastActivityAt: "2026-08-10T12:00:00.000Z"
+      };
+      workspaces = [...workspaces, workspace];
+      return workspace;
+    },
+
+    deleteWorkspace: async (workspaceId: string, force: boolean): Promise<void> => {
+      deleted.push({ workspaceId, force });
+      workspaces = workspaces.filter((workspace) => workspace.id !== workspaceId);
+    },
     getReviewSnapshot: async (workspaceId: string): Promise<ReviewSnapshot> => ({
       ...(options.review ?? fakeReview),
       workspaceId

@@ -28,4 +28,11 @@ export interface WorkspaceSummary {
 export interface WorkspaceRuntime {
   listProjects(): Promise<ProjectRef[]>;
   listWorkspaces(projectId?: string): Promise<WorkspaceSummary[]>;
+  /** Create a git worktree for `branch`, returning the workspace it becomes. */
+  createWorkspace(projectId: string, branch: string): Promise<WorkspaceSummary>;
+  /**
+   * Remove a worktree. Rejects when it holds uncommitted work unless `force`
+   * is set — discarding someone's changes has to be asked for, never inferred.
+   */
+  deleteWorkspace(workspaceId: string, force: boolean): Promise<void>;
 }

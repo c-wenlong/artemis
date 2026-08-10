@@ -59,6 +59,9 @@ function sessionIdForWorkspace(workspaceId: string): string {
  * Streaming is owned by the Rust host (M1). This reference host cannot stream,
  * so it says so rather than shipping a second, divergent implementation.
  */
+const WORKTREES_UNSUPPORTED =
+  "Creating and deleting worktrees requires the Tauri host.";
+
 const CHAT_UNSUPPORTED =
   "Streaming chat requires the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
 
@@ -82,6 +85,14 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
         ? `?workspaceId=${encodeURIComponent(workspaceId)}`
         : "";
       return getJson(`${basePath}/sessions${query}`);
+    },
+
+    createWorkspace(): Promise<WorkspaceSummary> {
+      return Promise.reject(new Error(WORKTREES_UNSUPPORTED));
+    },
+
+    deleteWorkspace(): Promise<void> {
+      return Promise.reject(new Error(WORKTREES_UNSUPPORTED));
     },
 
     launchAgent(request: AgentLaunchRequest): Promise<AgentLaunchResult> {

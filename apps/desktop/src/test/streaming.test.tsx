@@ -8,7 +8,7 @@ import { createFakeHost } from "./fakeHost";
 async function renderApp(host = createFakeHost()) {
   const user = userEvent.setup();
   render(<App host={host} />);
-  await screen.findByRole("button", { name: /artemis/i });
+  await screen.findByRole("button", { name: /^artemis$/i });
   return { host, user };
 }
 

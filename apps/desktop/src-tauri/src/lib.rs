@@ -6,8 +6,11 @@
 //! (`pnpm dev:web`) and is not on the app's runtime path.
 
 mod catalog;
-mod git;
 mod inventory;
+
+/// Public so `tests/worktrees.rs` can exercise the worktree lifecycle against
+/// real repositories.
+pub mod git;
 mod launcher;
 mod proc;
 mod scanner;
@@ -102,6 +105,21 @@ async fn launch_agent(request: AgentLaunchRequest) -> Result<AgentLaunchResult, 
 }
 
 #[tauri::command]
+async fn create_workspace(project_id: String, branch: String) -> Result<WorkspaceSummary, String> {
+    tauri::async_runtime::spawn_blocking(move || workspace::create_workspace(&project_id, &branch))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+/// `force` discards uncommitted work; without it a dirty worktree is refused.
+#[tauri::command]
+async fn delete_workspace(workspace_id: String, force: bool) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || workspace::delete_workspace(&workspace_id, force))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
 async fn create_chat_session(
     store: State<'_, Arc<ChatStore>>,
     request: CreateChatSessionRequest,
@@ -156,6 +174,8 @@ pub fn run() {
             get_runtime_settings,
             update_runtime_settings,
             launch_agent,
+            create_workspace,
+            delete_workspace,
             create_chat_session,
             send_chat_message,
             cancel_chat_turn,

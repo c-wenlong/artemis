@@ -99,44 +99,154 @@ fn project_for(path: &Path) -> ProjectRef {
     }
 }
 
-/// One workspace per project for now — the checkout itself. M5 adds worktrees.
+/// Where Artemis puts worktrees it creates.
+///
+/// Outside the repository on purpose: a worktree inside the checkout shows up
+/// in its own `git status`, in editor file trees, and in every glob the agent
+/// runs.
+pub fn worktrees_root(project_id: &str) -> PathBuf {
+    std::env::var_os("ARTEMIS_WORKTREES_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| crate::scanner::home_dir().join(".artemis/worktrees"))
+        .join(project_id)
+}
+
+fn workspace_id_for(project_id: &str, path: &Path) -> String {
+    let leaf = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "root".to_string());
+    let cleaned: String = leaf
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    format!("ws-{project_id}-{}", cleaned.to_lowercase())
+}
+
+fn summarise(project: &ProjectRef, worktree: &git::Worktree) -> WorkspaceSummary {
+    let path = &worktree.path;
+    let exists = path.is_dir();
+    let changed = git::changed_file_count(path);
+
+    WorkspaceSummary {
+        id: if worktree.is_main {
+            format!("ws-{}", project.id)
+        } else {
+            workspace_id_for(&project.id, path)
+        },
+        project_id: project.id.clone(),
+        // The main checkout carries the project's name; a worktree carries its
+        // branch, which is what distinguishes it.
+        name: if worktree.is_main {
+            project.name.clone()
+        } else {
+            worktree
+                .branch
+                .clone()
+                .unwrap_or_else(|| "detached".to_string())
+        },
+        branch: match &worktree.branch {
+            Some(name) => name.clone(),
+            None => "detached HEAD".to_string(),
+        },
+        worktree_path: path.to_string_lossy().into_owned(),
+        // A directory git still lists but that is no longer on disk needs
+        // attention rather than looking ready.
+        status: if exists {
+            WorkspaceStatus::Ready
+        } else {
+            WorkspaceStatus::NeedsAttention
+        },
+        active_session_ids: Vec::new(),
+        changed_file_count: changed.unwrap_or(0),
+        last_activity_at: chrono::Utc::now().to_rfc3339(),
+    }
+}
+
+/// Every workspace: each project's checkout plus each of its worktrees.
+///
+/// Worktrees come from git's own list, so ones created outside Artemis appear
+/// without being registered anywhere.
 pub fn list_workspaces(project_id: Option<&str>) -> Vec<WorkspaceSummary> {
     list_projects()
         .into_iter()
         // `Option::is_none_or` would read better but is stable only since 1.82;
         // the crate's MSRV is 1.77.
         .filter(|project| project_id.map_or(true, |wanted| wanted == project.id))
-        .map(|project| {
-            let path = PathBuf::from(&project.root_path);
-            let is_repo = git::is_repo(&path);
-            let branch = git::current_branch(&path);
-            let changed = git::changed_file_count(&path);
+        .flat_map(|project| {
+            let root = PathBuf::from(&project.root_path);
 
-            WorkspaceSummary {
-                id: format!("ws-{}", project.id),
-                project_id: project.id.clone(),
-                // Named after the project: every workspace being "Current
-                // checkout" made a nine-project list unreadable. M5 gives
-                // worktrees their own names.
-                name: project.name.clone(),
+            if !git::is_repo(&root) {
                 // No invented branch name: a non-repository says so.
-                branch: match (is_repo, branch) {
-                    (true, Some(name)) => name,
-                    (true, None) => "detached HEAD".to_string(),
-                    (false, _) => "not a git repository".to_string(),
-                },
-                worktree_path: project.root_path.clone(),
-                status: if is_repo {
-                    WorkspaceStatus::Ready
-                } else {
-                    WorkspaceStatus::NeedsAttention
-                },
-                active_session_ids: Vec::new(),
-                changed_file_count: changed.unwrap_or(0),
-                last_activity_at: chrono::Utc::now().to_rfc3339(),
+                return vec![WorkspaceSummary {
+                    id: format!("ws-{}", project.id),
+                    project_id: project.id.clone(),
+                    name: project.name.clone(),
+                    branch: "not a git repository".to_string(),
+                    worktree_path: project.root_path.clone(),
+                    status: WorkspaceStatus::NeedsAttention,
+                    active_session_ids: Vec::new(),
+                    changed_file_count: 0,
+                    last_activity_at: chrono::Utc::now().to_rfc3339(),
+                }];
             }
+
+            git::list_worktrees(&root)
+                .iter()
+                .map(|worktree| summarise(&project, worktree))
+                .collect::<Vec<_>>()
         })
         .collect()
+}
+
+/// Create a worktree for `branch` in `project_id`, returning the new workspace.
+pub fn create_workspace(project_id: &str, branch: &str) -> Result<WorkspaceSummary, String> {
+    let project = list_projects()
+        .into_iter()
+        .find(|candidate| candidate.id == project_id)
+        .ok_or_else(|| format!("Unknown project: {project_id}"))?;
+
+    let root = PathBuf::from(&project.root_path);
+    if !git::is_repo(&root) {
+        return Err(format!("{} is not a git repository.", project.name));
+    }
+
+    let worktree = git::create_worktree(&root, &worktrees_root(project_id), branch)?;
+    Ok(summarise(&project, &worktree))
+}
+
+/// Remove a worktree. Refuses to discard uncommitted work unless `force`.
+///
+/// The main checkout is never removable: it is the repository, not a workspace
+/// Artemis made.
+pub fn delete_workspace(workspace_id: &str, force: bool) -> Result<(), String> {
+    let projects = list_projects();
+    for project in &projects {
+        let root = PathBuf::from(&project.root_path);
+        if !git::is_repo(&root) {
+            continue;
+        }
+        for worktree in git::list_worktrees(&root) {
+            let summary = summarise(project, &worktree);
+            if summary.id != workspace_id {
+                continue;
+            }
+            if worktree.is_main {
+                return Err(
+                    "This is the project's own checkout, not a worktree Artemis created."
+                        .to_string(),
+                );
+            }
+            return git::remove_worktree(&root, &worktree.path, force);
+        }
+    }
+    Err(format!("Unknown workspace: {workspace_id}"))
 }
 
 /// Sessions are not persisted yet — M7 adds the store, M1 the event log.

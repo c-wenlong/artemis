@@ -8,6 +8,8 @@ interface RailProps {
   selectedWorkspaceId: string | null;
   onSelectWorkspace(workspaceId: string): void;
   onOpenSettings(): void;
+  onNewWorktree(projectId: string): void;
+  onDeleteWorktree(workspaceId: string): void;
 }
 
 interface Group {
@@ -36,18 +38,29 @@ function groupByProject(
 }
 
 /**
+ * A project's own checkout is not a worktree Artemis made, so it cannot be
+ * deleted from here. Identified by path rather than by an id convention, which
+ * would silently stop matching if the host changed how it builds ids.
+ */
+function isMainCheckout(project: ProjectRef, workspace: WorkspaceSummary): boolean {
+  return workspace.worktreePath === project.rootPath;
+}
+
+/**
  * Left rail: projects resolved down to the workspaces you actually open.
  *
- * A project heading appears only when it holds more than one workspace — until
- * M5 adds worktrees that is the common case, and "artemis › artemis" is noise,
- * not hierarchy.
+ * A project heading appears only when it holds more than one workspace —
+ * "artemis › artemis" is noise, not hierarchy. The add control lives on the
+ * group row either way.
  */
 export function Rail({
   projects,
   workspaces,
   selectedWorkspaceId,
   onSelectWorkspace,
-  onOpenSettings
+  onOpenSettings,
+  onNewWorktree,
+  onDeleteWorktree
 }: RailProps) {
   const groups = groupByProject(projects, workspaces);
 
@@ -63,26 +76,63 @@ export function Rail({
       <nav aria-label="Projects and workspaces" className="rail-nav">
         {groups.map((group) => (
           <div className="rail-group" key={group.project.id}>
-            {group.workspaces.length > 1 ? (
-              <h2 className="rail-group-label">{group.project.name}</h2>
-            ) : null}
-            {group.workspaces.map((workspace) => (
-              <button
-                aria-current={workspace.id === selectedWorkspaceId ? "true" : undefined}
-                className="rail-item"
-                key={workspace.id}
-                onClick={() => onSelectWorkspace(workspace.id)}
-                type="button"
-              >
-                <StatusDot status={workspace.status} subject={workspace.name} />
-                <span className="rail-item-name">{workspace.name}</span>
-                {workspace.changedFileCount > 0 ? (
-                  <span className="rail-item-count mono">
-                    {workspace.changedFileCount}
-                  </span>
-                ) : null}
-              </button>
-            ))}
+            <div className="rail-group-head">
+              {group.workspaces.length > 1 ? (
+                <h2 className="rail-group-label">{group.project.name}</h2>
+              ) : (
+                <span aria-hidden className="rail-group-spacer" />
+              )}
+              {group.project.id === "__orphans" ? null : (
+                <button
+                  aria-label={`New worktree in ${group.project.name}`}
+                  className="rail-group-action"
+                  onClick={() => onNewWorktree(group.project.id)}
+                  title="New worktree"
+                  type="button"
+                >
+                  +
+                </button>
+              )}
+            </div>
+
+            {group.workspaces.map((workspace) => {
+              const selected = workspace.id === selectedWorkspaceId;
+              const deletable = !isMainCheckout(group.project, workspace);
+
+              return (
+                <div className="rail-item-row" key={workspace.id}>
+                  <button
+                    aria-current={selected ? "true" : undefined}
+                    /* Just the name: the dot carries its own label, and
+                       "artemis: ready artemis 4" is not a useful thing to hear. */
+                    aria-label={workspace.name}
+                    className="rail-item"
+                    onClick={() => onSelectWorkspace(workspace.id)}
+                    type="button"
+                  >
+                    <StatusDot status={workspace.status} subject={workspace.name} />
+                    <span className="rail-item-name">{workspace.name}</span>
+                    {workspace.changedFileCount > 0 ? (
+                      <span className="rail-item-count mono">
+                        {workspace.changedFileCount}
+                      </span>
+                    ) : null}
+                  </button>
+
+                  {selected && deletable ? (
+                    <button
+                      aria-label={`Delete worktree ${workspace.name}`}
+                      className="rail-item-action"
+                      onClick={() => onDeleteWorktree(workspace.id)}
+                      title="Delete worktree"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         ))}
         {groups.length === 0 ? (

@@ -44,16 +44,74 @@
   margin-top: var(--space-3);
 }
 
+.rail-group-head {
+  display: flex;
+  align-items: center;
+  min-height: 1.25rem;
+  padding: 0 var(--space-1) 0 var(--space-2);
+}
+
 .rail-group-label {
-  margin: 0 0 var(--space-1);
-  padding: 0 var(--space-2);
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--text-ui-xs);
   font-weight: 500;
   color: var(--text-tertiary);
   text-transform: lowercase;
 }
 
+.rail-group-spacer {
+  flex: 1;
+}
+
+/* Quiet until the group is hovered: one "+" per project would otherwise be a
+   column of plus signs down the rail. */
+.rail-group-action {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.rail-group:hover .rail-group-action,
+.rail-group-action:focus-visible {
+  opacity: 1;
+}
+
+.rail-group-action:hover {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+}
+
+.rail-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.rail-item-action {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+}
+
+.rail-item-action:hover {
+  background: var(--accent-muted);
+  color: var(--state-error);
+}
+
 .rail-item {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--space-2);

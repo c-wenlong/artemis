@@ -13,6 +13,10 @@ import { AppShell } from "./components/AppShell/AppShell";
 import { Composer } from "./components/Composer/Composer";
 import { Conversation } from "./components/Conversation/Conversation";
 import { Rail } from "./components/Rail/Rail";
+import {
+  DeleteWorktreeDialog,
+  NewWorktreeDialog
+} from "./components/Rail/WorktreeDialogs";
 import { SettingsDialog } from "./components/SettingsDialog/SettingsDialog";
 
 interface AppProps {
@@ -43,6 +47,8 @@ export function App({ host }: AppProps = {}) {
   const [selectedHarnessId, setSelectedHarnessId] = useState<string | null>(null);
   const [model, setModel] = useState("");
   const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const [newWorktreeProjectId, setNewWorktreeProjectId] = useState<string | null>(null);
+  const [deletingWorkspaceId, setDeletingWorkspaceId] = useState<string | null>(null);
 
   // Load once. The previous implementation listed `selectedWorkspaceId` as a
   // dependency, so selecting a workspace refetched the entire inventory.
@@ -122,6 +128,37 @@ export function App({ host }: AppProps = {}) {
     [chat, hostService, selectedWorkspace]
   );
 
+  const refreshWorkspaces = useCallback(async () => {
+    const workspaces = await hostService.listWorkspaces();
+    setData((current) => ({ ...current, workspaces }));
+    return workspaces;
+  }, [hostService]);
+
+  const handleCreateWorktree = useCallback(
+    async (branch: string) => {
+      if (!newWorktreeProjectId) return;
+      const workspace = await hostService.createWorkspace(newWorktreeProjectId, branch);
+      await refreshWorkspaces();
+      // Select what was just made: creating a worktree is how you start work
+      // in it, so landing somewhere else would need an extra click every time.
+      setSelectedWorkspaceId(workspace.id);
+    },
+    [hostService, newWorktreeProjectId, refreshWorkspaces]
+  );
+
+  const handleDeleteWorktree = useCallback(
+    async (force: boolean) => {
+      if (!deletingWorkspaceId) return;
+      await hostService.deleteWorkspace(deletingWorkspaceId, force);
+      const workspaces = await refreshWorkspaces();
+      // The selection cannot stay on something that no longer exists.
+      setSelectedWorkspaceId((current) =>
+        current === deletingWorkspaceId ? (workspaces[0]?.id ?? null) : current
+      );
+    },
+    [deletingWorkspaceId, hostService, refreshWorkspaces]
+  );
+
   const handleSaveSettings = useCallback(
     async (next: RuntimeSettings) => {
       const saved = await hostService.updateRuntimeSettings(next);
@@ -159,12 +196,32 @@ export function App({ host }: AppProps = {}) {
         }
         rail={
           <Rail
+            onDeleteWorktree={setDeletingWorkspaceId}
+            onNewWorktree={setNewWorktreeProjectId}
             onOpenSettings={() => setSettingsOpen(true)}
             onSelectWorkspace={setSelectedWorkspaceId}
             projects={data.projects}
             selectedWorkspaceId={selectedWorkspaceId}
             workspaces={data.workspaces}
           />
+        }
+      />
+      <NewWorktreeDialog
+        onClose={() => setNewWorktreeProjectId(null)}
+        onCreate={handleCreateWorktree}
+        open={newWorktreeProjectId !== null}
+        projectName={
+          data.projects.find((project) => project.id === newWorktreeProjectId)?.name ??
+          "this project"
+        }
+      />
+      <DeleteWorktreeDialog
+        onClose={() => setDeletingWorkspaceId(null)}
+        onDelete={handleDeleteWorktree}
+        open={deletingWorkspaceId !== null}
+        workspace={
+          data.workspaces.find((workspace) => workspace.id === deletingWorkspaceId) ??
+          null
         }
       />
       <SettingsDialog

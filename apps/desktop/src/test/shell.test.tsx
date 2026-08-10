@@ -8,7 +8,7 @@ async function renderApp(host = createFakeHost()) {
   const user = userEvent.setup();
   render(<App host={host} />);
   // The shell paints before data arrives; wait for the rail to fill.
-  await screen.findByRole("button", { name: /artemis/i });
+  await screen.findByRole("button", { name: /^artemis$/i });
   return { host, user };
 }
 
@@ -46,7 +46,7 @@ describe("shell", () => {
   it("selects a workspace from the rail", async () => {
     const { user } = await renderApp();
     const rail = screen.getByRole("navigation", { name: /workspaces/i });
-    await user.click(within(rail).getByRole("button", { name: /quiver/i }));
+    await user.click(within(rail).getByRole("button", { name: /^quiver$/i }));
     await waitFor(() => {
       expect(screen.getByTestId("composer-context")).toHaveTextContent("quiver");
     });

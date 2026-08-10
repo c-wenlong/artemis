@@ -36,6 +36,8 @@ describe("Rail", () => {
   it("omits the project heading when it holds a single workspace", () => {
     render(
       <Rail
+        onDeleteWorktree={noop}
+        onNewWorktree={noop}
         onOpenSettings={noop}
         onSelectWorkspace={noop}
         projects={fakeProjects}
@@ -45,7 +47,7 @@ describe("Rail", () => {
     );
     // "artemis › artemis" would be noise, not hierarchy.
     expect(screen.queryByRole("heading", { name: "artemis" })).toBeNull();
-    expect(screen.getByRole("button", { name: /artemis/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^artemis$/i })).toBeInTheDocument();
   });
 
   it("shows the project heading once a project holds more than one workspace", () => {
@@ -60,6 +62,8 @@ describe("Rail", () => {
     ];
     render(
       <Rail
+        onDeleteWorktree={noop}
+        onNewWorktree={noop}
         onOpenSettings={noop}
         onSelectWorkspace={noop}
         projects={fakeProjects}
@@ -73,6 +77,8 @@ describe("Rail", () => {
   it("keeps workspaces whose project is missing rather than dropping them", () => {
     render(
       <Rail
+        onDeleteWorktree={noop}
+        onNewWorktree={noop}
         onOpenSettings={noop}
         onSelectWorkspace={noop}
         projects={[]}
@@ -81,12 +87,14 @@ describe("Rail", () => {
       />
     );
     expect(screen.getByRole("heading", { name: "Other" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /artemis/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^artemis$/i })).toBeInTheDocument();
   });
 
   it("marks the selected workspace for assistive technology", () => {
     render(
       <Rail
+        onDeleteWorktree={noop}
+        onNewWorktree={noop}
         onOpenSettings={noop}
         onSelectWorkspace={noop}
         projects={fakeProjects}
@@ -94,7 +102,7 @@ describe("Rail", () => {
         workspaces={fakeWorkspaces}
       />
     );
-    expect(screen.getByRole("button", { name: /quiver/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^quiver$/i })).toHaveAttribute(
       "aria-current",
       "true"
     );
@@ -103,6 +111,8 @@ describe("Rail", () => {
   it("reports an empty scan root instead of rendering nothing", () => {
     render(
       <Rail
+        onDeleteWorktree={noop}
+        onNewWorktree={noop}
         onOpenSettings={noop}
         onSelectWorkspace={noop}
         projects={[]}
@@ -190,10 +200,10 @@ describe("App data flow", () => {
     const user = userEvent.setup();
 
     render(<App host={host} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
     await waitFor(() => expect(getReview).toHaveBeenCalledTimes(1));
 
-    await user.click(screen.getByRole("button", { name: /quiver/i }));
+    await user.click(screen.getByRole("button", { name: /^quiver$/i }));
     await waitFor(() => expect(getReview).toHaveBeenCalledTimes(2));
 
     // The old shell listed the selection in its load effect's dependencies, so
@@ -207,7 +217,7 @@ describe("App data flow", () => {
     const user = userEvent.setup();
 
     render(<App host={host} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
     await waitFor(() => expect(getReview).toHaveBeenCalledTimes(1));
 
     await user.type(screen.getByRole("textbox", { name: /prompt/i }), "do work");
@@ -218,7 +228,7 @@ describe("App data flow", () => {
 
   it("seeds the model field from saved settings", async () => {
     render(<App host={createFakeHost()} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: /model/i })).toHaveValue(
         "anthropic/claude-opus-5"
@@ -228,7 +238,7 @@ describe("App data flow", () => {
 
   it("offers only ready harnesses, defaulting to opencode", async () => {
     render(<App host={createFakeHost()} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
     const harness = screen.getByRole("combobox", { name: /harness/i });
     await waitFor(() => expect(harness).toHaveValue("opencode"));
     expect(within(harness).getAllByRole("option")).toHaveLength(2);
@@ -240,7 +250,7 @@ describe("SettingsDialog", () => {
     const host = createFakeHost();
     const user = userEvent.setup();
     render(<App host={host} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     await user.click(screen.getByRole("button", { name: /settings/i }));
     const dialog = await screen.findByRole("dialog", { name: /settings/i });
@@ -262,7 +272,7 @@ describe("SettingsDialog", () => {
   it("exposes the scan root, the setting that bounds the inventory scan", async () => {
     const user = userEvent.setup();
     render(<App host={createFakeHost()} />);
-    await screen.findByRole("button", { name: /artemis/i });
+    await screen.findByRole("button", { name: /^artemis$/i });
 
     await user.click(screen.getByRole("button", { name: /settings/i }));
     const dialog = await screen.findByRole("dialog", { name: /settings/i });
