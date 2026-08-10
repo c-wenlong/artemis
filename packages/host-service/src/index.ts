@@ -10,6 +10,7 @@ import type {
   CreateChatSessionRequest,
   RuntimeEvent,
   ProjectRef,
+  LaunchPreset,
   ReviewRuntime,
   TerminalRuntime,
   TerminalSession,
@@ -96,6 +97,14 @@ export function createLocalHostService(
       return workspaceId
         ? seedSessions.filter((session) => session.workspaceId === workspaceId)
         : seedSessions;
+    },
+
+    async getLaunchPreset(): Promise<LaunchPreset | null> {
+      return null;
+    },
+
+    async saveLaunchPreset(): Promise<void> {
+      return;
     },
 
     async openTerminal(): Promise<TerminalSession> {

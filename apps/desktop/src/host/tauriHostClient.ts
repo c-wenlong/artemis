@@ -7,6 +7,7 @@ import type {
   ChatEventListener,
   ChatSession,
   CreateChatSessionRequest,
+  LaunchPreset,
   ProjectRef,
   ReviewSnapshot,
   RuntimeEvent,
@@ -48,6 +49,18 @@ export function createTauriHostClient(): ArtemisHostClient {
 
     deleteWorkspace(workspaceId: string, force: boolean): Promise<void> {
       return invoke("delete_workspace", { workspaceId, force });
+    },
+
+    getLaunchPreset(workspaceId: string): Promise<LaunchPreset | null> {
+      return invoke("get_launch_preset", { workspaceId });
+    },
+
+    saveLaunchPreset(
+      workspaceId: string,
+      harnessId: string,
+      model: string | null
+    ): Promise<void> {
+      return invoke("save_launch_preset", { workspaceId, harnessId, model });
     },
 
     getReviewSnapshot(workspaceId: string): Promise<ReviewSnapshot> {

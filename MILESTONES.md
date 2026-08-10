@@ -370,12 +370,50 @@ behaviour is covered by the host tests, and the reconnect path by the UI tests.
 > else, and turns that survive a reload. Persistence (M7) is what is still
 > missing.
 
-## M7. Persistence
+## M7. Persistence ✅
 
-- SQLite for projects, workspaces, sessions, launch presets, event log
-- Migrations; crash recovery marks orphaned running sessions as stopped
+- [x] SQLite for sessions and launch presets, with migrations
+- [x] Crash recovery marks orphaned running sessions as stopped
+- [ ] Projects, workspaces, event log — **deliberately not stored**, see below
 
-**Exit:** quit mid-turn, reopen, and the app restores to a truthful state.
+**Exit:** met. A session left `running` by a hard quit is corrected to `stopped`
+on the next launch, and `opencode_session_id` survives the restart so the
+conversation resumes with its context instead of starting over.
+
+### What is stored, and what is not
+
+Three of the five things this milestone originally listed are deliberately
+absent, which is a narrowing of scope and worth stating plainly rather than
+quietly dropping:
+
+- **Projects and workspaces are derived** — from the filesystem scan and from
+  `git worktree list`. Storing them would create a second answer that drifts
+  from the first, and the first is always right. A worktree deleted on the
+  command line would linger in a table; a repository cloned outside Artemis
+  would be missing from one.
+- **The event log stays as JSONL.** It is append-only, a crash truncates the
+  last line rather than corrupting a file, and nothing has needed to query it.
+  Moving it into SQLite is churn with a real regression surface and no benefit
+  yet. If M8 or M9 needs indexed queries over events, that is when to move it.
+
+What is left is what genuinely cannot be recomputed: `opencode_session_id`,
+without which a restart forgets the conversation, and launch presets, so a
+workspace reopens with the harness and model it was last used with.
+
+Two bugs, both in the same place and both about the difference between *loading*
+a preset and *choosing* one:
+
+- **Saving was gated on the load having finished**, so a model typed in the
+  first moments after opening a workspace was silently discarded. The gate is
+  structural now: the loader only calls internal setters, the exported setters
+  only run from user input, so no timing is involved.
+- **The load re-ran when settings arrived a tick later**, resetting the
+  "user has chosen" flag and overwriting what had just been typed. The effect
+  now reloads when the workspace changes and only then.
+
+Both surfaced as *flaky* tests rather than failing ones, which is the more
+dangerous shape — the first two fixes made the flake move rather than go away.
+
 **Depends:** M1, M5.
 
 ---

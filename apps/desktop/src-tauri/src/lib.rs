@@ -16,6 +16,8 @@ mod proc;
 mod scanner;
 mod settings;
 
+/// Public so `tests/persistence.rs` can exercise migrations and recovery.
+pub mod db;
 /// Public so `tests/pty.rs` can drive terminal sessions against a real shell.
 pub mod pty;
 /// Public so `tests/record_demo_log.rs` can resolve a real workspace.
@@ -34,6 +36,7 @@ use tauri::{Manager, State};
 
 use chat::stream::EventSink;
 use chat::ChatStore;
+use db::Db;
 use pty::{PtyStore, TerminalSession, TerminalSink, TerminalSpec};
 use types::{
     AgentLaunchRequest, AgentLaunchResult, AgentSessionSummary, AssetInventorySnapshot,
@@ -130,6 +133,34 @@ async fn delete_workspace(workspace_id: String, force: bool) -> Result<(), Strin
     tauri::async_runtime::spawn_blocking(move || workspace::delete_workspace(&workspace_id, force))
         .await
         .map_err(|error| error.to_string())?
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LaunchPresetPayload {
+    harness_id: String,
+    model: Option<String>,
+}
+
+#[tauri::command]
+async fn get_launch_preset(
+    db: State<'_, Arc<Db>>,
+    workspace_id: String,
+) -> Result<Option<LaunchPresetPayload>, String> {
+    Ok(db.preset(&workspace_id)?.map(|preset| LaunchPresetPayload {
+        harness_id: preset.harness_id,
+        model: preset.model,
+    }))
+}
+
+#[tauri::command]
+async fn save_launch_preset(
+    db: State<'_, Arc<Db>>,
+    workspace_id: String,
+    harness_id: String,
+    model: Option<String>,
+) -> Result<(), String> {
+    db.save_preset(&workspace_id, &harness_id, model.as_deref())
 }
 
 #[tauri::command]
@@ -244,8 +275,29 @@ async fn close_terminal(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // A database that cannot be opened is not a reason to refuse to start —
+    // fall back to memory so the app runs, losing only what would have been
+    // remembered across restarts.
+    let db = Arc::new(
+        Db::open(&db::default_path())
+            .or_else(|error| {
+                eprintln!("artemis: falling back to an in-memory database: {error}");
+                Db::in_memory()
+            })
+            .expect("in-memory database"),
+    );
+
+    // Anything still marked running was interrupted by a crash: nothing is
+    // running after the process dies.
+    match db.recover_interrupted_sessions() {
+        Ok(0) => {}
+        Ok(count) => eprintln!("artemis: marked {count} interrupted session(s) as stopped"),
+        Err(error) => eprintln!("artemis: could not recover sessions: {error}"),
+    }
+
     tauri::Builder::default()
-        .manage(Arc::new(ChatStore::default()))
+        .manage(db.clone())
+        .manage(Arc::new(ChatStore::new(db)))
         .manage(Arc::new(PtyStore::default()))
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
@@ -269,6 +321,8 @@ pub fn run() {
             write_terminal,
             resize_terminal,
             close_terminal,
+            get_launch_preset,
+            save_launch_preset,
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Destroyed = event {

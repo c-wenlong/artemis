@@ -9,6 +9,7 @@ import type {
 import type { ArtemisHostClient } from "@artemis/host-service/client";
 import { createHostClient } from "./host";
 import { useChat } from "./chat/useChat";
+import { useLaunchPreset } from "./chat/useLaunchPreset";
 import { useTerminals } from "./chat/useTerminals";
 import { AppShell } from "./components/AppShell/AppShell";
 import { Composer } from "./components/Composer/Composer";
@@ -46,8 +47,6 @@ export function App({ host }: AppProps = {}) {
   const [data, setData] = useState<AppData>(initialData);
   const [review, setReview] = useState<ReviewSnapshot | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
-  const [selectedHarnessId, setSelectedHarnessId] = useState<string | null>(null);
-  const [model, setModel] = useState("");
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [newWorktreeProjectId, setNewWorktreeProjectId] = useState<string | null>(null);
   const [deletingWorkspaceId, setDeletingWorkspaceId] = useState<string | null>(null);
@@ -68,15 +67,6 @@ export function App({ host }: AppProps = {}) {
 
       setData({ inventory, projects, settings, workspaces });
       setSelectedWorkspaceId((current) => current ?? workspaces[0]?.id ?? null);
-      setModel((current) => current || (settings.opencodeDefaultModel ?? ""));
-      setSelectedHarnessId((current) => {
-        if (current) return current;
-        const ready = inventory.harnesses.filter(
-          (harness) => harness.health === "ready"
-        );
-        const preferred = ready.find((harness) => harness.id === "opencode");
-        return preferred?.id ?? ready[0]?.id ?? null;
-      });
     })();
 
     return () => {
@@ -108,6 +98,16 @@ export function App({ host }: AppProps = {}) {
 
   const selectedWorkspace =
     data.workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ?? null;
+
+  // Harness and model come from the workspace's remembered preset.
+  const preset = useLaunchPreset({
+    defaultModel: data.settings.opencodeDefaultModel ?? "",
+    host: hostService,
+    readyHarnesses,
+    workspace: selectedWorkspace
+  });
+  const selectedHarnessId = preset.harnessId;
+  const model = preset.model;
 
   const selectedHarness =
     readyHarnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
@@ -172,7 +172,6 @@ export function App({ host }: AppProps = {}) {
       const saved = await hostService.updateRuntimeSettings(next);
       const inventory = await hostService.getSnapshot();
       setData((current) => ({ ...current, inventory, settings: saved }));
-      if (saved.opencodeDefaultModel) setModel(saved.opencodeDefaultModel);
     },
     [hostService]
   );
@@ -185,8 +184,8 @@ export function App({ host }: AppProps = {}) {
             harnesses={readyHarnesses}
             isBusy={chat.isRunning}
             model={model}
-            onModelChange={setModel}
-            onSelectHarness={setSelectedHarnessId}
+            onModelChange={preset.setModel}
+            onSelectHarness={preset.setHarnessId}
             isTerminalVisible={terminals.isVisible}
             onStop={() => void chat.stop()}
             onSubmit={handleSubmit}

@@ -10,6 +10,7 @@ import type {
   CreateChatSessionRequest,
   RuntimeEvent,
   ProjectRef,
+  LaunchPreset,
   ReviewRuntime,
   TerminalRuntime,
   TerminalSession,
@@ -92,6 +93,14 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
         ? `?workspaceId=${encodeURIComponent(workspaceId)}`
         : "";
       return getJson(`${basePath}/sessions${query}`);
+    },
+
+    getLaunchPreset(): Promise<LaunchPreset | null> {
+      return Promise.resolve(null);
+    },
+
+    saveLaunchPreset(): Promise<void> {
+      return Promise.resolve();
     },
 
     openTerminal(): Promise<TerminalSession> {

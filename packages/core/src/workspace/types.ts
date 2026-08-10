@@ -25,6 +25,12 @@ export interface WorkspaceSummary {
   lastActivityAt: string;
 }
 
+/** The harness and model a workspace was last used with. */
+export interface LaunchPreset {
+  harnessId: string;
+  model: string | null;
+}
+
 export interface WorkspaceRuntime {
   listProjects(): Promise<ProjectRef[]>;
   listWorkspaces(projectId?: string): Promise<WorkspaceSummary[]>;
@@ -35,4 +41,10 @@ export interface WorkspaceRuntime {
    * is set — discarding someone's changes has to be asked for, never inferred.
    */
   deleteWorkspace(workspaceId: string, force: boolean): Promise<void>;
+  getLaunchPreset(workspaceId: string): Promise<LaunchPreset | null>;
+  saveLaunchPreset(
+    workspaceId: string,
+    harnessId: string,
+    model: string | null
+  ): Promise<void>;
 }

@@ -142,6 +142,10 @@ describe("conversation surface", () => {
 
   it("shows an empty state naming the selected harness", async () => {
     await renderApp();
-    expect(screen.getByTestId("conversation-empty")).toHaveTextContent(/OpenCode/);
+    // The harness comes from the workspace's stored preset, which resolves a
+    // tick after the rail does.
+    await waitFor(() =>
+      expect(screen.getByTestId("conversation-empty")).toHaveTextContent(/OpenCode/)
+    );
   });
 });

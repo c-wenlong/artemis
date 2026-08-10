@@ -6,6 +6,7 @@ import type {
   ChatEventListener,
   ChatSession,
   CreateChatSessionRequest,
+  LaunchPreset,
   RuntimeEvent,
   ProjectRef,
   ReviewSnapshot,
@@ -128,6 +129,8 @@ export interface FakeHostOptions {
   /** Events a reopened session replays. */
   replay?: RuntimeEvent[];
   projects?: ProjectRef[];
+  /** Presets the host has stored, keyed by workspace id. */
+  presets?: Record<string, { harnessId: string; model: string | null }>;
   /** Terminals the host already has, as after a reload. */
   existingTerminals?: TerminalSession[];
   /** Message the host refuses to open a terminal with. */
@@ -156,6 +159,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   deleted: Array<{ workspaceId: string; force: boolean }>;
   terminals: TerminalSpec[];
   closedTerminals: string[];
+  savedPresets: Array<{ workspaceId: string; harnessId: string; model: string | null }>;
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -170,6 +174,12 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   const terminals: TerminalSpec[] = [];
   const closedTerminals: string[] = [];
   let sessions: TerminalSession[] = [...(options.existingTerminals ?? [])];
+  const presets: Record<string, LaunchPreset> = { ...(options.presets ?? {}) };
+  const savedPresets: Array<{
+    workspaceId: string;
+    harnessId: string;
+    model: string | null;
+  }> = [];
   const projects = options.projects ?? fakeProjects;
   // Mutable so create and delete are observable through listWorkspaces, the
   // way they are against the real host.
@@ -184,6 +194,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     deleted,
     terminals,
     closedTerminals,
+    savedPresets,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => projects,
@@ -222,6 +233,18 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
       deleted.push({ workspaceId, force });
       workspaces = workspaces.filter((workspace) => workspace.id !== workspaceId);
     },
+    getLaunchPreset: async (workspaceId: string): Promise<LaunchPreset | null> =>
+      presets[workspaceId] ?? null,
+
+    saveLaunchPreset: async (
+      workspaceId: string,
+      harnessId: string,
+      model: string | null
+    ): Promise<void> => {
+      presets[workspaceId] = { harnessId, model };
+      savedPresets.push({ workspaceId, harnessId, model });
+    },
+
     getReviewSnapshot: async (workspaceId: string): Promise<ReviewSnapshot> => ({
       ...(options.review ?? fakeReview),
       workspaceId

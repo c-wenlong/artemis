@@ -15,6 +15,7 @@ use std::sync::Arc;
 
 use artemis_host::chat::stream::EventSink;
 use artemis_host::chat::ChatStore;
+use artemis_host::db::Db;
 use artemis_host::types::{CreateChatSessionRequest, RuntimeEvent, SendChatMessageRequest};
 
 struct Printer;
@@ -41,7 +42,7 @@ impl EventSink for Printer {
 #[test]
 #[ignore]
 fn record_a_demo_turn() {
-    let store = ChatStore::default();
+    let store = ChatStore::new(Arc::new(Db::in_memory().expect("db")));
 
     // Use the first workspace the host actually reports, so the recorded log
     // lands under the session id the UI will ask for.

@@ -10,6 +10,7 @@ export type {
   SkillAsset
 } from "./catalog/types";
 export type {
+  LaunchPreset,
   ProjectRef,
   WorkspaceRuntime,
   WorkspaceStatus,

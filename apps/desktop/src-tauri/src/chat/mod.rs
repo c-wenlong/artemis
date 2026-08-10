@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use crate::db::Db;
 use crate::inventory;
 use crate::settings;
 use crate::types::{
@@ -19,9 +20,13 @@ use log::EventLog;
 use stream::{new_turn_handle, run_turn, EventSink, TurnHandle, TurnRequest};
 
 /// Sessions and their in-flight turns.
-#[derive(Default)]
+///
+/// Sessions live in the database rather than in memory: `opencode_session_id`
+/// is what lets a restart resume a conversation with its context, and losing it
+/// means the agent starts over having forgotten everything. In-flight turns
+/// stay in memory, because a turn cannot outlive the process that spawned it.
 pub struct ChatStore {
-    sessions: Mutex<HashMap<String, ChatSession>>,
+    db: Arc<Db>,
     running: Mutex<HashMap<String, TurnHandle>>,
 }
 
@@ -61,6 +66,13 @@ pub fn session_id_for_workspace(workspace_id: &str) -> String {
 }
 
 impl ChatStore {
+    pub fn new(db: Arc<Db>) -> Self {
+        ChatStore {
+            db,
+            running: Mutex::new(HashMap::new()),
+        }
+    }
+
     /// Idempotent: reopening a workspace returns the existing session, keeping
     /// the opencode session id so the conversation resumes with its context.
     pub fn create_session(&self, request: CreateChatSessionRequest) -> ChatSession {
@@ -84,21 +96,18 @@ impl ChatStore {
             workspace_id: request.workspace_id,
             workspace_path: request.workspace_path,
         };
-        self.sessions
-            .lock()
-            .expect("sessions lock")
-            .insert(session.id.clone(), session.clone());
+        let _ = self.db.save_session(&session);
         session
     }
 
     pub fn session(&self, session_id: &str) -> Option<ChatSession> {
-        self.sessions.lock().ok()?.get(session_id).cloned()
+        self.db.session(session_id).ok().flatten()
     }
 
     fn update_session(&self, session: ChatSession) {
-        if let Ok(mut sessions) = self.sessions.lock() {
-            sessions.insert(session.id.clone(), session);
-        }
+        // Best-effort: failing to persist a status change must not abort the
+        // turn the user is watching.
+        let _ = self.db.save_session(&session);
     }
 
     /// Stop the running turn for a session, if there is one.
@@ -259,7 +268,7 @@ mod tests {
     use super::*;
 
     fn store() -> ChatStore {
-        ChatStore::default()
+        ChatStore::new(Arc::new(Db::in_memory().expect("in-memory db")))
     }
 
     fn request() -> CreateChatSessionRequest {
