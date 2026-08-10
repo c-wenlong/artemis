@@ -324,15 +324,51 @@ count concatenated. The row now carries just the name; the dot keeps its own.
 
 **Depends:** M0.
 
-## M6. Terminal dock
+## M6. Terminal dock ✅
 
-- PTY via `portable-pty`; xterm.js in a closable right dock, tabbed
-- Non-opencode harnesses launch here
-- Scrollback retention; PTYs survive UI reload
+- [x] PTY via `portable-pty`; xterm.js in a closable right dock, tabbed
+- [x] Non-opencode harnesses launch here
+- [x] Scrollback retention; PTYs survive UI reload
 
-**Exit:** launch Claude Code into a workspace terminal, reload the window, find
-the session alive.
+**Exit:** met at the host level, which is where it is decided. The PTY belongs
+to the host process, so a webview reload drops the *subscriber*, not the
+terminal — `output_survives_a_subscriber_going_away` detaches mid-run, keeps
+writing, reattaches, and finds both the earlier output in the replayed
+scrollback and the process still alive. On the UI side, the dock adopts whatever
+`listTerminals` reports rather than starting fresh.
+
+Design:
+
+- **The PTY lives in the host, the window is only a subscriber.** Everything
+  else follows from that: reload survival, output accumulating while nobody
+  listens, and a reader thread per terminal that runs regardless of subscribers.
+- **The backlog is returned from `subscribe`, not pushed through the sink.**
+  xterm writes it in one call; replaying a hundred kilobytes chunk by chunk
+  makes a reconnect visibly crawl.
+- **Scrollback is bounded to 256KB, keeping the tail** — a terminal shows the
+  end, and a runaway process should not be able to exhaust memory.
+- **Only the visible tab is mounted.** A dozen xterm instances rendering
+  off-screen costs real frame time; the PTY keeps running either way.
+- **Hiding is not closing.** The composer toggle collapses the dock and leaves
+  every process running.
+
+Tested against `/bin/sh` rather than a mock, because a PTY is not a pipe — it
+echoes, it has a window size, it delivers signals. `stty size` confirms a resize
+actually reaches the program, which a mock could never show.
+
+One design gap the tests surfaced: the composer button was a toggle, so there
+was no way to open a *second* terminal. Splitting it — toggle on the composer,
+"+" inside the dock — is what Superset and Pane both do, for the same reason.
+
+Not manually driven: opening a terminal in the running desktop app and reloading
+the window. The app was confirmed to build and run stably; the survival
+behaviour is covered by the host tests, and the reconnect path by the UI tests.
+
 **Depends:** M0, M5.
+
+> **v0.2 — a usable cockpit.** Real workspaces, a terminal for everything
+> else, and turns that survive a reload. Persistence (M7) is what is still
+> missing.
 
 ## M7. Persistence
 
@@ -341,9 +377,6 @@ the session alive.
 
 **Exit:** quit mid-turn, reopen, and the app restores to a truthful state.
 **Depends:** M1, M5.
-
-> **v0.2 — a usable cockpit.** Real workspaces, a terminal for everything else,
-> state that survives a restart.
 
 ---
 

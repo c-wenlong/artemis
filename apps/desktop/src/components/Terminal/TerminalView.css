@@ -1,0 +1,13 @@
+.terminal-view {
+  width: 100%;
+  height: 100%;
+}
+
+/* xterm measures its own viewport; it needs a definite box to fit into. */
+.terminal-view .xterm {
+  height: 100%;
+}
+
+.terminal-view .xterm-viewport {
+  background: transparent !important;
+}

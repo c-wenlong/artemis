@@ -12,6 +12,9 @@ import type {
   RuntimeEvent,
   RuntimeSettings,
   SendChatMessageRequest,
+  TerminalOutputListener,
+  TerminalSession,
+  TerminalSpec,
   WorkspaceSummary
 } from "@artemis/core";
 import type { ArtemisHostClient } from "@artemis/host-service/client";
@@ -61,6 +64,39 @@ export function createTauriHostClient(): ArtemisHostClient {
 
     launchAgent(request: AgentLaunchRequest): Promise<AgentLaunchResult> {
       return invoke("launch_agent", { request });
+    },
+
+    openTerminal(spec: TerminalSpec): Promise<TerminalSession> {
+      return invoke("open_terminal", { spec });
+    },
+
+    listTerminals(): Promise<TerminalSession[]> {
+      return invoke("list_terminals");
+    },
+
+    subscribeTerminal(
+      terminalId: string,
+      onOutput: TerminalOutputListener
+    ): Promise<string> {
+      const channel = new Channel<string>();
+      channel.onmessage = (chunk) => onOutput(chunk);
+      return invoke("subscribe_terminal", { terminalId, channel });
+    },
+
+    unsubscribeTerminal(terminalId: string): Promise<void> {
+      return invoke("unsubscribe_terminal", { terminalId });
+    },
+
+    writeTerminal(terminalId: string, data: string): Promise<void> {
+      return invoke("write_terminal", { terminalId, data });
+    },
+
+    resizeTerminal(terminalId: string, cols: number, rows: number): Promise<void> {
+      return invoke("resize_terminal", { terminalId, cols, rows });
+    },
+
+    closeTerminal(terminalId: string): Promise<void> {
+      return invoke("close_terminal", { terminalId });
     },
 
     createChatSession(request: CreateChatSessionRequest): Promise<ChatSession> {

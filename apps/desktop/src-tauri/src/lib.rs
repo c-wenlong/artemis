@@ -16,6 +16,8 @@ mod proc;
 mod scanner;
 mod settings;
 
+/// Public so `tests/pty.rs` can drive terminal sessions against a real shell.
+pub mod pty;
 /// Public so `tests/record_demo_log.rs` can resolve a real workspace.
 pub mod workspace;
 
@@ -28,10 +30,11 @@ pub mod types;
 use std::sync::Arc;
 
 use tauri::ipc::Channel;
-use tauri::State;
+use tauri::{Manager, State};
 
 use chat::stream::EventSink;
 use chat::ChatStore;
+use pty::{PtyStore, TerminalSession, TerminalSink, TerminalSpec};
 use types::{
     AgentLaunchRequest, AgentLaunchResult, AgentSessionSummary, AssetInventorySnapshot,
     ChatSession, CreateChatSessionRequest, ProjectRef, ReviewSnapshot, RuntimeEvent,
@@ -47,6 +50,16 @@ impl EventSink for ChannelSink {
         // A closed channel means the window went away mid-turn; the run loop
         // should finish and record to the log regardless.
         let _ = self.0.send(events.to_vec());
+    }
+}
+
+/// Terminal output reaches the webview as plain chunks; xterm.js parses the
+/// escape sequences, so nothing here needs to understand them.
+struct TerminalChannelSink(Channel<String>);
+
+impl TerminalSink for TerminalChannelSink {
+    fn emit(&self, _terminal_id: &str, chunk: &str) {
+        let _ = self.0.send(chunk.to_string());
     }
 }
 
@@ -161,10 +174,79 @@ async fn replay_chat_session(session_id: String) -> Result<Vec<RuntimeEvent>, St
         .map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+async fn open_terminal(
+    store: State<'_, Arc<PtyStore>>,
+    spec: TerminalSpec,
+) -> Result<TerminalSession, String> {
+    let store = store.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || store.open(spec))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn list_terminals(store: State<'_, Arc<PtyStore>>) -> Result<Vec<TerminalSession>, String> {
+    Ok(store.list())
+}
+
+/// Attaches a listener and returns everything buffered so far.
+///
+/// The replay comes back as the return value rather than through the channel:
+/// the webview writes it to xterm in one call, where feeding a hundred
+/// kilobytes through the live path chunk by chunk makes a reconnect crawl.
+#[tauri::command]
+async fn subscribe_terminal(
+    store: State<'_, Arc<PtyStore>>,
+    terminal_id: String,
+    channel: Channel<String>,
+) -> Result<String, String> {
+    let sink: Arc<dyn TerminalSink> = Arc::new(TerminalChannelSink(channel));
+    Ok(store.subscribe(&terminal_id, sink))
+}
+
+#[tauri::command]
+async fn unsubscribe_terminal(
+    store: State<'_, Arc<PtyStore>>,
+    terminal_id: String,
+) -> Result<(), String> {
+    store.unsubscribe(&terminal_id);
+    Ok(())
+}
+
+#[tauri::command]
+async fn write_terminal(
+    store: State<'_, Arc<PtyStore>>,
+    terminal_id: String,
+    data: String,
+) -> Result<(), String> {
+    store.write(&terminal_id, &data)
+}
+
+#[tauri::command]
+async fn resize_terminal(
+    store: State<'_, Arc<PtyStore>>,
+    terminal_id: String,
+    cols: u16,
+    rows: u16,
+) -> Result<(), String> {
+    store.resize(&terminal_id, cols, rows)
+}
+
+#[tauri::command]
+async fn close_terminal(
+    store: State<'_, Arc<PtyStore>>,
+    terminal_id: String,
+) -> Result<(), String> {
+    store.close(&terminal_id);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(Arc::new(ChatStore::default()))
+        .manage(Arc::new(PtyStore::default()))
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
             list_projects,
@@ -180,7 +262,21 @@ pub fn run() {
             send_chat_message,
             cancel_chat_turn,
             replay_chat_session,
+            open_terminal,
+            list_terminals,
+            subscribe_terminal,
+            unsubscribe_terminal,
+            write_terminal,
+            resize_terminal,
+            close_terminal,
         ])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                if let Some(store) = window.try_state::<Arc<PtyStore>>() {
+                    store.close_all();
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running Artemis");
 }

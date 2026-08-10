@@ -14,6 +14,8 @@ interface ComposerProps {
   onSubmit(prompt: string): void;
   /** Present once a turn can be stopped. */
   onStop?(): void;
+  onToggleTerminal?(): void;
+  isTerminalVisible?: boolean;
 }
 
 function diffTotals(review: ReviewSnapshot | null) {
@@ -43,7 +45,9 @@ export function Composer({
   onSelectHarness,
   onModelChange,
   onSubmit,
-  onStop
+  onStop,
+  onToggleTerminal,
+  isTerminalVisible = false
 }: ComposerProps) {
   const [prompt, setPrompt] = useState("");
   const { additions, deletions } = diffTotals(review);
@@ -115,6 +119,18 @@ export function Composer({
             value={model}
           />
         </label>
+
+        {onToggleTerminal ? (
+          <button
+            aria-label={isTerminalVisible ? "Hide terminal" : "Open terminal"}
+            className="composer-terminal"
+            onClick={onToggleTerminal}
+            title={isTerminalVisible ? "Hide terminal" : "Open terminal"}
+            type="button"
+          >
+            ▤
+          </button>
+        ) : null}
 
         {/* Stop replaces Run while a turn is in flight: one control in one
             place, so there is never a disabled button next to a live one. */}

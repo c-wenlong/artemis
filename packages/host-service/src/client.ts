@@ -11,6 +11,8 @@ import type {
   RuntimeEvent,
   ProjectRef,
   ReviewRuntime,
+  TerminalRuntime,
+  TerminalSession,
   ReviewSnapshot,
   RuntimeSettings,
   RuntimeSettingsRuntime,
@@ -24,7 +26,8 @@ export interface ArtemisHostClient
     AgentRuntime,
     ChatRuntime,
     RuntimeSettingsRuntime,
-    ReviewRuntime {}
+    ReviewRuntime,
+    TerminalRuntime {}
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -62,6 +65,10 @@ function sessionIdForWorkspace(workspaceId: string): string {
 const WORKTREES_UNSUPPORTED =
   "Creating and deleting worktrees requires the Tauri host.";
 
+/** Terminals are PTYs owned by the Rust host; there is no browser equivalent. */
+const TERMINALS_UNSUPPORTED =
+  "Terminals require the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
+
 const CHAT_UNSUPPORTED =
   "Streaming chat requires the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
 
@@ -85,6 +92,34 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
         ? `?workspaceId=${encodeURIComponent(workspaceId)}`
         : "";
       return getJson(`${basePath}/sessions${query}`);
+    },
+
+    openTerminal(): Promise<TerminalSession> {
+      return Promise.reject(new Error(TERMINALS_UNSUPPORTED));
+    },
+
+    listTerminals(): Promise<TerminalSession[]> {
+      return Promise.resolve([]);
+    },
+
+    subscribeTerminal(): Promise<string> {
+      return Promise.resolve("");
+    },
+
+    unsubscribeTerminal(): Promise<void> {
+      return Promise.resolve();
+    },
+
+    writeTerminal(): Promise<void> {
+      return Promise.reject(new Error(TERMINALS_UNSUPPORTED));
+    },
+
+    resizeTerminal(): Promise<void> {
+      return Promise.resolve();
+    },
+
+    closeTerminal(): Promise<void> {
+      return Promise.resolve();
     },
 
     createWorkspace(): Promise<WorkspaceSummary> {

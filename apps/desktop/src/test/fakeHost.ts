@@ -11,6 +11,8 @@ import type {
   ReviewSnapshot,
   RuntimeSettings,
   SendChatMessageRequest,
+  TerminalSession,
+  TerminalSpec,
   WorkspaceSummary
 } from "@artemis/core";
 import type { ArtemisHostClient } from "@artemis/host-service/client";
@@ -126,6 +128,10 @@ export interface FakeHostOptions {
   /** Events a reopened session replays. */
   replay?: RuntimeEvent[];
   projects?: ProjectRef[];
+  /** Terminals the host already has, as after a reload. */
+  existingTerminals?: TerminalSession[];
+  /** Message the host refuses to open a terminal with. */
+  terminalError?: string;
   /** Holds worktree creation open so a test can observe the progress state. */
   holdWorktreeCreate?: boolean;
   /** Message the host rejects worktree creation with. */
@@ -148,6 +154,8 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   replayedIds: string[];
   created: Array<{ projectId: string; branch: string }>;
   deleted: Array<{ workspaceId: string; force: boolean }>;
+  terminals: TerminalSpec[];
+  closedTerminals: string[];
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -159,6 +167,9 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   const replayedIds: string[] = [];
   const created: Array<{ projectId: string; branch: string }> = [];
   const deleted: Array<{ workspaceId: string; force: boolean }> = [];
+  const terminals: TerminalSpec[] = [];
+  const closedTerminals: string[] = [];
+  let sessions: TerminalSession[] = [...(options.existingTerminals ?? [])];
   const projects = options.projects ?? fakeProjects;
   // Mutable so create and delete are observable through listWorkspaces, the
   // way they are against the real host.
@@ -171,6 +182,8 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     replayedIds,
     created,
     deleted,
+    terminals,
+    closedTerminals,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => projects,
@@ -232,6 +245,31 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
         stdout: "done"
       };
     },
+    openTerminal: async (spec: TerminalSpec): Promise<TerminalSession> => {
+      if (options.terminalError) throw new Error(options.terminalError);
+      terminals.push(spec);
+      const session: TerminalSession = {
+        id: `term-${terminals.length}`,
+        title: spec.title,
+        command: spec.command,
+        cwd: spec.cwd,
+        isRunning: true,
+        startedAt: "2026-08-10T12:00:00.000Z"
+      };
+      sessions = [...sessions, session];
+      return session;
+    },
+
+    listTerminals: async (): Promise<TerminalSession[]> => sessions,
+    subscribeTerminal: async (): Promise<string> => "",
+    unsubscribeTerminal: async (): Promise<void> => {},
+    writeTerminal: async (): Promise<void> => {},
+    resizeTerminal: async (): Promise<void> => {},
+    closeTerminal: async (terminalId: string): Promise<void> => {
+      closedTerminals.push(terminalId);
+      sessions = sessions.filter((session) => session.id !== terminalId);
+    },
+
     createChatSession: async (request: CreateChatSessionRequest): Promise<ChatSession> => ({
       createdAt: "2026-08-10T12:00:00.000Z",
       harnessId: request.harnessId,

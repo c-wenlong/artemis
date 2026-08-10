@@ -36,3 +36,20 @@
   border-left: 1px solid var(--border-subtle);
   background: var(--surface-sunken);
 }
+
+/* Surfaced outside the shell so a host failure is visible even when the dock
+   never opened. */
+.app-error {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  max-width: 24rem;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--state-error);
+  border-radius: var(--radius-md);
+  background: var(--surface-overlay);
+  color: var(--state-error);
+  font-size: var(--text-ui-sm);
+  box-shadow: var(--shadow-md);
+}

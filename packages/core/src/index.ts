@@ -46,3 +46,9 @@ export type {
   ReviewRuntime,
   ReviewSnapshot
 } from "./review/types";
+export type {
+  TerminalOutputListener,
+  TerminalRuntime,
+  TerminalSession,
+  TerminalSpec
+} from "./terminal/types";

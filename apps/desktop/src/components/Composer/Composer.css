@@ -118,8 +118,21 @@
   color: var(--text-primary);
 }
 
-.composer-run {
+.composer-terminal {
   margin-left: auto;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+}
+
+.composer-terminal:hover {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+}
+
+.composer-run {
   flex: none;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-sm);
@@ -135,7 +148,6 @@
 }
 
 .composer-stop {
-  margin-left: auto;
   flex: none;
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--border-strong);

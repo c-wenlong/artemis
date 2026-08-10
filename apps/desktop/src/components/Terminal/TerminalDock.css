@@ -1,0 +1,83 @@
+.terminal-dock {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-base);
+}
+
+.terminal-dock-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+}
+
+.terminal-dock-tabs {
+  display: flex;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.terminal-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  max-width: 12rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}
+
+.terminal-tab:hover {
+  background: var(--accent-muted);
+}
+
+.terminal-tab[aria-selected="true"] {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.terminal-tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-tab-exited {
+  flex: none;
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+}
+
+.terminal-dock-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.terminal-dock-action {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+}
+
+.terminal-dock-action:hover {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+}
+
+.terminal-dock-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-2);
+}

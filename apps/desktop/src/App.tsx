@@ -9,6 +9,7 @@ import type {
 import type { ArtemisHostClient } from "@artemis/host-service/client";
 import { createHostClient } from "./host";
 import { useChat } from "./chat/useChat";
+import { useTerminals } from "./chat/useTerminals";
 import { AppShell } from "./components/AppShell/AppShell";
 import { Composer } from "./components/Composer/Composer";
 import { Conversation } from "./components/Conversation/Conversation";
@@ -18,6 +19,7 @@ import {
   NewWorktreeDialog
 } from "./components/Rail/WorktreeDialogs";
 import { SettingsDialog } from "./components/SettingsDialog/SettingsDialog";
+import { TerminalDock } from "./components/Terminal/TerminalDock";
 
 interface AppProps {
   /** Injected in tests; production resolves the host for the current runtime. */
@@ -110,6 +112,12 @@ export function App({ host }: AppProps = {}) {
   const selectedHarness =
     readyHarnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
 
+  const terminals = useTerminals({
+    harness: selectedHarness,
+    host: hostService,
+    workspace: selectedWorkspace
+  });
+
   const chat = useChat({
     harnessId: selectedHarnessId,
     host: hostService,
@@ -179,8 +187,12 @@ export function App({ host }: AppProps = {}) {
             model={model}
             onModelChange={setModel}
             onSelectHarness={setSelectedHarnessId}
+            isTerminalVisible={terminals.isVisible}
             onStop={() => void chat.stop()}
             onSubmit={handleSubmit}
+            onToggleTerminal={() =>
+              terminals.isVisible ? terminals.hide() : void terminals.open()
+            }
             review={review}
             selectedHarnessId={selectedHarnessId}
             workspace={selectedWorkspace}
@@ -194,6 +206,19 @@ export function App({ host }: AppProps = {}) {
             turns={chat.transcript.turns}
           />
         }
+        dock={
+          terminals.isVisible ? (
+            <TerminalDock
+              activeId={terminals.activeId}
+              host={hostService}
+              onClose={(id) => void terminals.close(id)}
+              onHide={terminals.hide}
+              onNew={() => void terminals.openNew()}
+              onSelect={terminals.select}
+              terminals={terminals.terminals}
+            />
+          ) : undefined
+        }
         rail={
           <Rail
             onDeleteWorktree={setDeletingWorkspaceId}
@@ -206,6 +231,11 @@ export function App({ host }: AppProps = {}) {
           />
         }
       />
+      {terminals.error ? (
+        <p className="app-error" role="alert">
+          {terminals.error}
+        </p>
+      ) : null}
       <NewWorktreeDialog
         onClose={() => setNewWorktreeProjectId(null)}
         onCreate={handleCreateWorktree}
