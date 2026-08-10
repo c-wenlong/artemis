@@ -51,7 +51,7 @@ describe("the appearance tab", () => {
   it("offers every icon variant the host reports", async () => {
     const { dialog } = await openAppearance();
     const options = within(dialog).getAllByRole("radio");
-    expect(options).toHaveLength(12);
+    expect(options).toHaveLength(11);
     expect(
       within(dialog).getByRole("radio", { name: /solar sentinel/i })
     ).toBeInTheDocument();

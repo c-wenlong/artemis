@@ -60,14 +60,6 @@ pub fn catalog() -> Vec<AppIcon> {
             id: "galactic-vanguard-nebula",
             label: "Galactic Vanguard",
         },
-        // The source art for this one carries the same "Galactic Vanguard
-        // (Nebula)" caption as the entry above on a different picture. Named
-        // for what distinguishes it rather than shipped as a second identical
-        // label.
-        AppIcon {
-            id: "galactic-vanguard-spiral",
-            label: "Galactic Vanguard (Spiral)",
-        },
         AppIcon {
             id: "solar-sentinel-sunstone",
             label: "Solar Sentinel",

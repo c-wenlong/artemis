@@ -195,7 +195,6 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     { id: "desert-nomad-sandstone", label: "Desert Nomad" },
     { id: "frost-weaver-ice", label: "Frost Weaver" },
     { id: "galactic-vanguard-nebula", label: "Galactic Vanguard" },
-    { id: "galactic-vanguard-spiral", label: "Galactic Vanguard (Spiral)" },
     { id: "solar-sentinel-sunstone", label: "Solar Sentinel" },
     { id: "verdant-druid-moss", label: "Verdant Druid" }
   ];

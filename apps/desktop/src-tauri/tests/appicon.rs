@@ -11,7 +11,7 @@ use artemis_host::appicon;
 #[test]
 fn every_variant_is_listed() {
     let icons = appicon::catalog();
-    assert_eq!(icons.len(), 12, "twelve variants were produced");
+    assert_eq!(icons.len(), 11, "eleven variants ship");
 }
 
 #[test]
@@ -24,9 +24,9 @@ fn the_default_is_olympian_and_comes_first() {
     );
 }
 
-/// Two of the source images carry the same caption, "Galactic Vanguard
-/// (Nebula)", on visibly different artwork. Their labels have to tell them
-/// apart or the picker shows the same name twice.
+/// The source images were not uniquely captioned — two arrived as "Galactic
+/// Vanguard (Nebula)" on different artwork — so a duplicate label is a real
+/// way for this catalog to go wrong rather than a theoretical one.
 #[test]
 fn labels_are_unique() {
     let icons = appicon::catalog();
