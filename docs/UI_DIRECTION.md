@@ -1,7 +1,8 @@
 # Artemis UI Direction
 
-Reference snapshot: 2026-08-10. Sources: live Superset (v-current, running locally),
-Traycer `clients/gui-app` source at `047b28f`, and the existing Artemis prototype.
+Reference snapshot: 2026-08-10. Sources: live Superset running locally, Traycer
+`clients/gui-app` source at `047b28f`, Mobbin's Cursor Web set, and the existing
+Artemis prototype.
 
 ## The thesis
 
@@ -109,11 +110,64 @@ Note also `working-verb.ts`, `context-usage-chip.tsx`, and
 `scroll-to-bottom-chip.tsx` — small touches that make a streaming surface feel
 alive.
 
-## Cursor
+## Cursor Web — the opposite philosophy
 
-Not captured. The Mobbin link wouldn't finish loading in Chrome (>45s to
-document-idle, twice). Worth a second pass — Cursor's inline-diff review and its
-file-mention chips are the two things worth stealing there specifically.
+From Mobbin's Cursor Web set (293 screens). Cursor is worth studying precisely
+because it *disagrees* with Traycer about what to show.
+
+**It hides the mechanics entirely.** In the agent conversation view there are no
+tool cards, no collapsed activity groups, no reasoning block — none of Traycer's
+nineteen segment types. There is the prompt, then prose. Superset folds the
+mechanics away behind a chevron; Cursor omits them.
+
+**In their place: inline `file:line` citation chips.** Every claim in the answer
+carries a monospace reference immediately after it:
+
+```
+2. Static resolution: Express serves from public/ (symlinked to root
+   content in this repo setup). server.js:6-10  AGENTS.md:9-12
+
+•  Root route returns HTML 200 OK. terminal:3-11
+•  Missing CSS asset also returns fallback HTML 200 OK (bug candidate #1). terminal:3-10
+```
+
+Note `terminal:3-11` — even shell output is a citable range. The answer is
+auditable inline without expanding anything. This is a genuinely different bet
+from Traycer's: **trust through evidence rather than trust through transparency.**
+
+**Multi-model tabs.** The turn header is three cards — `Codex 5.3 High`,
+`GPT-5.4 High`, `Composer 1.5`, each reading `Task completed`. Same prompt, three
+models, switch between the answers. For Artemis, which already has a
+multi-harness catalog, this is the most directly transferable idea in the whole
+reference set: run one prompt across Claude/Codex/Gemini and compare.
+
+**Run cards instead of a session table.** Each run: a stacked-paper thumbnail
+(implying a changeset) carrying `7 files` and `+17 −0`, a status pill
+(`Draft` / `Branch` / `Merged`), then title, model, repo, relative age. The
+sidebar groups runs under `Yesterday` / `This Week` with a `+853` diffstat badge
+per entry.
+
+**Other details worth taking:** the repo·branch breadcrumb sits directly above
+the composer; suggested-prompt chips (`Run security audit`, `Improve AGENTS.md`,
+`Solve a TODO`) fill the empty state; the user's message renders as a bordered
+full-width box that echoes the input it came from, not a chat bubble; the turn
+closes with a quiet `Worked for 27s`; the content column stays narrow and
+centered with generous whitespace.
+
+Cursor Web is **light**, low-chrome, and calm — worth noting, since Superset and
+Traycer are both near-black. Dark is not the only credible answer here.
+
+### The tension to resolve
+
+Traycer shows everything as typed segments. Cursor shows nothing and cites
+sources. Superset sits between them with one-line collapsed summaries.
+
+Artemis has to pick. My recommendation: **Superset's middle position, with
+Cursor's citations.** Collapsed past-tense activity summaries keep the transcript
+readable while leaving the mechanics one click away, and `file:line` chips make
+the prose verifiable without expanding anything. Traycer's full segment
+vocabulary is the right *architecture* to build on even if you render a quieter
+subset of it — the renderers can exist and stay collapsed.
 
 ## What this means for Artemis
 
@@ -143,9 +197,18 @@ Concretely, in priority order:
    dock. Review becomes a segment type and a diffstat in the composer bar, not a
    destination. Settings becomes a modal. Inventory moves into the launcher —
    you pick a harness where you start a run, not in a catalog screen.
-6. **Go dark, with layered elevation.** Near-black base, one step up for cards,
-   one more for popovers. Color reserved for state: running, needs-attention,
-   error, diff add/remove.
+6. **Add `file:line` citation chips** to the markdown renderer, resolving to the
+   workspace. Cheap to build, and it's what makes a hidden-mechanics transcript
+   trustworthy. Needs harnesses to emit ranges, or a post-hoc linkifier over
+   paths mentioned in prose.
+7. **Multi-harness comparison.** One prompt, N harnesses, tabbed results —
+   Cursor's model-tabs pattern. Artemis already has the catalog and the launcher
+   to support this; no other reference here can do it across *vendors*.
+8. **Commit to a palette.** Superset and Traycer are near-black; Cursor Web is
+   light and calm. Either works — what kills the current prototype is having
+   neither. If dark: near-black base, one step up for cards, one more for
+   popovers, color reserved for state (running, needs-attention, error, diff
+   add/remove).
 
 ## Open questions
 
