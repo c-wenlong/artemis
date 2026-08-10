@@ -11,7 +11,7 @@ import {
   statSync,
   writeFileSync
 } from "node:fs";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import type {
   AgentLaunchRequest,
   AssetInventorySnapshot,
@@ -150,12 +150,15 @@ function executableAt(path: string): boolean {
   }
 }
 
-export default defineConfig({
-  plugins: [
-    react(),
-    {
-      name: "artemis-local-host-api",
-      configureServer(server) {
+// The TypeScript host is a browser-mode reference implementation only. Under
+// Tauri the Rust host owns every one of these endpoints, so the middleware must
+// not be mounted — otherwise `pnpm dev` would silently serve a second,
+// divergent host alongside the real one. `pnpm dev:web` opts back in.
+const enableTsHost = process.env.ARTEMIS_TS_HOST === "1";
+
+const tsHostPlugin: Plugin = {
+  name: "artemis-local-host-api",
+  configureServer(server) {
         server.middlewares.use("/api/artemis/settings", async (request, response) => {
           try {
             if (request.method === "GET") {
@@ -282,10 +285,16 @@ export default defineConfig({
             );
           }
         });
-      }
-    }
-  ],
+  }
+};
+
+export default defineConfig({
+  plugins: [react(), ...(enableTsHost ? [tsHostPlugin] : [])],
+  // Tauri surfaces Rust panics and build errors far better than the browser
+  // overlay does; keep the dev server quiet and let the shell report.
+  clearScreen: false,
   server: {
-    port: 4637
+    port: 4637,
+    strictPort: true
   }
 });

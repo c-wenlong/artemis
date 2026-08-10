@@ -9,7 +9,7 @@ import type {
   SendChatMessageRequest,
   WorkspaceSummary
 } from "@artemis/core";
-import { createHttpHostClient } from "@artemis/host-service/client";
+import { createHostClient } from "./host";
 import { AppShell, type AppSection } from "./components/AppShell/AppShell";
 import { AssetInventory } from "./components/AssetInventory/AssetInventory";
 import { BaselineWorkbench } from "./components/BaselineWorkbench/BaselineWorkbench";
@@ -35,7 +35,7 @@ const initialData: ArtemisData = {
 };
 
 export function App() {
-  const hostService = useMemo(() => createHttpHostClient(), []);
+  const hostService = useMemo(() => createHostClient(), []);
   const [activeSection, setActiveSection] = useState<AppSection>("workbench");
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
     null

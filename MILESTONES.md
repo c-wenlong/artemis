@@ -47,19 +47,38 @@ mirrored in Rust.
 
 # Phase 0 — Foundations
 
-## M0. Tauri shell and Rust host core
+## M0. Tauri shell and Rust host core ✅
 
 Replace the Vite-middleware host with a real one.
 
-- Tauri scaffold; `@artemis/desktop` becomes the webview UI unchanged
-- Rust host: harness scanning, settings (`~/.artemis/settings.json`), process
-  spawn, git overlay — ported from `packages/host-service/src/node/*`
-- Tauri commands replacing the `/api/artemis/*` middleware
-- `@artemis/core` types mirrored as Rust structs, with a serde contract test
-- TS host retained, dev-only, as the parity reference
+- [x] Tauri scaffold; `@artemis/desktop` becomes the webview UI unchanged
+- [x] Rust host: harness scanning, settings (`~/.artemis/settings.json`),
+      process spawn, git overlay — ported from `packages/host-service/src/node/*`
+- [x] Tauri commands replacing the `/api/artemis/*` middleware
+- [x] `@artemis/core` types mirrored as Rust structs, with a serde contract test
+- [x] TS host retained, dev-only, as the parity reference
 
-**Exit:** `pnpm tauri dev` opens a window; asset inventory renders from the Rust
-host; no Vite middleware remains in the runtime path.
+**Exit:** met. `pnpm dev` opens the window; the inventory renders from Rust
+(12 harnesses, 10 ready, 404 skills, 9 git projects); the TypeScript middleware
+is gated behind `ARTEMIS_TS_HOST=1` and never mounts under Tauri.
+
+Decisions taken during the port, each a departure from a faithful translation:
+
+- **Seed data deleted rather than ported.** The TypeScript host returned invented
+  MCP servers and providers that were indistinguishable from findings. Skills and
+  providers are now discovered for real; MCP returns empty until M10.
+- **A non-repository says so.** The old git overlay swallowed failures and fell
+  back to a seeded `main`, so any directory displayed `main / 0 changed`.
+- **`scanRoot` is an explicit setting.** It was previously derived from the app's
+  own location, which made the walk unbounded. Now env → setting → `$HOME`, with
+  depth, entry-count, and wall-clock caps on the walk.
+- **Cold inventory scan: 7.6s → 1.67s.** The walk was not the bottleneck; ten
+  sequential `--version` probes at up to 1.8s each were. They now run
+  concurrently, so the cost is the slowest single probe.
+- **Chat is deliberately unimplemented in Rust.** M1 replaces the whole
+  request/response shape with a streamed event channel; porting the one-shot
+  implementation first would be wasted work. It rejects with a clear message.
+
 **Blocks:** everything.
 
 ---

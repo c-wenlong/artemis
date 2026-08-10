@@ -7,6 +7,16 @@ dist/
 build/
 *.tsbuildinfo
 
+# Rust / Tauri
+target/
+apps/desktop/src-tauri/gen/
+# Intermediate raster generated from icon.svg by `tauri icon`; the desktop
+# icons/ files are committed because the bundler needs them. Mobile icon sets
+# are not — regenerate with `tauri icon` if Artemis ever targets them.
+apps/desktop/src-tauri/icon.png
+apps/desktop/src-tauri/icons/android/
+apps/desktop/src-tauri/icons/ios/
+
 # Environment
 .env
 .env.*
