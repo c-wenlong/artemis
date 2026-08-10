@@ -254,6 +254,7 @@ export function App({ host }: AppProps = {}) {
         }
       />
       <SettingsDialog
+        host={hostService}
         inventory={data.inventory}
         onClose={() => setSettingsOpen(false)}
         onSave={handleSaveSettings}

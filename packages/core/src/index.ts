@@ -38,6 +38,7 @@ export type {
   SendChatMessageRequest
 } from "./chat/types";
 export type {
+  AppIcon,
   RuntimeSettings,
   RuntimeSettingsRuntime
 } from "./settings/types";

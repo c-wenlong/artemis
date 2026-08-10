@@ -1,0 +1,58 @@
+.appearance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.appearance-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.appearance-option:hover:not(:disabled) {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+}
+
+.appearance-option[aria-checked="true"] {
+  border-color: var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.appearance-option:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.appearance-swatch {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--radius-md);
+  /* The artwork is a rendered icon; keep its own edges crisp rather than
+     letting the browser soften them at this size. */
+  image-rendering: auto;
+}
+
+.appearance-label {
+  font-size: var(--text-ui-xs);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.appearance-error {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--state-error);
+  border-radius: var(--radius-sm);
+  color: var(--state-error);
+  font-size: var(--text-ui-sm);
+}

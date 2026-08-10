@@ -453,6 +453,10 @@ pub struct RuntimeSettings {
     pub opencode_executable_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scan_root: Option<String>,
+    /// Chosen app-icon variant. Applies to the running app's dock icon; the
+    /// bundled icon is fixed at build time.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub app_icon_id: Option<String>,
 }
 
 impl RuntimeSettings {
@@ -468,6 +472,7 @@ impl RuntimeSettings {
             opencode_default_model: clean(self.opencode_default_model),
             opencode_executable_path: clean(self.opencode_executable_path),
             scan_root: clean(self.scan_root),
+            app_icon_id: clean(self.app_icon_id),
         }
     }
 }

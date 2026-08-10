@@ -1,5 +1,6 @@
 import type {
   AgentRuntime,
+  AppIcon,
   AgentLaunchRequest,
   AgentLaunchResult,
   AgentSessionSummary,
@@ -66,6 +67,9 @@ const WORKTREES_UNSUPPORTED =
 const TERMINALS_UNSUPPORTED =
   "Terminals require the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
 
+/** The dock icon belongs to the native app, which browser mode is not. */
+const ICONS_UNSUPPORTED = "Changing the app icon requires the Tauri host.";
+
 const CHAT_UNSUPPORTED =
   "Streaming chat requires the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
 
@@ -97,6 +101,14 @@ export function createLocalHostService(
       return workspaceId
         ? seedSessions.filter((session) => session.workspaceId === workspaceId)
         : seedSessions;
+    },
+
+    async listAppIcons(): Promise<AppIcon[]> {
+      return [];
+    },
+
+    async setAppIcon(): Promise<void> {
+      throw new Error(ICONS_UNSUPPORTED);
     },
 
     async getLaunchPreset(): Promise<LaunchPreset | null> {

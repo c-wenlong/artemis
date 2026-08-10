@@ -5,6 +5,8 @@
 //! TypeScript host survives only as a browser-mode reference implementation
 //! (`pnpm dev:web`) and is not on the app's runtime path.
 
+/// Public so `tests/appicon.rs` can check the catalog against the shipped files.
+pub mod appicon;
 mod catalog;
 mod inventory;
 
@@ -32,6 +34,7 @@ pub mod types;
 use std::sync::Arc;
 
 use tauri::ipc::Channel;
+use tauri::path::BaseDirectory;
 use tauri::{Manager, State};
 
 use chat::stream::EventSink;
@@ -133,6 +136,49 @@ async fn delete_workspace(workspace_id: String, force: bool) -> Result<(), Strin
     tauri::async_runtime::spawn_blocking(move || workspace::delete_workspace(&workspace_id, force))
         .await
         .map_err(|error| error.to_string())?
+}
+
+/// Read a variant's artwork, preferring the bundled resource and falling back
+/// to the source tree so `tauri dev` works before anything is packaged.
+fn read_icon_bytes(app: &tauri::AppHandle, id: &str) -> Result<Vec<u8>, String> {
+    let relative = format!("icons/variants/{id}.png");
+    if let Ok(path) = app.path().resolve(&relative, BaseDirectory::Resource) {
+        if let Ok(bytes) = std::fs::read(&path) {
+            return Ok(bytes);
+        }
+    }
+    let fallback = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(&relative);
+    std::fs::read(&fallback).map_err(|error| format!("read {fallback:?}: {error}"))
+}
+
+#[tauri::command]
+async fn list_app_icons() -> Result<Vec<appicon::AppIcon>, String> {
+    Ok(appicon::catalog())
+}
+
+/// Apply a variant to the running app and remember it.
+///
+/// This changes the dock icon of the running process. The bundled icon — what
+/// Finder shows, and what the dock shows before launch — is baked at build time
+/// and is not something the app can rewrite.
+#[tauri::command]
+async fn set_app_icon(app: tauri::AppHandle, icon_id: String) -> Result<(), String> {
+    if !appicon::is_known(&icon_id) {
+        return Err(format!("Unknown icon: {icon_id}"));
+    }
+    let bytes = read_icon_bytes(&app, &icon_id)?;
+
+    // AppKit insists on the main thread.
+    let (tx, rx) = std::sync::mpsc::channel();
+    app.run_on_main_thread(move || {
+        let _ = tx.send(appicon::apply_to_running_app(&bytes));
+    })
+    .map_err(|error| error.to_string())?;
+    rx.recv().map_err(|error| error.to_string())??;
+
+    let mut current = settings::read();
+    current.app_icon_id = Some(icon_id);
+    settings::write(current).map(|_| ())
 }
 
 #[derive(serde::Serialize)]
@@ -323,7 +369,21 @@ pub fn run() {
             close_terminal,
             get_launch_preset,
             save_launch_preset,
+            list_app_icons,
+            set_app_icon,
         ])
+        .setup(|app| {
+            // Restore the remembered icon. Only the running app's icon can be
+            // changed, so this has to happen on every launch.
+            let stored = settings::read().app_icon_id;
+            let id = appicon::resolve_id(stored.as_deref()).to_string();
+            if id != appicon::DEFAULT_ICON_ID {
+                if let Ok(bytes) = read_icon_bytes(app.handle(), &id) {
+                    let _ = appicon::apply_to_running_app(&bytes);
+                }
+            }
+            Ok(())
+        })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Destroyed = event {
                 if let Some(store) = window.try_state::<Arc<PtyStore>>() {

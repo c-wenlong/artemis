@@ -156,3 +156,27 @@
   color: var(--accent-text);
   font-weight: 500;
 }
+
+.settings-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-tab {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}
+
+.settings-tab:hover {
+  color: var(--text-primary);
+}
+
+.settings-tab[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--text-primary);
+  font-weight: 500;
+}

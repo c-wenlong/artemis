@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AssetInventorySnapshot, RuntimeSettings } from "@artemis/core";
+import type { ArtemisHostClient } from "@artemis/host-service/client";
+import { AppearancePanel } from "./AppearancePanel";
 import "./SettingsDialog.css";
+
+type SettingsTab = "general" | "appearance";
+
+const TABS: Array<{ id: SettingsTab; label: string }> = [
+  { id: "general", label: "General" },
+  { id: "appearance", label: "Appearance" }
+];
 
 interface SettingsDialogProps {
   open: boolean;
+  host: ArtemisHostClient;
   inventory: AssetInventorySnapshot | null;
   settings: RuntimeSettings;
   onClose(): void;
@@ -17,6 +27,7 @@ interface SettingsDialogProps {
  */
 export function SettingsDialog({
   open,
+  host,
   inventory,
   settings,
   onClose,
@@ -24,10 +35,15 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState<RuntimeSettings>(settings);
+  const [tab, setTab] = useState<SettingsTab>("general");
 
   // Re-seed whenever the dialog opens so a cancelled edit does not persist.
   useEffect(() => {
-    if (open) setDraft(settings);
+    if (open) {
+      setDraft(settings);
+      // Reopening lands on General; the icon picker is a visit, not a home.
+      setTab("general");
+    }
   }, [open, settings]);
 
   useEffect(() => {
@@ -71,9 +87,34 @@ export function SettingsDialog({
           </button>
         </header>
 
+        <div aria-label="Settings sections" className="settings-tabs" role="tablist">
+          {TABS.map((entry) => (
+            <button
+              aria-selected={tab === entry.id}
+              className="settings-tab"
+              key={entry.id}
+              onClick={() => setTab(entry.id)}
+              role="tab"
+              type="button"
+            >
+              {entry.label}
+            </button>
+          ))}
+        </div>
+
         {/* One scroll container for the whole form: per-section scrolling
             clipped fields that sat near a section boundary. */}
         <div className="settings-body">
+        {tab === "appearance" ? (
+          <AppearancePanel
+            host={host}
+            onApplied={(iconId) =>
+              setDraft((current) => ({ ...current, appIconId: iconId }))
+            }
+            selectedIconId={settings.appIconId ?? null}
+          />
+        ) : (
+        <>
         <section className="settings-section">
           <h3 className="settings-section-title">OpenCode</h3>
           <label className="settings-label" htmlFor="opencode-model">
@@ -162,6 +203,8 @@ export function SettingsDialog({
             MCP servers are not indexed yet — Quiver integration lands in M10.
           </p>
         </section>
+        </>
+        )}
         </div>
 
         <footer className="settings-footer">

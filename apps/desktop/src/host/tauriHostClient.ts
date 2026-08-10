@@ -1,6 +1,7 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import type {
   AgentLaunchRequest,
+  AppIcon,
   AgentLaunchResult,
   AgentSessionSummary,
   AssetInventorySnapshot,
@@ -73,6 +74,14 @@ export function createTauriHostClient(): ArtemisHostClient {
 
     updateRuntimeSettings(settings: RuntimeSettings): Promise<RuntimeSettings> {
       return invoke("update_runtime_settings", { settings });
+    },
+
+    listAppIcons(): Promise<AppIcon[]> {
+      return invoke("list_app_icons");
+    },
+
+    setAppIcon(iconId: string): Promise<void> {
+      return invoke("set_app_icon", { iconId });
     },
 
     launchAgent(request: AgentLaunchRequest): Promise<AgentLaunchResult> {

@@ -1,5 +1,6 @@
 import type {
   AgentLaunchRequest,
+  AppIcon,
   AgentLaunchResult,
   AgentSessionSummary,
   AssetInventorySnapshot,
@@ -160,6 +161,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   terminals: TerminalSpec[];
   closedTerminals: string[];
   savedPresets: Array<{ workspaceId: string; harnessId: string; model: string | null }>;
+  appliedIcons: string[];
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -180,6 +182,23 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     harnessId: string;
     model: string | null;
   }> = [];
+  const appliedIcons: string[] = [];
+
+  // Mirrors the Rust catalog in appicon.rs.
+  const iconCatalog: AppIcon[] = [
+    { id: "deep-sea-gradient", label: "Deep Sea Gradient" },
+    { id: "forest-warden-copper", label: "Forest Warden" },
+    { id: "volcanic-sentry-obsidian", label: "Volcanic Sentry" },
+    { id: "cosmic-hunter-nebula", label: "Cosmic Hunter" },
+    { id: "silver-archer-metal", label: "Silver Archer" },
+    { id: "opal-archer-iridescent", label: "Opal Archer" },
+    { id: "cyber-hunter-neon", label: "Cyber-Hunter" },
+    { id: "olympian-marble", label: "Olympian" },
+    { id: "frost-weaver-ice", label: "Frost Weaver" },
+    { id: "chronos-archer-clockwork", label: "Chronos Archer" },
+    { id: "solar-sentinel-sunstone", label: "Solar Sentinel" },
+    { id: "eastern-mystic-jade", label: "Eastern Mystic" }
+  ];
   const projects = options.projects ?? fakeProjects;
   // Mutable so create and delete are observable through listWorkspaces, the
   // way they are against the real host.
@@ -195,6 +214,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     terminals,
     closedTerminals,
     savedPresets,
+    appliedIcons,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => projects,
@@ -249,6 +269,13 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
       ...(options.review ?? fakeReview),
       workspaceId
     }),
+    listAppIcons: async (): Promise<AppIcon[]> => iconCatalog,
+
+    setAppIcon: async (iconId: string): Promise<void> => {
+      appliedIcons.push(iconId);
+      settings = { ...settings, appIconId: iconId };
+    },
+
     getRuntimeSettings: async (): Promise<RuntimeSettings> => settings,
     updateRuntimeSettings: async (next: RuntimeSettings): Promise<RuntimeSettings> => {
       settings = next;
