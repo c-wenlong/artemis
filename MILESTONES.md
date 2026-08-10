@@ -87,18 +87,55 @@ Decisions taken during the port, each a departure from a faithful translation:
 
 The differentiator, end to end, on one harness. This phase is the product.
 
-## M1. Event streaming
+## M1. Event streaming ✅
 
-`sendChatMessage` currently returns a whole turn. The renderer needs deltas.
+`sendChatMessage` returned a whole turn. The renderer needs deltas.
 
-- Stream `RuntimeEvent`s from Rust to the webview over Tauri's event channel
-- opencode adapter emits `text.delta`, `reasoning.delta`,
-  `tool_call.started/completed/errored`, `turn.*` as they arrive
-- Turn cancellation; backpressure on fast streams
-- Event-log persistence so a turn can be replayed on reopen
+- [x] Stream `RuntimeEvent`s from Rust to the webview over a Tauri channel
+- [x] opencode adapter emits `text.delta`, `reasoning.delta`,
+      `tool_call.started/completed/errored`, `turn.*` as they arrive
+- [x] Turn cancellation; backpressure on fast streams
+- [x] Event-log persistence so a turn can be replayed on reopen
 
-**Exit:** a prompt to opencode streams token-by-token; stopping mid-turn leaves
-consistent state; reopening the session replays the turn.
+**Exit:** met, and verified against the real binary rather than fixtures —
+`tests/opencode_live.rs` (ignored by default) ran a live turn: 3 batches,
+4 events, opencode session id captured, log replay matching the stream exactly.
+
+The contract changed shape: `ChatRuntime` is now
+`createChatSession` / `streamChatMessage` / `cancelChatTurn` /
+`replayChatSession`. The 754-line TypeScript `opencodeChat.ts` was deleted
+rather than maintained alongside the Rust one — the reference host reports chat
+as unavailable in browser mode instead of shipping a second, divergent parser.
+
+Design notes worth keeping:
+
+- **Deltas are computed, not received.** OpenCode resends each part's whole text
+  as it grows, so the parser diffs against the previous value per block. Getting
+  this wrong renders every token repeated.
+- **The parser is shape-tolerant on purpose.** It walks every object in the JSON
+  tree and keeps the ones that look like a content part, rather than modelling
+  each envelope. A stricter parser breaks on the next opencode release; this one
+  degrades to emitting less.
+- **Coalescing is the backpressure.** Consecutive deltas for one block merge
+  before crossing the IPC boundary, so a fast model costs one message per 40ms
+  flush rather than one per token.
+- **The fold is the same code live and replayed.** `reduceEvents` is pure and
+  incremental, which is what makes reopening a session show exactly what
+  streamed.
+
+Two bugs found while building, both by tests that did more than restate the
+implementation:
+
+- **Cancelling did not stop the work.** Killing the child left its grandchildren
+  holding the stdout pipe, so a cancelled turn hung until the real process
+  exited — 30s in the test. The harness now runs in its own process group and
+  cancel signals the group. The suite went from 30s to 0.31s.
+- **Replay could never have worked.** The UI replayed under the workspace id
+  while the host keyed its event log by the chat session id. The fake host was
+  ignoring the argument, so every test passed. Session ids are now deterministic
+  per workspace, the fake honours the id it is given, and a regression test
+  asserts the key.
+
 **Depends:** M0.
 
 ## M2. Design system ✅

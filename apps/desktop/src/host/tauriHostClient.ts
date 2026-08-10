@@ -1,14 +1,15 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import type {
   AgentLaunchRequest,
   AgentLaunchResult,
   AgentSessionSummary,
   AssetInventorySnapshot,
+  ChatEventListener,
   ChatSession,
-  ChatTurnResult,
   CreateChatSessionRequest,
   ProjectRef,
   ReviewSnapshot,
+  RuntimeEvent,
   RuntimeSettings,
   SendChatMessageRequest,
   WorkspaceSummary
@@ -54,26 +55,31 @@ export function createTauriHostClient(): ArtemisHostClient {
       return invoke("launch_agent", { request });
     },
 
-    // Chat is the one surface the Rust host does not own yet. M1 replaces the
-    // whole request/response shape with a streamed RuntimeEvent channel, so
-    // porting the current one-shot implementation first would be wasted work.
     createChatSession(request: CreateChatSessionRequest): Promise<ChatSession> {
-      return Promise.reject(
-        new Error(
-          `Chat is not available in the Tauri host yet (M1). Requested harness: ${request.harnessId}.`
-        )
-      );
+      return invoke("create_chat_session", { request });
     },
 
-    sendChatMessage(
+    /**
+     * Events arrive over a Tauri channel in batches — the host coalesces
+     * consecutive deltas before sending, so this is one message per flush
+     * rather than per token. The promise resolves when the turn ends.
+     */
+    streamChatMessage(
       sessionId: string,
-      _request: SendChatMessageRequest
-    ): Promise<ChatTurnResult> {
-      return Promise.reject(
-        new Error(
-          `Chat is not available in the Tauri host yet (M1). Session: ${sessionId}.`
-        )
-      );
+      request: SendChatMessageRequest,
+      onEvents: ChatEventListener
+    ): Promise<void> {
+      const channel = new Channel<RuntimeEvent[]>();
+      channel.onmessage = (events) => onEvents(events);
+      return invoke("send_chat_message", { sessionId, request, channel });
+    },
+
+    cancelChatTurn(sessionId: string): Promise<void> {
+      return invoke("cancel_chat_turn", { sessionId });
+    },
+
+    replayChatSession(sessionId: string): Promise<RuntimeEvent[]> {
+      return invoke("replay_chat_session", { sessionId });
     }
   };
 }

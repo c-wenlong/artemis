@@ -8,6 +8,7 @@ import type {
 } from "@artemis/core";
 import type { ArtemisHostClient } from "@artemis/host-service/client";
 import { createHostClient } from "./host";
+import { useChat } from "./chat/useChat";
 import { AppShell } from "./components/AppShell/AppShell";
 import { Composer } from "./components/Composer/Composer";
 import { Conversation } from "./components/Conversation/Conversation";
@@ -42,7 +43,6 @@ export function App({ host }: AppProps = {}) {
   const [selectedHarnessId, setSelectedHarnessId] = useState<string | null>(null);
   const [model, setModel] = useState("");
   const [isSettingsOpen, setSettingsOpen] = useState(false);
-  const [isBusy, setBusy] = useState(false);
 
   // Load once. The previous implementation listed `selectedWorkspaceId` as a
   // dependency, so selecting a workspace refetched the entire inventory.
@@ -104,24 +104,22 @@ export function App({ host }: AppProps = {}) {
   const selectedHarness =
     readyHarnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
 
+  const chat = useChat({
+    harnessId: selectedHarnessId,
+    host: hostService,
+    model,
+    workspace: selectedWorkspace
+  });
+
   const handleSubmit = useCallback(
     async (prompt: string) => {
-      if (!selectedWorkspace || !selectedHarnessId) return;
-      setBusy(true);
-      try {
-        await hostService.launchAgent({
-          harnessId: selectedHarnessId,
-          prompt,
-          workspaceId: selectedWorkspace.id,
-          workspacePath: selectedWorkspace.worktreePath
-        });
-        const snapshot = await hostService.getReviewSnapshot(selectedWorkspace.id);
-        setReview(snapshot);
-      } finally {
-        setBusy(false);
-      }
+      if (!selectedWorkspace) return;
+      await chat.send(prompt);
+      // A turn usually changes files; refresh the diffstat so the composer bar
+      // keeps telling the truth.
+      setReview(await hostService.getReviewSnapshot(selectedWorkspace.id));
     },
-    [hostService, selectedHarnessId, selectedWorkspace]
+    [chat, hostService, selectedWorkspace]
   );
 
   const handleSaveSettings = useCallback(
@@ -140,17 +138,23 @@ export function App({ host }: AppProps = {}) {
         composer={
           <Composer
             harnesses={readyHarnesses}
-            isBusy={isBusy}
+            isBusy={chat.isRunning}
             model={model}
             onModelChange={setModel}
             onSelectHarness={setSelectedHarnessId}
+            onStop={() => void chat.stop()}
             onSubmit={handleSubmit}
             review={review}
             selectedHarnessId={selectedHarnessId}
             workspace={selectedWorkspace}
           />
         }
-        conversation={<Conversation harnessLabel={selectedHarness?.label ?? null} />}
+        conversation={
+          <Conversation
+            harnessLabel={selectedHarness?.label ?? null}
+            messages={chat.transcript.messages}
+          />
+        }
         rail={
           <Rail
             onOpenSettings={() => setSettingsOpen(true)}

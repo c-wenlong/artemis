@@ -52,6 +52,7 @@ name = "artemis-host"
 version = "0.0.0"
 dependencies = [
  "chrono",
+ "libc",
  "serde",
  "serde_json",
  "tauri",

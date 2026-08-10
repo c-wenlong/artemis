@@ -9,7 +9,6 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./node/agentLauncher": "./src/node/agentLauncher.ts",
-    "./node/opencodeChat": "./src/node/opencodeChat.ts",
     "./node/snapshot": "./src/node/snapshot.ts"
   },
   "scripts": {

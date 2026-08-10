@@ -15,13 +15,10 @@ import { defineConfig, type Plugin } from "vite";
 import type {
   AgentLaunchRequest,
   AssetInventorySnapshot,
-  CreateChatSessionRequest,
   HarnessAsset,
-  RuntimeSettings,
-  SendChatMessageRequest
+  RuntimeSettings
 } from "@artemis/core";
 import { launchNodeAgent } from "@artemis/host-service/node/agentLauncher";
-import { createNodeChatRuntime } from "@artemis/host-service/node/opencodeChat";
 import {
   getNodeInventorySnapshot,
   getNodeReviewSnapshot,
@@ -36,14 +33,6 @@ const scanRoot =
   process.env.ARTEMIS_SCAN_ROOT ?? resolve(appDir, "../../../..");
 const settingsPath =
   process.env.ARTEMIS_SETTINGS_PATH ?? resolve(homedir(), ".artemis/settings.json");
-const chatRuntime = createNodeChatRuntime({
-  resolveHarnesses() {
-    return listConfiguredHarnesses({
-      includeVersions: false,
-      includeWorkspaceMentions: false
-    });
-  }
-});
 
 function sendJson(response: import("node:http").ServerResponse, data: unknown) {
   response.statusCode = 200;
@@ -172,52 +161,6 @@ const tsHostPlugin: Plugin = {
             }
             response.statusCode = 405;
             response.end("Method not allowed");
-          } catch (error) {
-            response.statusCode = 500;
-            response.setHeader("content-type", "application/json; charset=utf-8");
-            response.end(
-              JSON.stringify({
-                error: error instanceof Error ? error.message : String(error)
-              })
-            );
-          }
-        });
-
-        server.middlewares.use("/api/artemis/chat", async (request, response) => {
-          if (request.method !== "POST") {
-            response.statusCode = 405;
-            response.end("Method not allowed");
-            return;
-          }
-
-          try {
-            const url = readUrl(request);
-            const pathname = url.pathname.replace(/^\/api\/artemis\/chat/, "");
-            if (pathname === "/sessions" || pathname === "") {
-              const createRequest = JSON.parse(
-                await readBody(request)
-              ) as CreateChatSessionRequest;
-              sendJson(response, await chatRuntime.createChatSession(createRequest));
-              return;
-            }
-
-            const messageMatch = pathname.match(/^\/sessions\/([^/]+)\/messages$/);
-            if (messageMatch) {
-              const messageRequest = JSON.parse(
-                await readBody(request)
-              ) as SendChatMessageRequest;
-              sendJson(
-                response,
-                await chatRuntime.sendChatMessage(
-                  decodeURIComponent(messageMatch[1]),
-                  messageRequest
-                )
-              );
-              return;
-            }
-
-            response.statusCode = 404;
-            response.end("Not found");
           } catch (error) {
             response.statusCode = 500;
             response.setHeader("content-type", "application/json; charset=utf-8");

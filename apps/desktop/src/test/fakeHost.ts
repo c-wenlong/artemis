@@ -3,9 +3,10 @@ import type {
   AgentLaunchResult,
   AgentSessionSummary,
   AssetInventorySnapshot,
+  ChatEventListener,
   ChatSession,
-  ChatTurnResult,
   CreateChatSessionRequest,
+  RuntimeEvent,
   ProjectRef,
   ReviewSnapshot,
   RuntimeSettings,
@@ -120,6 +121,15 @@ export interface FakeHostOptions {
   settings?: RuntimeSettings;
   workspaces?: WorkspaceSummary[];
   review?: ReviewSnapshot;
+  /** Batches the host should emit for a turn. */
+  streamScript?(turnId: string, prompt: string): RuntimeEvent[][];
+  /** Events a reopened session replays. */
+  replay?: RuntimeEvent[];
+  /**
+   * Keep the turn open until it is cancelled — models a long-running turn, so
+   * a test can click Stop without racing the stream to completion.
+   */
+  holdUntilCancelled?: boolean;
 }
 
 /**
@@ -129,17 +139,24 @@ export interface FakeHostOptions {
 export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient & {
   savedSettings: RuntimeSettings[];
   launches: AgentLaunchRequest[];
+  streamed: string[];
+  replayedIds: string[];
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
   };
   const savedSettings: RuntimeSettings[] = [];
   const launches: AgentLaunchRequest[] = [];
+  const streamed: string[] = [];
+  const cancelled = new Set<string>();
+  const replayedIds: string[] = [];
   const workspaces = options.workspaces ?? fakeWorkspaces;
 
   return {
     savedSettings,
     launches,
+    streamed,
+    replayedIds,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => fakeProjects,
@@ -174,40 +191,129 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     createChatSession: async (request: CreateChatSessionRequest): Promise<ChatSession> => ({
       createdAt: "2026-08-10T12:00:00.000Z",
       harnessId: request.harnessId,
-      id: "chat-1",
+      // Mirrors `session_id_for_workspace` in the Rust host. Deterministic on
+      // purpose: the event log is keyed by this, so a fake that invented an id
+      // would hide a replay-key mismatch.
+      id: `chat-${request.workspaceId}`,
       lastEventAt: "2026-08-10T12:00:00.000Z",
       status: "idle",
       title: "Test chat",
       workspaceId: request.workspaceId,
       workspacePath: request.workspacePath
     }),
-    sendChatMessage: async (
+
+    /**
+     * Streams a scripted turn. `streamScript` lets a test drive the exact
+     * batches the host would send; the default is a short successful turn.
+     */
+    streamChatMessage: async (
       sessionId: string,
-      request: SendChatMessageRequest
-    ): Promise<ChatTurnResult> => ({
-      events: [],
-      messages: [
-        {
-          blocks: [
-            { id: "b1", status: "completed", text: request.prompt, type: "text" }
-          ],
-          createdAt: "2026-08-10T12:00:00.000Z",
-          id: "m1",
-          role: "user",
-          sessionId,
-          turnId: "t1"
-        }
-      ],
-      session: {
-        createdAt: "2026-08-10T12:00:00.000Z",
-        harnessId: "opencode",
-        id: sessionId,
-        lastEventAt: "2026-08-10T12:00:00.000Z",
-        status: "idle",
-        title: "Test chat",
-        workspaceId: "ws-artemis",
-        workspacePath: "/work/artemis"
+      request: SendChatMessageRequest,
+      onEvents: ChatEventListener
+    ): Promise<void> => {
+      streamed.push(request.prompt);
+      const turnId = `turn-${streamed.length}`;
+      const batches =
+        options.streamScript?.(turnId, request.prompt) ??
+        defaultScript(turnId, sessionId, request.prompt);
+
+      for (const batch of batches) {
+        if (cancelled.has(sessionId)) break;
+        onEvents(batch);
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
-    })
+
+      if (options.holdUntilCancelled) {
+        while (!cancelled.has(sessionId)) {
+          await new Promise((resolve) => setTimeout(resolve, 1));
+        }
+      }
+
+      if (cancelled.has(sessionId)) {
+        cancelled.delete(sessionId);
+        onEvents([
+          {
+            id: `${turnId}-cancelled`,
+            sessionId,
+            timestamp: "2026-08-10T12:00:03.000Z",
+            turnId,
+            message: "Turn stopped.",
+            type: "turn.errored"
+          }
+        ]);
+      }
+    },
+
+    cancelChatTurn: async (sessionId: string): Promise<void> => {
+      cancelled.add(sessionId);
+    },
+
+    replayChatSession: async (sessionId: string): Promise<RuntimeEvent[]> => {
+      replayedIds.push(sessionId);
+      const recorded = options.replay ?? [];
+      // Only the session those events belong to replays them.
+      return recorded.length > 0 && recorded[0]!.sessionId === sessionId ? recorded : [];
+    }
   };
+}
+
+function defaultScript(
+  turnId: string,
+  sessionId: string,
+  prompt: string
+): RuntimeEvent[][] {
+  const at = (n: number) => `2026-08-10T12:00:0${n}.000Z`;
+  return [
+    [
+      {
+        id: `${turnId}-started`,
+        sessionId,
+        timestamp: at(0),
+        turnId,
+        harnessId: "opencode",
+        workspaceId: "ws-artemis",
+        type: "turn.started"
+      },
+      {
+        id: `${turnId}-user`,
+        sessionId,
+        timestamp: at(0),
+        turnId,
+        text: prompt,
+        type: "user.message"
+      }
+    ],
+    [
+      {
+        id: `${turnId}-d1`,
+        sessionId,
+        timestamp: at(1),
+        turnId,
+        blockId: "b1",
+        text: "Reading ",
+        type: "text.delta"
+      }
+    ],
+    [
+      {
+        id: `${turnId}-d2`,
+        sessionId,
+        timestamp: at(2),
+        turnId,
+        blockId: "b1",
+        text: "the scanner.",
+        type: "text.delta"
+      }
+    ],
+    [
+      {
+        id: `${turnId}-done`,
+        sessionId,
+        timestamp: at(3),
+        turnId,
+        opencodeSessionId: "ses_fake",
+        type: "turn.completed"
+      }
+    ]
+  ];
 }

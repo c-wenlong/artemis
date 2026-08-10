@@ -1,9 +1,12 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import type { ChatMessage } from "@artemis/core";
+import { MessageList } from "./MessageList";
 import "./Conversation.css";
 
 interface ConversationProps {
   /** Label of the harness the next turn will go to. */
   harnessLabel: string | null;
+  messages?: ChatMessage[];
   children?: ReactNode;
 }
 
@@ -14,12 +17,24 @@ interface ConversationProps {
  * M3 fills it with typed segment renderers; M2 establishes the column, the
  * scroll region, and the empty state.
  */
-export function Conversation({ harnessLabel, children }: ConversationProps) {
-  const isEmpty = children === undefined || children === null;
+export function Conversation({
+  harnessLabel,
+  messages = [],
+  children
+}: ConversationProps) {
+  const isEmpty = messages.length === 0 && (children === undefined || children === null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Follow the stream. `block: "end"` rather than smooth scrolling: during a
+  // fast turn this fires many times a second and animating each one lags.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [messages]);
 
   return (
     <div aria-label="Conversation" className="conversation" role="log">
       <div className="conversation-column" data-testid="conversation-column">
+        {messages.length > 0 ? <MessageList messages={messages} /> : null}
         {isEmpty ? (
           <div className="conversation-empty" data-testid="conversation-empty">
             <p className="conversation-empty-title">
@@ -33,6 +48,7 @@ export function Conversation({ harnessLabel, children }: ConversationProps) {
         ) : (
           children
         )}
+        <div ref={bottomRef} />
       </div>
     </div>
   );

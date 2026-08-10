@@ -19,6 +19,12 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = "0.4"
 
+# Cancelling a turn has to kill the whole process group: opencode spawns
+# children, and killing only the direct child leaves them holding the stdout
+# pipe open.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [profile.release]
 codegen-units = 1
 lto = true

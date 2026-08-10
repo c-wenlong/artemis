@@ -258,6 +258,184 @@ pub struct ReviewSnapshot {
     pub artifact_paths: Vec<String>,
 }
 
+// ------------------------------------------------------------------- chat
+
+/// Mirrors the `RuntimeEvent` union in `packages/core/src/chat/types.ts`.
+///
+/// Internally tagged on `type`, whose values carry dots (`turn.started`), so
+/// every variant names its tag explicitly. Field casing is per-variant because
+/// the union has no common struct.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum RuntimeEvent {
+    #[serde(rename = "turn.started", rename_all = "camelCase")]
+    TurnStarted {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        harness_id: String,
+        workspace_id: String,
+    },
+    #[serde(rename = "user.message", rename_all = "camelCase")]
+    UserMessage {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        text: String,
+    },
+    #[serde(rename = "text.delta", rename_all = "camelCase")]
+    TextDelta {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        block_id: String,
+        text: String,
+    },
+    #[serde(rename = "reasoning.delta", rename_all = "camelCase")]
+    ReasoningDelta {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        block_id: String,
+        text: String,
+    },
+    #[serde(rename = "tool_call.started", rename_all = "camelCase")]
+    ToolCallStarted {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        block_id: String,
+        name: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        input: Option<String>,
+    },
+    #[serde(rename = "tool_call.completed", rename_all = "camelCase")]
+    ToolCallCompleted {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        block_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        output: Option<String>,
+    },
+    #[serde(rename = "tool_call.errored", rename_all = "camelCase")]
+    ToolCallErrored {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        block_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
+        message: String,
+    },
+    #[serde(rename = "turn.completed", rename_all = "camelCase")]
+    TurnCompleted {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        opencode_session_id: Option<String>,
+    },
+    #[serde(rename = "turn.errored", rename_all = "camelCase")]
+    TurnErrored {
+        id: String,
+        session_id: String,
+        timestamp: String,
+        turn_id: String,
+        message: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        exit_code: Option<i32>,
+    },
+}
+
+impl RuntimeEvent {
+    pub fn turn_id(&self) -> &str {
+        match self {
+            RuntimeEvent::TurnStarted { turn_id, .. }
+            | RuntimeEvent::UserMessage { turn_id, .. }
+            | RuntimeEvent::TextDelta { turn_id, .. }
+            | RuntimeEvent::ReasoningDelta { turn_id, .. }
+            | RuntimeEvent::ToolCallStarted { turn_id, .. }
+            | RuntimeEvent::ToolCallCompleted { turn_id, .. }
+            | RuntimeEvent::ToolCallErrored { turn_id, .. }
+            | RuntimeEvent::TurnCompleted { turn_id, .. }
+            | RuntimeEvent::TurnErrored { turn_id, .. } => turn_id,
+        }
+    }
+
+    /// True for the events that end a turn — the signal a consumer waits on.
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            RuntimeEvent::TurnCompleted { .. } | RuntimeEvent::TurnErrored { .. }
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ChatSessionStatus {
+    Idle,
+    Running,
+    Failed,
+    Stopped,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatSession {
+    pub created_at: String,
+    pub harness_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub harness_kind: Option<HarnessKind>,
+    pub id: String,
+    pub last_event_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub opencode_session_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start_path: Option<String>,
+    pub status: ChatSessionStatus,
+    pub title: String,
+    pub workspace_id: String,
+    pub workspace_path: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateChatSessionRequest {
+    pub harness_id: String,
+    #[serde(default)]
+    pub model: Option<String>,
+    #[serde(default)]
+    pub opencode_session_id: Option<String>,
+    #[serde(default)]
+    pub start_path: Option<String>,
+    #[serde(default)]
+    pub title: Option<String>,
+    pub workspace_id: String,
+    pub workspace_path: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SendChatMessageRequest {
+    pub prompt: String,
+    #[serde(default)]
+    pub start_path: Option<String>,
+}
+
 // --------------------------------------------------------------- settings
 
 /// Persisted to `~/.artemis/settings.json`.

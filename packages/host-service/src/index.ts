@@ -7,14 +7,12 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
-  ChatTurnResult,
-  CreateChatSessionRequest,
+  RuntimeEvent,
   ProjectRef,
   ReviewRuntime,
   ReviewSnapshot,
   RuntimeSettings,
   RuntimeSettingsRuntime,
-  SendChatMessageRequest,
   WorkspaceRuntime,
   WorkspaceSummary
 } from "@artemis/core";
@@ -42,6 +40,14 @@ const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     globalThis.setTimeout(resolve, ms);
   });
+
+/**
+ * Streaming chat is owned by the Rust host (M1). This reference host cannot
+ * stream, so it reports chat as unavailable rather than shipping a second,
+ * divergent implementation.
+ */
+const CHAT_UNSUPPORTED =
+  "Streaming chat requires the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
 
 export function createLocalHostService(
   options: LocalHostServiceOptions = {}
@@ -89,59 +95,20 @@ export function createLocalHostService(
       };
     },
 
-    async createChatSession(request: CreateChatSessionRequest): Promise<ChatSession> {
-      await wait(latencyMs);
-      const now = new Date().toISOString();
-      return {
-        createdAt: now,
-        harnessId: request.harnessId,
-        id: "mock-chat",
-        lastEventAt: now,
-        model: request.model,
-        startPath: request.startPath,
-        status: "idle",
-        title: request.title ?? "Mock chat",
-        workspaceId: request.workspaceId,
-        workspacePath: request.workspacePath
-      };
+    async createChatSession(): Promise<ChatSession> {
+      throw new Error(CHAT_UNSUPPORTED);
     },
 
-    async sendChatMessage(
-      sessionId: string,
-      request: SendChatMessageRequest
-    ): Promise<ChatTurnResult> {
-      await wait(latencyMs);
-      const now = new Date().toISOString();
-      return {
-        events: [],
-        messages: [
-          {
-            blocks: [
-              {
-                id: "mock-user-text",
-                status: "completed",
-                text: request.prompt,
-                type: "text"
-              }
-            ],
-            createdAt: now,
-            id: "mock-user",
-            role: "user",
-            sessionId,
-            turnId: "mock-turn"
-          }
-        ],
-        session: {
-          createdAt: now,
-          harnessId: "opencode",
-          id: sessionId,
-          lastEventAt: now,
-          status: "idle",
-          title: "Mock chat",
-          workspaceId: "mock-workspace",
-          workspacePath: "."
-        }
-      };
+    async streamChatMessage(): Promise<void> {
+      throw new Error(CHAT_UNSUPPORTED);
+    },
+
+    async cancelChatTurn(): Promise<void> {
+      return;
+    },
+
+    async replayChatSession(): Promise<RuntimeEvent[]> {
+      return [];
     },
 
     async getRuntimeSettings(): Promise<RuntimeSettings> {

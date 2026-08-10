@@ -133,3 +133,18 @@
   opacity: 0.55;
   cursor: default;
 }
+
+.composer-stop {
+  margin-left: auto;
+  flex: none;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
+}
+
+.composer-stop:hover {
+  background: var(--accent-muted);
+}

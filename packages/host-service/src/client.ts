@@ -7,12 +7,10 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
-  ChatTurnResult,
-  CreateChatSessionRequest,
+  RuntimeEvent,
   ProjectRef,
   ReviewRuntime,
   ReviewSnapshot,
-  SendChatMessageRequest,
   RuntimeSettings,
   RuntimeSettingsRuntime,
   WorkspaceRuntime,
@@ -47,6 +45,14 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/**
+ * Streaming chat is owned by the Rust host (M1). This reference host cannot
+ * stream, so it reports chat as unavailable rather than shipping a second,
+ * divergent implementation.
+ */
+const CHAT_UNSUPPORTED =
+  "Streaming chat requires the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
+
 export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClient {
   return {
     getSnapshot(): Promise<AssetInventorySnapshot> {
@@ -73,18 +79,20 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
       return postJson(`${basePath}/launch`, request);
     },
 
-    createChatSession(request: CreateChatSessionRequest): Promise<ChatSession> {
-      return postJson(`${basePath}/chat/sessions`, request);
+    createChatSession(): Promise<ChatSession> {
+      return Promise.reject(new Error(CHAT_UNSUPPORTED));
     },
 
-    sendChatMessage(
-      sessionId: string,
-      request: SendChatMessageRequest
-    ): Promise<ChatTurnResult> {
-      return postJson(
-        `${basePath}/chat/sessions/${encodeURIComponent(sessionId)}/messages`,
-        request
-      );
+    streamChatMessage(): Promise<void> {
+      return Promise.reject(new Error(CHAT_UNSUPPORTED));
+    },
+
+    cancelChatTurn(): Promise<void> {
+      return Promise.resolve();
+    },
+
+    replayChatSession(): Promise<RuntimeEvent[]> {
+      return Promise.resolve([]);
     },
 
     getRuntimeSettings(): Promise<RuntimeSettings> {

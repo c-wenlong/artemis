@@ -12,6 +12,8 @@ interface ComposerProps {
   onSelectHarness(harnessId: string): void;
   onModelChange(model: string): void;
   onSubmit(prompt: string): void;
+  /** Present once a turn can be stopped. */
+  onStop?(): void;
 }
 
 function diffTotals(review: ReviewSnapshot | null) {
@@ -40,7 +42,8 @@ export function Composer({
   isBusy,
   onSelectHarness,
   onModelChange,
-  onSubmit
+  onSubmit,
+  onStop
 }: ComposerProps) {
   const [prompt, setPrompt] = useState("");
   const { additions, deletions } = diffTotals(review);
@@ -113,9 +116,17 @@ export function Composer({
           />
         </label>
 
-        <button className="composer-run" disabled={isBusy} type="submit">
-          {isBusy ? "Running…" : "Run"}
-        </button>
+        {/* Stop replaces Run while a turn is in flight: one control in one
+            place, so there is never a disabled button next to a live one. */}
+        {isBusy && onStop ? (
+          <button className="composer-stop" onClick={onStop} type="button">
+            Stop
+          </button>
+        ) : (
+          <button className="composer-run" disabled={isBusy} type="submit">
+            {isBusy ? "Running…" : "Run"}
+          </button>
+        )}
       </div>
     </form>
   );

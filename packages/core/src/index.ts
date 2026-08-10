@@ -24,13 +24,13 @@ export type {
 } from "./session/types";
 export type {
   ChatBlock,
+  ChatEventListener,
   ChatBlockStatus,
   ChatMessage,
   ChatMessageRole,
   ChatRuntime,
   ChatSession,
   ChatSessionStatus,
-  ChatTurnResult,
   CreateChatSessionRequest,
   RuntimeEvent,
   RuntimeEventType,

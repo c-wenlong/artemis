@@ -74,6 +74,8 @@ describe("composer", () => {
     expect(screen.getByRole("textbox", { name: /model/i })).toBeInTheDocument();
   });
 
+  // M1 moved chat off the one-shot launcher and onto the streaming API; see
+  // streaming.test.tsx for the transcript behaviour.
   it("submits a prompt to the selected workspace", async () => {
     const { host, user } = await renderApp();
     await user.type(
@@ -81,18 +83,13 @@ describe("composer", () => {
       "explain the scanner"
     );
     await user.click(screen.getByRole("button", { name: /^run$/i }));
-    await waitFor(() => expect(host.launches).toHaveLength(1));
-    expect(host.launches[0]).toMatchObject({
-      prompt: "explain the scanner",
-      workspaceId: "ws-artemis",
-      workspacePath: "/work/artemis"
-    });
+    await waitFor(() => expect(host.streamed).toEqual(["explain the scanner"]));
   });
 
   it("will not submit an empty prompt", async () => {
     const { host, user } = await renderApp();
     await user.click(screen.getByRole("button", { name: /^run$/i }));
-    expect(host.launches).toHaveLength(0);
+    expect(host.streamed).toHaveLength(0);
   });
 });
 

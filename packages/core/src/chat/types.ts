@@ -166,16 +166,27 @@ export interface SendChatMessageRequest {
   startPath?: string;
 }
 
-export interface ChatTurnResult {
-  events: RuntimeEvent[];
-  messages: ChatMessage[];
-  session: ChatSession;
-}
+/** Receives batches of events as a turn streams. */
+export type ChatEventListener = (events: RuntimeEvent[]) => void;
 
 export interface ChatRuntime {
   createChatSession(request: CreateChatSessionRequest): Promise<ChatSession>;
-  sendChatMessage(
+  /**
+   * Run a turn, delivering events to `onEvents` as they arrive. Resolves when
+   * the turn ends; the transcript is built from the events, not the return
+   * value.
+   *
+   * Batched rather than one-event-at-a-time because the host coalesces
+   * consecutive deltas before sending — a fast model emits a line per token,
+   * and forwarding each individually costs an IPC message and a render each.
+   */
+  streamChatMessage(
     sessionId: string,
-    request: SendChatMessageRequest
-  ): Promise<ChatTurnResult>;
+    request: SendChatMessageRequest,
+    onEvents: ChatEventListener
+  ): Promise<void>;
+  /** Stop the running turn. A terminal event still arrives. */
+  cancelChatTurn(sessionId: string): Promise<void>;
+  /** Every event recorded for a session, for rebuilding it on reopen. */
+  replayChatSession(sessionId: string): Promise<RuntimeEvent[]>;
 }

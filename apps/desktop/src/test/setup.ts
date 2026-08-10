@@ -20,6 +20,11 @@ if (!window.matchMedia) {
   })) as typeof window.matchMedia;
 }
 
+// jsdom has no layout, so scrolling is a no-op rather than an error.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 if (!HTMLDialogElement.prototype.showModal) {
   HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
     this.open = true;
