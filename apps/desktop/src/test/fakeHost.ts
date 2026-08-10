@@ -186,18 +186,18 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
 
   // Mirrors the Rust catalog in appicon.rs.
   const iconCatalog: AppIcon[] = [
-    { id: "deep-sea-gradient", label: "Deep Sea Gradient" },
-    { id: "forest-warden-copper", label: "Forest Warden" },
-    { id: "volcanic-sentry-obsidian", label: "Volcanic Sentry" },
-    { id: "cosmic-hunter-nebula", label: "Cosmic Hunter" },
-    { id: "silver-archer-metal", label: "Silver Archer" },
-    { id: "opal-archer-iridescent", label: "Opal Archer" },
-    { id: "cyber-hunter-neon", label: "Cyber-Hunter" },
     { id: "olympian-marble", label: "Olympian" },
-    { id: "frost-weaver-ice", label: "Frost Weaver" },
+    { id: "arcane-sentinel-obsidian", label: "Arcane Sentinel" },
+    { id: "auroral-archer-frost", label: "Auroral Archer" },
+    { id: "celestial-emissary-stained-glass", label: "Celestial Emissary" },
+    { id: "chrome-sentinel-cybernetic", label: "Chrome Sentinel" },
     { id: "chronos-archer-clockwork", label: "Chronos Archer" },
+    { id: "desert-nomad-sandstone", label: "Desert Nomad" },
+    { id: "frost-weaver-ice", label: "Frost Weaver" },
+    { id: "galactic-vanguard-nebula", label: "Galactic Vanguard" },
+    { id: "galactic-vanguard-spiral", label: "Galactic Vanguard (Spiral)" },
     { id: "solar-sentinel-sunstone", label: "Solar Sentinel" },
-    { id: "eastern-mystic-jade", label: "Eastern Mystic" }
+    { id: "verdant-druid-moss", label: "Verdant Druid" }
   ];
   const projects = options.projects ?? fakeProjects;
   // Mutable so create and delete are observable through listWorkspaces, the

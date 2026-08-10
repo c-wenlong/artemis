@@ -53,7 +53,7 @@ describe("the appearance tab", () => {
     const options = within(dialog).getAllByRole("radio");
     expect(options).toHaveLength(12);
     expect(
-      within(dialog).getByRole("radio", { name: /deep sea gradient/i })
+      within(dialog).getByRole("radio", { name: /solar sentinel/i })
     ).toBeInTheDocument();
     expect(
       within(dialog).getByRole("radio", { name: /frost weaver/i })
@@ -62,9 +62,7 @@ describe("the appearance tab", () => {
 
   it("shows the bundled icon as selected to begin with", async () => {
     const { dialog } = await openAppearance();
-    expect(
-      within(dialog).getByRole("radio", { name: /deep sea gradient/i })
-    ).toBeChecked();
+    expect(within(dialog).getByRole("radio", { name: /^olympian$/i })).toBeChecked();
   });
 
   it("applies a chosen icon", async () => {
@@ -77,11 +75,18 @@ describe("the appearance tab", () => {
     ).toBeChecked();
   });
 
+  // Deliberately not the default: storing the default would let this pass on a
+  // panel that ignored the stored value entirely.
   it("reflects the icon already stored when the tab opens", async () => {
     const { dialog } = await openAppearance(
-      createFakeHost({ settings: { appIconId: "olympian-marble" } })
+      createFakeHost({ settings: { appIconId: "solar-sentinel-sunstone" } })
     );
-    expect(within(dialog).getByRole("radio", { name: /olympian/i })).toBeChecked();
+    expect(
+      within(dialog).getByRole("radio", { name: /solar sentinel/i })
+    ).toBeChecked();
+    expect(
+      within(dialog).getByRole("radio", { name: /^olympian$/i })
+    ).not.toBeChecked();
   });
 
   /**
@@ -107,8 +112,9 @@ describe("the appearance tab", () => {
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Unknown icon");
     // The selection stays on what is actually applied.
+    expect(within(dialog).getByRole("radio", { name: /^olympian$/i })).toBeChecked();
     expect(
-      within(dialog).getByRole("radio", { name: /deep sea gradient/i })
-    ).toBeChecked();
+      within(dialog).getByRole("radio", { name: /frost weaver/i })
+    ).not.toBeChecked();
   });
 });

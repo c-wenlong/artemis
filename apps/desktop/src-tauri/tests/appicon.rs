@@ -15,13 +15,25 @@ fn every_variant_is_listed() {
 }
 
 #[test]
-fn the_default_is_deep_sea_and_comes_first() {
+fn the_default_is_olympian_and_comes_first() {
     let icons = appicon::catalog();
-    assert_eq!(appicon::DEFAULT_ICON_ID, "deep-sea-gradient");
+    assert_eq!(appicon::DEFAULT_ICON_ID, "olympian-marble");
     assert_eq!(
-        icons[0].id, "deep-sea-gradient",
+        icons[0].id, "olympian-marble",
         "the bundled icon should lead the list rather than hide in it"
     );
+}
+
+/// Two of the source images carry the same caption, "Galactic Vanguard
+/// (Nebula)", on visibly different artwork. Their labels have to tell them
+/// apart or the picker shows the same name twice.
+#[test]
+fn labels_are_unique() {
+    let icons = appicon::catalog();
+    let mut seen = std::collections::HashSet::new();
+    for icon in &icons {
+        assert!(seen.insert(icon.label), "duplicate label: {}", icon.label);
+    }
 }
 
 #[test]
@@ -44,7 +56,7 @@ fn ids_are_unique_and_filesystem_safe() {
 fn every_variant_has_a_readable_label() {
     for icon in appicon::catalog() {
         assert!(!icon.label.trim().is_empty(), "{} has no label", icon.id);
-        // "Deep Sea Gradient", not "deep-sea-gradient".
+        // "Solar Sentinel", not "solar-sentinel-sunstone".
         assert!(
             icon.label.chars().next().unwrap().is_uppercase(),
             "{} should be titled for display, got {:?}",
@@ -65,10 +77,87 @@ fn every_variant_has_a_file_on_disk() {
     }
 }
 
+/// The opaque bounding box of a PNG, as (left, top, width, height).
+fn opaque_box(path: &std::path::Path) -> (u32, u32, u32, u32, u32) {
+    let decoder = png::Decoder::new(std::fs::File::open(path).expect("open png"));
+    let mut reader = decoder.read_info().expect("png header");
+    let mut buf = vec![0; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).expect("png pixels");
+    assert_eq!(
+        info.color_type,
+        png::ColorType::Rgba,
+        "{path:?} has no alpha channel, so it cannot carry the icon margin"
+    );
+
+    let (w, h) = (info.width, info.height);
+    let (mut l, mut t, mut r, mut b) = (w, h, 0u32, 0u32);
+    for y in 0..h {
+        for x in 0..w {
+            let alpha = buf[((y * w + x) * 4 + 3) as usize];
+            if alpha > 64 {
+                l = l.min(x);
+                t = t.min(y);
+                r = r.max(x);
+                b = b.max(y);
+            }
+        }
+    }
+    (l, t, r - l + 1, b - t + 1, w)
+}
+
+/// macOS does not draw app icons edge to edge. On a 1024 canvas the rounded
+/// square occupies 824x824 at +100+100 — measured off Spotify and Telegram,
+/// both exact — and artwork that fills its canvas renders about a quarter
+/// larger than every neighbour in the dock. That shipped once already.
+#[test]
+fn variants_sit_on_apples_icon_grid() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("icons/variants");
+    for icon in appicon::catalog() {
+        let path = root.join(format!("{}.png", icon.id));
+        let (left, top, w, h, canvas) = opaque_box(&path);
+
+        let ratio = w as f32 / canvas as f32;
+        assert!(
+            (0.78..=0.83).contains(&ratio),
+            "{} fills {:.3} of its canvas; Apple's grid is 824/1024 = 0.805",
+            icon.id,
+            ratio
+        );
+        // Centred, give or take the odd row of drop shadow.
+        let right = canvas - (left + w);
+        let bottom = canvas - (top + h);
+        assert!(
+            left.abs_diff(right) <= 4 && top.abs_diff(bottom) <= 12,
+            "{} is off centre: margins l={left} r={right} t={top} b={bottom}",
+            icon.id
+        );
+    }
+}
+
+/// The other direction of the check above. Replacing the icon set is a matter
+/// of swapping a directory, and a leftover from the previous set would ship in
+/// the bundle forever without anything noticing.
+#[test]
+fn no_artwork_ships_without_a_catalog_entry() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("icons/variants");
+    let known: std::collections::HashSet<&str> = appicon::catalog().iter().map(|i| i.id).collect();
+    for entry in std::fs::read_dir(&root).expect("variants directory") {
+        let path = entry.expect("readable entry").path();
+        if path.extension().and_then(|e| e.to_str()) != Some("png") {
+            continue;
+        }
+        let stem = path.file_stem().unwrap().to_str().unwrap();
+        assert!(known.contains(stem), "orphaned artwork: {stem}");
+    }
+}
+
 #[test]
 fn an_unknown_id_is_rejected_rather_than_guessed_at() {
-    assert!(appicon::is_known("deep-sea-gradient"));
+    assert!(appicon::is_known("olympian-marble"));
     assert!(!appicon::is_known("no-such-icon"));
+    // The previous icon set. A settings row still naming one of these has to
+    // fall through to the default rather than look for artwork that is gone.
+    assert!(!appicon::is_known("deep-sea-gradient"));
     // Path traversal through the id must not resolve to a real file.
     assert!(!appicon::is_known("../../../etc/passwd"));
 }

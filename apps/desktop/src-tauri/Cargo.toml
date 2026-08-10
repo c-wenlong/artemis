@@ -32,6 +32,11 @@ objc2 = "0.6.4"
 objc2-app-kit = "0.3.2"
 objc2-foundation = "0.3.2"
 
+[dev-dependencies]
+# Already in the tree via tauri; used to check the shipped icon artwork sits on
+# Apple's icon grid rather than filling its canvas.
+png = "0.17"
+
 [profile.release]
 codegen-units = 1
 lto = true

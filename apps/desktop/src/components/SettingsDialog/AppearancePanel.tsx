@@ -10,7 +10,7 @@ interface AppearancePanelProps {
   onApplied(iconId: string): void;
 }
 
-const DEFAULT_ICON_ID = "deep-sea-gradient";
+const DEFAULT_ICON_ID = "olympian-marble";
 
 /**
  * Icon picker.

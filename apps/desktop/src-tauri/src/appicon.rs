@@ -19,58 +19,62 @@ pub struct AppIcon {
 }
 
 /// The bundled icon. Leads the catalog so the list opens on what is currently
-/// shipped rather than burying it.
-pub const DEFAULT_ICON_ID: &str = "deep-sea-gradient";
+/// shipped rather than burying it; the rest follow alphabetically.
+pub const DEFAULT_ICON_ID: &str = "olympian-marble";
 
 pub fn catalog() -> Vec<AppIcon> {
     vec![
-        AppIcon {
-            id: "deep-sea-gradient",
-            label: "Deep Sea Gradient",
-        },
-        AppIcon {
-            id: "forest-warden-copper",
-            label: "Forest Warden",
-        },
-        AppIcon {
-            id: "volcanic-sentry-obsidian",
-            label: "Volcanic Sentry",
-        },
-        AppIcon {
-            id: "cosmic-hunter-nebula",
-            label: "Cosmic Hunter",
-        },
-        AppIcon {
-            id: "silver-archer-metal",
-            label: "Silver Archer",
-        },
-        AppIcon {
-            id: "opal-archer-iridescent",
-            label: "Opal Archer",
-        },
-        AppIcon {
-            id: "cyber-hunter-neon",
-            label: "Cyber-Hunter",
-        },
         AppIcon {
             id: "olympian-marble",
             label: "Olympian",
         },
         AppIcon {
-            id: "frost-weaver-ice",
-            label: "Frost Weaver",
+            id: "arcane-sentinel-obsidian",
+            label: "Arcane Sentinel",
+        },
+        AppIcon {
+            id: "auroral-archer-frost",
+            label: "Auroral Archer",
+        },
+        AppIcon {
+            id: "celestial-emissary-stained-glass",
+            label: "Celestial Emissary",
+        },
+        AppIcon {
+            id: "chrome-sentinel-cybernetic",
+            label: "Chrome Sentinel",
         },
         AppIcon {
             id: "chronos-archer-clockwork",
             label: "Chronos Archer",
         },
         AppIcon {
+            id: "desert-nomad-sandstone",
+            label: "Desert Nomad",
+        },
+        AppIcon {
+            id: "frost-weaver-ice",
+            label: "Frost Weaver",
+        },
+        AppIcon {
+            id: "galactic-vanguard-nebula",
+            label: "Galactic Vanguard",
+        },
+        // The source art for this one carries the same "Galactic Vanguard
+        // (Nebula)" caption as the entry above on a different picture. Named
+        // for what distinguishes it rather than shipped as a second identical
+        // label.
+        AppIcon {
+            id: "galactic-vanguard-spiral",
+            label: "Galactic Vanguard (Spiral)",
+        },
+        AppIcon {
             id: "solar-sentinel-sunstone",
             label: "Solar Sentinel",
         },
         AppIcon {
-            id: "eastern-mystic-jade",
-            label: "Eastern Mystic",
+            id: "verdant-druid-moss",
+            label: "Verdant Druid",
         },
     ]
 }
