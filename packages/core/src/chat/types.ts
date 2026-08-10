@@ -49,8 +49,28 @@ export interface ToolCallStartedEvent extends RuntimeEventBase {
   type: "tool_call.started";
 }
 
+/**
+ * A file a tool call changed, as the harness reported it.
+ *
+ * opencode computes the per-file line counts itself, so they are carried
+ * through rather than re-derived from patch text. `path` is workspace-relative.
+ */
+export interface FileChange {
+  additions: number;
+  deletions: number;
+  path: string;
+}
+
 export interface ToolCallCompletedEvent extends RuntimeEventBase {
   blockId: string;
+  /** Files the call changed, when the harness reports them. */
+  fileChanges?: FileChange[];
+  /**
+   * What the call was given. Present here as well as on the start event because
+   * `opencode run --format json` reports each tool exactly once, already
+   * finished — there is no start frame to have carried it.
+   */
+  input?: string;
   name?: string;
   output?: string;
   type: "tool_call.completed";
@@ -102,6 +122,7 @@ export interface ReasoningChatBlock {
 }
 
 export interface ToolCallChatBlock {
+  fileChanges?: FileChange[];
   id: string;
   input?: string;
   name: string;

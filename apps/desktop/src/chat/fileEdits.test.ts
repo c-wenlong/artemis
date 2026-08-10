@@ -118,3 +118,68 @@ describe("deriveFileEdits", () => {
     }
   });
 });
+
+/**
+ * The counts opencode itself computed, taken from a live run that edited two
+ * files. Believing the harness beats anything this module could infer from a
+ * patch: `apply_patch` passes one `patchText` blob with no file names in a
+ * shape the fallback could read.
+ */
+describe("deriveFileEdits, from what the harness reported", () => {
+  const applyPatch = (
+    fileChanges: Array<{ additions: number; deletions: number; path: string }>
+  ): ChatBlock => ({
+    fileChanges,
+    id: `patch-${fileChanges[0]?.path}`,
+    input: JSON.stringify({ patchText: "*** Begin Patch\n*** End Patch" }),
+    name: "apply_patch",
+    output: "Success. Updated the following files:\nM seed.txt",
+    status: "completed",
+    type: "tool_call"
+  });
+
+  it("uses the reported counts", () => {
+    const summary = deriveFileEdits([
+      applyPatch([{ additions: 1, deletions: 0, path: "seed.txt" }]),
+      applyPatch([{ additions: 3, deletions: 0, path: "notes.md" }])
+    ]);
+    expect(summary).toEqual({
+      added: 4,
+      files: [
+        { added: 1, path: "seed.txt", removed: 0 },
+        { added: 3, path: "notes.md", removed: 0 }
+      ],
+      removed: 0
+    });
+  });
+
+  it("prefers them over anything guessed from the input", () => {
+    const summary = deriveFileEdits([
+      {
+        fileChanges: [{ additions: 7, deletions: 2, path: "real.ts" }],
+        id: "t",
+        // A path the fallback would have believed, on a tool it recognises.
+        input: JSON.stringify({ content: "a\nb", filePath: "guessed.ts" }),
+        name: "write",
+        status: "completed",
+        type: "tool_call"
+      }
+    ]);
+    expect(summary?.files).toEqual([{ added: 7, path: "real.ts", removed: 2 }]);
+  });
+
+  it("still reads a bash call as touching nothing", () => {
+    expect(
+      deriveFileEdits([
+        {
+          id: "b",
+          input: JSON.stringify({ command: "ls -la" }),
+          name: "bash",
+          output: "total 8",
+          status: "completed",
+          type: "tool_call"
+        }
+      ])
+    ).toBeNull();
+  });
+});

@@ -444,13 +444,26 @@ header, prose carrying file chips and code pills, and a summary of what was
 edited — without any of it being clickable yet.
 **Depends:** M3, M4.
 
-**Shipped with one gap.** The edit summary derives from tool calls, and against
-a real recorded opencode session those calls arrive with **no `input` at all**
-and a generic name of `tool`. So the card is correct and unit-tested but will
-not appear on live output yet. `chat/parser.rs` reads `state` as a string when
-opencode sends it as an object carrying `status`, `input` and `output` — that is
-the likely cause and the first thing to check. Needs a live capture of the raw
-frames to fix, not a guess.
+**The parser gap is closed.** Confirmed against a live `opencode run` that
+edited two files, and the guess was right: `state` is an object carrying
+`status`, `input`, `output` and `metadata.files`, not a status string. Four
+things came out of the recording that no amount of reading the docs would have:
+
+- The real tool name is on `tool`; everything was arriving as `"tool"`.
+- Flattening the frame collected `state` as a *second* part, so every call was
+  duplicated and the duplicate was the unnamed one. The envelope names the real
+  part; use it.
+- `opencode run --format json` reports each tool **once, already finished**.
+  There is no start frame, so the completion has to carry `input` as well.
+- `metadata.files` already has per-file `additions`/`deletions`. The summary
+  reports those rather than parsing `patchText`, which `apply_patch` sends as a
+  single opaque blob.
+
+`relativePath` is not reliably relative — on macOS `/var` symlinks to
+`/private/var` and opencode returns a stripped absolute path — so paths are
+re-derived against the workspace root. The recording is pinned as a fixture at
+`tests/fixtures/opencode-apply-patch.jsonl`, and `tests/opencode_live.rs` has an
+ignored test that repeats the whole thing against the real binary.
 
 **Fork ships with a real limitation.** The transcript is copied; the opencode
 session id is not, because reusing it would make the fork an alias rather than a

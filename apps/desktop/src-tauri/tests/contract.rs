@@ -241,3 +241,79 @@ fn settings_round_trip_and_sanitize() {
         .unwrap()
         .contains_key("opencodeDefaultModel"));
 }
+
+#[test]
+fn file_change_matches_core() {
+    // export interface FileChange {
+    //   additions: number;
+    //   deletions: number;
+    //   path: string;
+    // }
+    let change = FileChange {
+        path: "seed.txt".into(),
+        additions: 1,
+        deletions: 0,
+    };
+    assert_eq!(
+        to_json(&change),
+        json!({ "path": "seed.txt", "additions": 1, "deletions": 0 })
+    );
+}
+
+/// The completion carries `input` and `fileChanges` because
+/// `opencode run --format json` reports each tool exactly once, already
+/// finished — there is no start event to have carried them.
+#[test]
+fn tool_call_completed_matches_core() {
+    let event = RuntimeEvent::ToolCallCompleted {
+        id: "e1".into(),
+        session_id: "s1".into(),
+        timestamp: "2026-08-11T09:00:00Z".into(),
+        turn_id: "t1".into(),
+        block_id: "b1".into(),
+        name: Some("apply_patch".into()),
+        input: Some(r#"{"patchText":"..."}"#.into()),
+        output: Some("Success.".into()),
+        file_changes: Some(vec![FileChange {
+            path: "seed.txt".into(),
+            additions: 1,
+            deletions: 0,
+        }]),
+    };
+    assert_eq!(
+        to_json(&event),
+        json!({
+            "type": "tool_call.completed",
+            "id": "e1",
+            "sessionId": "s1",
+            "timestamp": "2026-08-11T09:00:00Z",
+            "turnId": "t1",
+            "blockId": "b1",
+            "name": "apply_patch",
+            "input": "{\"patchText\":\"...\"}",
+            "output": "Success.",
+            "fileChanges": [{ "path": "seed.txt", "additions": 1, "deletions": 0 }]
+        })
+    );
+}
+
+/// The optional halves stay absent rather than serializing as null, which the
+/// TypeScript side declares with `?` rather than `| null`.
+#[test]
+fn tool_call_completed_omits_what_it_does_not_have() {
+    let event = RuntimeEvent::ToolCallCompleted {
+        id: "e1".into(),
+        session_id: "s1".into(),
+        timestamp: "2026-08-11T09:00:00Z".into(),
+        turn_id: "t1".into(),
+        block_id: "b1".into(),
+        name: None,
+        input: None,
+        output: None,
+        file_changes: None,
+    };
+    let json = to_json(&event);
+    for absent in ["name", "input", "output", "fileChanges"] {
+        assert!(json.get(absent).is_none(), "{absent} should be omitted");
+    }
+}

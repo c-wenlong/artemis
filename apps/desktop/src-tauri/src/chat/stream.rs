@@ -241,7 +241,8 @@ pub fn run_turn(
         *guard = Some(child);
     }
 
-    let mut parser = OpenCodeParser::new(request.session_id.clone(), request.turn_id.clone());
+    let mut parser = OpenCodeParser::new(request.session_id.clone(), request.turn_id.clone())
+        .rooted_at(request.cwd);
     let mut pending: Vec<RuntimeEvent> = Vec::new();
     let mut last_flush = Instant::now();
 

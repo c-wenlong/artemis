@@ -260,6 +260,18 @@ pub struct ReviewSnapshot {
 
 // ------------------------------------------------------------------- chat
 
+/// A file a tool call changed, as the harness reported it.
+///
+/// `path` is the workspace-relative one: the absolute path opencode also sends
+/// is machine-specific and too long to render.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FileChange {
+    pub path: String,
+    pub additions: u32,
+    pub deletions: u32,
+}
+
 /// Mirrors the `RuntimeEvent` union in `packages/core/src/chat/types.ts`.
 ///
 /// Internally tagged on `type`, whose values carry dots (`turn.started`), so
@@ -323,8 +335,18 @@ pub enum RuntimeEvent {
         block_id: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         name: Option<String>,
+        /// What the call was given. Present here as well as on the start event
+        /// because `opencode run --format json` reports each tool exactly once,
+        /// already finished — there is no start frame to have carried it.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        input: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         output: Option<String>,
+        /// Files the call changed, when the harness reports them. opencode
+        /// computes the per-file line counts itself, so they are carried
+        /// through rather than re-derived from a patch.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        file_changes: Option<Vec<FileChange>>,
     },
     #[serde(rename = "tool_call.errored", rename_all = "camelCase")]
     ToolCallErrored {

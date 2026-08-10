@@ -191,8 +191,10 @@ export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcr
           const previous = existing?.type === "tool_call" ? existing : undefined;
           return upsertBlock(blocks, {
             id: event.blockId,
-            // The start event carries the input; completion does not resend it.
-            input: previous?.input,
+            fileChanges: isError ? previous?.fileChanges : event.fileChanges,
+            // Usually the start event carried it, but `opencode run --format
+            // json` never sends a start, so the completion carries it instead.
+            input: (isError ? undefined : event.input) ?? previous?.input,
             name: event.name ?? previous?.name ?? "tool",
             output: isError ? event.message : event.output,
             status: isError ? "errored" : "completed",

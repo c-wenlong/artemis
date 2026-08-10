@@ -128,3 +128,105 @@ fn streams_a_real_opencode_turn() {
     println!("assistant said: {text:?}");
     assert!(!text.trim().is_empty());
 }
+
+/// The edit path, end to end.
+///
+/// The parser previously read `state` as a status string when opencode sends an
+/// object carrying `status`, `input`, `output` and `metadata.files`. The result
+/// was tool calls named "tool" with no input and no file information at all,
+/// which no fixture caught because the fixtures were written from the wrong
+/// shape. This asks the real binary to edit a real file.
+///
+/// ```text
+/// OPENCODE_BIN=$(command -v opencode) OPENCODE_MODEL=openai/gpt-5-mini \
+///   cargo test --test opencode_live edits -- --ignored --nocapture
+/// ```
+#[test]
+#[ignore]
+fn reports_the_files_a_real_turn_edited() {
+    let Some(binary) = opencode_binary() else {
+        eprintln!("opencode not found; set OPENCODE_BIN");
+        return;
+    };
+
+    let dir = std::env::temp_dir().join("artemis-opencode-live-edit");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("seed.txt"), "alpha\nbeta\ngamma\n").unwrap();
+
+    let prompt = "Add a line reading 'delta' to the end of seed.txt. Use your edit tools.";
+    let mut args = vec![
+        "run".to_string(),
+        "--format".into(),
+        "json".into(),
+        "--dir".into(),
+        dir.to_string_lossy().into_owned(),
+    ];
+    if let Ok(model) = std::env::var("OPENCODE_MODEL") {
+        args.push("--model".into());
+        args.push(model);
+    }
+    args.push(prompt.to_string());
+
+    let sink = Arc::new(Collector::default());
+    let log = EventLog::in_dir(dir.clone(), "live-edit");
+    let outcome = run_turn(
+        TurnRequest {
+            session_id: "live-edit".into(),
+            turn_id: "live-edit-turn".into(),
+            command: binary,
+            args,
+            cwd: &dir,
+            prompt: prompt.into(),
+            harness_id: "opencode".into(),
+            workspace_id: "ws-live".into(),
+        },
+        new_turn_handle(),
+        sink.clone(),
+        &log,
+    );
+    assert!(!outcome.failed, "the turn should succeed");
+
+    let batches = sink.batches.lock().unwrap();
+    let events: Vec<&RuntimeEvent> = batches.iter().flatten().collect();
+
+    let named: Vec<&str> = events
+        .iter()
+        .filter_map(|event| match event {
+            RuntimeEvent::ToolCallCompleted { name, .. } => name.as_deref(),
+            RuntimeEvent::ToolCallStarted { name, .. } => Some(name.as_str()),
+            _ => None,
+        })
+        .collect();
+    println!("tools: {named:?}");
+    assert!(
+        !named.is_empty() && named.iter().all(|name| *name != "tool"),
+        "every call should be named by what ran, got {named:?}"
+    );
+
+    let changes: Vec<_> = events
+        .iter()
+        .filter_map(|event| match event {
+            RuntimeEvent::ToolCallCompleted { file_changes, .. } => file_changes.clone(),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+    println!("file changes: {changes:?}");
+
+    // Workspace-relative, exactly. opencode's own `relativePath` is not: on
+    // macOS `/var` symlinks to `/private/var`, and its path arithmetic returns a
+    // stripped absolute path instead. This is the assertion that caught that.
+    assert!(
+        changes.iter().any(|change| change.path == "seed.txt"),
+        "expected a relative seed.txt, got {changes:?}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("seed.txt"))
+            .unwrap()
+            .lines()
+            .count(),
+        4,
+        "and the file should really have been edited"
+    );
+}

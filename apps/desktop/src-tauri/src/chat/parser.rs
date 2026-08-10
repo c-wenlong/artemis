@@ -12,10 +12,11 @@
 //! are computed by diffing against the last value seen for that block.
 
 use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::types::RuntimeEvent;
+use crate::types::{FileChange, RuntimeEvent};
 
 pub struct OpenCodeParser {
     session_id: String,
@@ -25,6 +26,7 @@ pub struct OpenCodeParser {
     previous_text: HashMap<String, String>,
     started_tools: HashSet<String>,
     counter: u64,
+    workspace_root: Option<PathBuf>,
 }
 
 enum Part {
@@ -42,6 +44,7 @@ enum Part {
         input: Option<String>,
         output: Option<String>,
         status: ToolStatus,
+        file_changes: Option<Vec<FileChange>>,
     },
 }
 
@@ -62,7 +65,20 @@ impl OpenCodeParser {
             previous_text: HashMap::new(),
             started_tools: HashSet::new(),
             counter: 0,
+            workspace_root: None,
         }
+    }
+
+    /// The directory the turn runs in, used to shorten reported file paths.
+    ///
+    /// opencode sends a `relativePath`, but it is only relative when its own
+    /// path arithmetic works out; on macOS, where `/var` is a symlink to
+    /// `/private/var`, it comes back as a stripped absolute path. Keeping the
+    /// root here lets that be corrected rather than rendered.
+    pub fn rooted_at(mut self, root: &Path) -> Self {
+        let canonical = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+        self.workspace_root = Some(canonical);
+        self
     }
 
     /// The opencode-side session id, needed to resume this conversation later.
@@ -101,7 +117,7 @@ impl OpenCodeParser {
         }
 
         let mut events = Vec::new();
-        for part in extract_parts(&value, &raw_type) {
+        for part in extract_parts(&value, &raw_type, self.workspace_root.as_deref()) {
             match part {
                 Part::Text { id, text } => {
                     if let Some(delta) = self.delta_for(&id, &text) {
@@ -135,6 +151,7 @@ impl OpenCodeParser {
                     input,
                     output,
                     status,
+                    file_changes,
                 } => match status {
                     ToolStatus::Errored => {
                         let event_id = self.next_id();
@@ -157,7 +174,9 @@ impl OpenCodeParser {
                             turn_id: self.turn_id.clone(),
                             block_id: id,
                             name: Some(name),
+                            input,
                             output,
+                            file_changes,
                         });
                     }
                     ToolStatus::Started => {
@@ -268,6 +287,62 @@ fn is_reasoning(part_type: &str) -> bool {
         || part_type.contains("thought")
 }
 
+/// opencode nests a tool call's real payload under `state`:
+/// `{ status, input, output, metadata: { files: [...] } }`. Earlier code here
+/// read `state` as a status string, which is why tool calls arrived named
+/// "tool" with no input at all.
+fn tool_state(part: &Value) -> Option<&Value> {
+    part.get("state").filter(|state| state.is_object())
+}
+
+/// Per-file line counts, which opencode has already computed. Preferring its
+/// numbers over anything derived from the patch text means the summary agrees
+/// with what the harness actually did.
+/// Shorten a reported path against the workspace root.
+///
+/// Tries the absolute path first: it is the one opencode is reliable about.
+/// Anything still absolute after this is left alone rather than mangled — a
+/// long path is worse to read than a short one, but a wrong one is worse still.
+fn relativize(root: Option<&Path>, file: &Value) -> Option<String> {
+    let absolute = file.get("filePath").and_then(Value::as_str);
+    if let (Some(root), Some(absolute)) = (root, absolute) {
+        let canonical = Path::new(absolute)
+            .canonicalize()
+            .unwrap_or_else(|_| PathBuf::from(absolute));
+        if let Ok(relative) = canonical.strip_prefix(root) {
+            return Some(relative.to_string_lossy().into_owned());
+        }
+    }
+
+    let reported = file
+        .get("relativePath")
+        .and_then(Value::as_str)
+        .or(absolute)?;
+    Some(reported.to_string())
+}
+
+fn read_file_changes(part: &Value, root: Option<&Path>) -> Option<Vec<FileChange>> {
+    let files = tool_state(part)?
+        .get("metadata")?
+        .get("files")?
+        .as_array()?;
+
+    let changes: Vec<FileChange> = files
+        .iter()
+        .filter_map(|file| {
+            // The absolute path is machine-specific and too long to render.
+            let path = relativize(root, file)?;
+            Some(FileChange {
+                path,
+                additions: file.get("additions").and_then(Value::as_u64).unwrap_or(0) as u32,
+                deletions: file.get("deletions").and_then(Value::as_u64).unwrap_or(0) as u32,
+            })
+        })
+        .collect();
+
+    (!changes.is_empty()).then_some(changes)
+}
+
 fn is_tool(part_type: &str, raw_type: &str, part: &Value) -> bool {
     part_type.contains("tool")
         || raw_type.to_lowercase().contains("tool")
@@ -281,6 +356,8 @@ fn read_tool_status(part_type: &str, raw_type: &str, part: &Value) -> ToolStatus
     let status = part
         .get("status")
         .and_then(Value::as_str)
+        .or_else(|| tool_state(part).and_then(|state| state.get("status")?.as_str()))
+        // Some harnesses put the status directly on `state` as a string.
         .or_else(|| part.get("state").and_then(Value::as_str))
         .map(str::to_string)
         .unwrap_or_else(|| format!("{raw_type}{part_type}"))
@@ -298,9 +375,17 @@ fn read_tool_status(part_type: &str, raw_type: &str, part: &Value) -> ToolStatus
     ToolStatus::Started
 }
 
-fn extract_parts(raw: &Value, raw_type: &str) -> Vec<Part> {
-    let mut candidates = Vec::new();
-    collect_objects(raw, &mut candidates);
+fn extract_parts(raw: &Value, raw_type: &str, root: Option<&Path>) -> Vec<Part> {
+    // opencode names the real payload: `{ type, part: { ... } }`. Take it
+    // directly rather than flattening the frame, because a tool part contains
+    // nested objects — `state`, `state.metadata` — that are shaped enough like
+    // parts to be collected as extra ones. That produced a second, unnamed
+    // tool call for every real one, and doubled the completions.
+    let mut candidates: Vec<Value> = Vec::new();
+    match raw.get("part") {
+        Some(part) if part.is_object() => candidates.push(part.clone()),
+        _ => collect_objects(raw, &mut candidates),
+    }
 
     let mut parts = Vec::new();
     for (index, part) in candidates.iter().filter(|v| looks_like_part(v)).enumerate() {
@@ -339,17 +424,22 @@ fn extract_parts(raw: &Value, raw_type: &str) -> Vec<Part> {
                 .find_map(|key| part.get(*key).and_then(Value::as_str))
                 .unwrap_or("tool")
                 .to_string();
+            let state = tool_state(part);
+            let from_state = |key: &str| state.and_then(|state| state.get(key));
             parts.push(Part::Tool {
                 id,
                 name,
                 input: stringify(
-                    part.get("input")
+                    from_state("input")
+                        .or_else(|| part.get("input"))
                         .or_else(|| part.get("args"))
                         .or_else(|| part.get("arguments")),
                 ),
-                output: read_text(part)
+                output: stringify(from_state("output"))
+                    .or_else(|| read_text(part))
                     .or_else(|| stringify(part.get("output").or_else(|| part.get("error")))),
                 status: read_tool_status(&part_type, raw_type, part),
+                file_changes: read_file_changes(part, root),
             });
             continue;
         }

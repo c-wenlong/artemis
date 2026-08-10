@@ -48,6 +48,29 @@ export function deriveFileEdits(blocks: readonly ChatBlock[]): EditSummary | nul
     // Only a call that finished says anything about the file on disk. One still
     // running has not necessarily written, and one that errored did not.
     if (block.type !== "tool_call" || block.status !== "completed") continue;
+
+    // Preferred by a wide margin: opencode reports the files it touched with
+    // per-file counts it computed itself. Believe the harness over anything
+    // this module could infer from a tool's arguments.
+    if (block.fileChanges?.length) {
+      for (const change of block.fileChanges) {
+        const existing = byPath.get(change.path);
+        if (existing) {
+          existing.added = sum(existing.added, change.additions);
+          existing.removed = sum(existing.removed, change.deletions);
+        } else {
+          byPath.set(change.path, {
+            added: change.additions,
+            path: change.path,
+            removed: change.deletions
+          });
+        }
+      }
+      continue;
+    }
+
+    // Fallback for harnesses that do not report changed files — Claude's
+    // `edit` takes oldString/newString and says nothing about the result.
     if (!isEditTool(block.name) || !block.input) continue;
 
     let input: Record<string, unknown>;

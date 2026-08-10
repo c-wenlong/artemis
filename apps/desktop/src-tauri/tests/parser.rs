@@ -247,3 +247,130 @@ fn every_event_carries_session_and_turn_identity() {
         other => panic!("unexpected {other:?}"),
     }
 }
+
+/// Captured from a live `opencode run` that actually edited two files, and
+/// replayed here frame by frame. Written from the recording rather than the
+/// docs, because the previous pass through this file assumed a shape opencode
+/// does not use: `state` is an object carrying `status`, `input` and `output`,
+/// not a status string, and the tool's real name is on `tool`.
+mod live_apply_patch {
+    use super::*;
+
+    fn frames() -> Vec<String> {
+        let raw = include_str!("fixtures/opencode-apply-patch.jsonl");
+        raw.lines().map(str::to_string).collect()
+    }
+
+    fn drain() -> Vec<RuntimeEvent> {
+        let mut parser = parser();
+        frames()
+            .iter()
+            .flat_map(|line| parser.parse_line(line))
+            .collect()
+    }
+
+    /// `opencode run --format json` reports each tool once, already finished —
+    /// there is no separate started frame to pair with. So the transcript has
+    /// to be buildable from completions alone.
+    #[test]
+    fn tools_are_named_by_what_actually_ran() {
+        let events = drain();
+        let names: Vec<&str> = events
+            .iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::ToolCallCompleted { name, .. } => name.as_deref(),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            names,
+            vec!["bash", "bash", "apply_patch", "apply_patch"],
+            "a generic \"tool\" tells the reader nothing"
+        );
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, RuntimeEvent::ToolCallStarted { .. })),
+            "this transport never announces a start"
+        );
+    }
+
+    /// The completion is the only frame this transport sends, so it has to
+    /// carry the input too — otherwise the transcript can name the tool but not
+    /// say what it ran.
+    #[test]
+    fn tool_input_survives_the_state_wrapper() {
+        let events = drain();
+        let inputs: Vec<String> = events
+            .iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::ToolCallCompleted { input, .. } => input.clone(),
+                _ => None,
+            })
+            .collect();
+        assert!(
+            inputs.iter().any(|input| input.contains("ls -la")),
+            "the bash command is the only thing that identifies the call: {inputs:?}"
+        );
+        assert!(inputs.iter().any(|input| input.contains("Begin Patch")));
+    }
+
+    #[test]
+    fn a_completed_call_carries_its_output() {
+        let events = drain();
+        let outputs: Vec<String> = events
+            .iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::ToolCallCompleted { output, .. } => output.clone(),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(outputs.len(), 4);
+        assert!(outputs.iter().any(|output| output.contains("alpha")));
+    }
+
+    /// The whole reason for this pass. opencode has already computed the
+    /// per-file line counts, so the edit summary should report them rather than
+    /// re-derive them from a patch it would have to parse.
+    #[test]
+    fn file_changes_come_through_with_counts() {
+        let changes: Vec<_> = drain()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::ToolCallCompleted { file_changes, .. } => file_changes,
+                _ => None,
+            })
+            .flatten()
+            .collect();
+
+        assert_eq!(changes.len(), 2, "one update and one add");
+
+        let seed = &changes[0];
+        assert_eq!(seed.path, "seed.txt", "the relative path, not the absolute");
+        assert_eq!(seed.additions, 1);
+        assert_eq!(seed.deletions, 0);
+
+        let notes = &changes[1];
+        assert_eq!(notes.path, "notes.md");
+        assert_eq!(notes.additions, 3);
+        assert_eq!(notes.deletions, 0);
+    }
+
+    #[test]
+    fn a_call_that_changed_nothing_reports_no_files() {
+        let bash_changes: Vec<_> = drain()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::ToolCallCompleted {
+                    name, file_changes, ..
+                } if name.as_deref() == Some("bash") => Some(file_changes),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(bash_changes.len(), 2);
+        assert!(
+            bash_changes.iter().all(Option::is_none),
+            "running ls is not a file change"
+        );
+    }
+}
