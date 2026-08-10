@@ -1,0 +1,135 @@
+/* Gutter belongs to .app-composer; this only constrains the column. */
+.composer {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+.composer-context {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-bottom: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--surface-sunken);
+  font-size: var(--text-ui-sm);
+  color: var(--text-secondary);
+}
+
+.composer-repo {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.composer-branch {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-diffstat {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+  flex: none;
+}
+
+.composer-added {
+  color: var(--diff-added);
+}
+
+.composer-removed {
+  color: var(--diff-removed);
+}
+
+.composer-input-row {
+  border: 1px solid var(--border-subtle);
+  border-bottom: none;
+  background: var(--surface-raised);
+}
+
+.composer-input {
+  display: block;
+  width: 100%;
+  padding: var(--space-3);
+  border: none;
+  background: none;
+  resize: vertical;
+  line-height: var(--leading-ui);
+}
+
+.composer-input:focus {
+  outline: none;
+}
+
+.composer-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.composer-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.composer-field {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.composer-select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}
+
+.composer-select:hover {
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.composer-model {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+}
+
+.composer-model:hover {
+  border-color: var(--border-subtle);
+}
+
+.composer-model:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.composer-run {
+  margin-left: auto;
+  flex: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
+}
+
+.composer-run:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

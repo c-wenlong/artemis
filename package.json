@@ -8,6 +8,8 @@
     "dev": "pnpm --filter @artemis/desktop dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test && pnpm run test:rust",
+    "test:rust": "cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml",
     "clean": "rm -rf apps/*/dist packages/*/dist"
   },
   "devDependencies": {

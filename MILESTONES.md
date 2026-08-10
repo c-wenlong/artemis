@@ -101,21 +101,44 @@ The differentiator, end to end, on one harness. This phase is the product.
 consistent state; reopening the session replays the turn.
 **Depends:** M0.
 
-## M2. Design system
+## M2. Design system ✅
 
 Do this before writing renderers, not after — retrofitting tokens is the
 expensive order.
 
-- Light palette, elevation scale, typography, spacing; theme tokens throughout
-  (dark ships later, but nothing hardcodes a color)
-- Shell: left rail (projects → workspaces, status dots) + centered conversation
-  + composer; narrow content column, generous whitespace
-- Composer as status bar: repo · branch · diffstat above, model and effort below
-- Collapse the five sections — Settings becomes a modal, inventory moves into
-  the launcher, Review becomes a segment type
+- [x] Light palette, elevation scale, typography, spacing; theme tokens
+      throughout (dark ships complete, but nothing hardcodes a colour)
+- [x] Shell: left rail (projects → workspaces, status dots) + centred
+      conversation + composer; narrow content column, generous whitespace
+- [x] Composer as status bar: repo · branch · diffstat above, harness and model
+      below
+- [x] Collapse the five sections — Settings is a modal, inventory moved inside
+      it, Review reduced to the composer diffstat until M8 makes it a segment
 
-**Exit:** the shell renders with real data and reads as deliberate. No section
-nav remains.
+**Exit:** met. Rail, conversation and composer render against the Rust host; the
+five-section nav is gone; 42 front-end tests plus 11 Rust contract tests pass.
+
+Built test-first. `src/test/tokens.test.ts` is the load-bearing one: it fails the
+build on any colour literal outside `tokens.css`, which is what stops M3's
+renderers from hardcoding their own palette. `src/test/shell.test.tsx` encodes
+the M2 requirements as assertions; `src/test/components.test.tsx` locks in
+behaviour the implementation settled.
+
+Three defects found by looking at the running app rather than the tests:
+
+- **Light was not actually shipping.** An unscoped
+  `@media (prefers-color-scheme: dark)` overrode the chosen direction on a
+  dark-mode machine. The document now pins `data-theme="light"`, the media query
+  is scoped to `:root:not([data-theme])`, and two tests hold that in place.
+- **Conversation and composer were misaligned by 2rem** — each owned its own
+  gutter and `box-sizing: border-box` took the padding out of one but not the
+  other. The shell owns the gutter now; both columns constrain inside it.
+- **Settings sections scrolled independently**, clipping the Scan root field.
+  One scroll container for the form.
+
+Deferred deliberately: the dark theme is complete in tokens but has no toggle —
+that is UI work with no home until there is a settings surface worth extending.
+
 **Depends:** M0.
 
 ## M3. Segment renderer

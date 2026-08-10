@@ -1,0 +1,32 @@
+/* Gutter belongs to .app-conversation; this only scrolls and constrains. */
+.conversation {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--space-6) 0 var(--space-5);
+}
+
+.conversation-column {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  font-size: var(--text-ui);
+  line-height: var(--leading-prose);
+}
+
+.conversation-empty {
+  padding: var(--space-6) 0;
+}
+
+.conversation-empty-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-heading);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.conversation-empty-body {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--text-secondary);
+}

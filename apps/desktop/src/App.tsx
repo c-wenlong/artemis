@@ -1,140 +1,173 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
-  AgentSessionSummary,
   AssetInventorySnapshot,
-  CreateChatSessionRequest,
   ProjectRef,
   ReviewSnapshot,
   RuntimeSettings,
-  SendChatMessageRequest,
   WorkspaceSummary
 } from "@artemis/core";
+import type { ArtemisHostClient } from "@artemis/host-service/client";
 import { createHostClient } from "./host";
-import { AppShell, type AppSection } from "./components/AppShell/AppShell";
-import { AssetInventory } from "./components/AssetInventory/AssetInventory";
-import { BaselineWorkbench } from "./components/BaselineWorkbench/BaselineWorkbench";
-import { ProjectLauncher } from "./components/ProjectLauncher/ProjectLauncher";
-import { ReviewSurface } from "./components/ReviewSurface/ReviewSurface";
+import { AppShell } from "./components/AppShell/AppShell";
+import { Composer } from "./components/Composer/Composer";
+import { Conversation } from "./components/Conversation/Conversation";
+import { Rail } from "./components/Rail/Rail";
+import { SettingsDialog } from "./components/SettingsDialog/SettingsDialog";
 
-interface ArtemisData {
+interface AppProps {
+  /** Injected in tests; production resolves the host for the current runtime. */
+  host?: ArtemisHostClient;
+}
+
+interface AppData {
   inventory: AssetInventorySnapshot | null;
   projects: ProjectRef[];
   settings: RuntimeSettings;
   workspaces: WorkspaceSummary[];
-  sessions: AgentSessionSummary[];
-  review: ReviewSnapshot | null;
 }
 
-const initialData: ArtemisData = {
+const initialData: AppData = {
   inventory: null,
   projects: [],
   settings: {},
-  workspaces: [],
-  sessions: [],
-  review: null
+  workspaces: []
 };
 
-export function App() {
-  const hostService = useMemo(() => createHostClient(), []);
-  const [activeSection, setActiveSection] = useState<AppSection>("workbench");
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
-    null
-  );
-  const [data, setData] = useState<ArtemisData>(initialData);
-  const [isLoading, setIsLoading] = useState(true);
+export function App({ host }: AppProps = {}) {
+  const hostService = useMemo(() => host ?? createHostClient(), [host]);
 
+  const [data, setData] = useState<AppData>(initialData);
+  const [review, setReview] = useState<ReviewSnapshot | null>(null);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
+  const [selectedHarnessId, setSelectedHarnessId] = useState<string | null>(null);
+  const [model, setModel] = useState("");
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const [isBusy, setBusy] = useState(false);
+
+  // Load once. The previous implementation listed `selectedWorkspaceId` as a
+  // dependency, so selecting a workspace refetched the entire inventory.
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
-    async function loadData() {
-      setIsLoading(true);
-      const [inventory, projects, workspaces, sessions] = await Promise.all([
+    void (async () => {
+      const [inventory, projects, workspaces] = await Promise.all([
         hostService.getSnapshot(),
         hostService.listProjects(),
-        hostService.listWorkspaces(),
-        hostService.listSessions()
+        hostService.listWorkspaces()
       ]);
       const settings = await hostService.getRuntimeSettings();
-      const selected = selectedWorkspaceId ?? workspaces[0]?.id ?? null;
-      const review = selected ? await hostService.getReviewSnapshot(selected) : null;
+      if (!active) return;
 
-      if (!isMounted) return;
-
-      setSelectedWorkspaceId(selected);
-      setData({ inventory, projects, settings, workspaces, sessions, review });
-      setIsLoading(false);
-    }
-
-    void loadData();
+      setData({ inventory, projects, settings, workspaces });
+      setSelectedWorkspaceId((current) => current ?? workspaces[0]?.id ?? null);
+      setModel((current) => current || (settings.opencodeDefaultModel ?? ""));
+      setSelectedHarnessId((current) => {
+        if (current) return current;
+        const ready = inventory.harnesses.filter(
+          (harness) => harness.health === "ready"
+        );
+        const preferred = ready.find((harness) => harness.id === "opencode");
+        return preferred?.id ?? ready[0]?.id ?? null;
+      });
+    })();
 
     return () => {
-      isMounted = false;
+      active = false;
+    };
+  }, [hostService]);
+
+  // Review follows the selection on its own, so switching workspace costs one
+  // request rather than a full reload.
+  useEffect(() => {
+    if (!selectedWorkspaceId) return;
+    let active = true;
+
+    void (async () => {
+      const snapshot = await hostService.getReviewSnapshot(selectedWorkspaceId);
+      if (active) setReview(snapshot);
+    })();
+
+    return () => {
+      active = false;
     };
   }, [hostService, selectedWorkspaceId]);
 
+  const readyHarnesses = useMemo(
+    () =>
+      data.inventory?.harnesses.filter((harness) => harness.health === "ready") ?? [],
+    [data.inventory]
+  );
+
   const selectedWorkspace =
-    data.workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ??
-    data.workspaces[0] ??
-    null;
+    data.workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ?? null;
+
+  const selectedHarness =
+    readyHarnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
+
+  const handleSubmit = useCallback(
+    async (prompt: string) => {
+      if (!selectedWorkspace || !selectedHarnessId) return;
+      setBusy(true);
+      try {
+        await hostService.launchAgent({
+          harnessId: selectedHarnessId,
+          prompt,
+          workspaceId: selectedWorkspace.id,
+          workspacePath: selectedWorkspace.worktreePath
+        });
+        const snapshot = await hostService.getReviewSnapshot(selectedWorkspace.id);
+        setReview(snapshot);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [hostService, selectedHarnessId, selectedWorkspace]
+  );
+
+  const handleSaveSettings = useCallback(
+    async (next: RuntimeSettings) => {
+      const saved = await hostService.updateRuntimeSettings(next);
+      const inventory = await hostService.getSnapshot();
+      setData((current) => ({ ...current, inventory, settings: saved }));
+      if (saved.opencodeDefaultModel) setModel(saved.opencodeDefaultModel);
+    },
+    [hostService]
+  );
 
   return (
-    <AppShell
-      activeSection={activeSection}
-      isLoading={isLoading}
-      onSectionChange={setActiveSection}
-      projects={data.projects}
-      selectedWorkspace={selectedWorkspace}
-      sessions={data.sessions}
-      workspaces={data.workspaces}
-    >
-      {(activeSection === "workbench" || activeSection === "chat") && data.inventory ? (
-        <BaselineWorkbench
-          inventory={data.inventory}
-          projects={data.projects}
-          review={data.review}
-          selectedWorkspace={selectedWorkspace}
-          settings={data.settings}
-          sessions={data.sessions}
-          workspaces={data.workspaces}
-          onCreateChatSession={(request: CreateChatSessionRequest) =>
-            hostService.createChatSession(request)
-          }
-          onSendChatMessage={(sessionId: string, request: SendChatMessageRequest) =>
-            hostService.sendChatMessage(sessionId, request)
-          }
-          onOpenProjects={() => setActiveSection("projects")}
-          onOpenSettings={() => setActiveSection("settings")}
-          onSelectWorkspace={setSelectedWorkspaceId}
-        />
-      ) : null}
-      {activeSection === "projects" ? (
-        <ProjectLauncher
-          projects={data.projects}
-          selectedWorkspaceId={selectedWorkspaceId}
-          sessions={data.sessions}
-          workspaces={data.workspaces}
-          onOpenChat={() => setActiveSection("chat")}
-          onSelectWorkspace={setSelectedWorkspaceId}
-        />
-      ) : null}
-      {activeSection === "settings" && data.inventory ? (
-        <AssetInventory
-          inventory={data.inventory}
-          settings={data.settings}
-          onSaveSettings={async (settings) => {
-            const savedSettings = await hostService.updateRuntimeSettings(settings);
-            const inventory = await hostService.getSnapshot();
-            setData((current) => ({
-              ...current,
-              inventory,
-              settings: savedSettings
-            }));
-          }}
-        />
-      ) : null}
-      {activeSection === "review" && selectedWorkspace ? (
-        <ReviewSurface review={data.review} workspace={selectedWorkspace} />
-      ) : null}
-    </AppShell>
+    <>
+      <AppShell
+        composer={
+          <Composer
+            harnesses={readyHarnesses}
+            isBusy={isBusy}
+            model={model}
+            onModelChange={setModel}
+            onSelectHarness={setSelectedHarnessId}
+            onSubmit={handleSubmit}
+            review={review}
+            selectedHarnessId={selectedHarnessId}
+            workspace={selectedWorkspace}
+          />
+        }
+        conversation={<Conversation harnessLabel={selectedHarness?.label ?? null} />}
+        rail={
+          <Rail
+            onOpenSettings={() => setSettingsOpen(true)}
+            onSelectWorkspace={setSelectedWorkspaceId}
+            projects={data.projects}
+            selectedWorkspaceId={selectedWorkspaceId}
+            workspaces={data.workspaces}
+          />
+        }
+      />
+      <SettingsDialog
+        inventory={data.inventory}
+        onClose={() => setSettingsOpen(false)}
+        onSave={handleSaveSettings}
+        open={isSettingsOpen}
+        settings={data.settings}
+      />
+    </>
   );
 }

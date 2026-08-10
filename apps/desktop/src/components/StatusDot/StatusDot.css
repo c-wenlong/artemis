@@ -1,0 +1,36 @@
+.status-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--state-idle);
+}
+
+.status-dot[data-status="ready"] {
+  background: var(--state-ready);
+}
+
+.status-dot[data-status="running"] {
+  background: var(--state-running);
+  animation: status-pulse 1.6s ease-in-out infinite;
+}
+
+.status-dot[data-status="needs-attention"] {
+  background: var(--state-attention);
+}
+
+.status-dot[data-status="error"] {
+  background: var(--state-error);
+}
+
+/* Creating and archived stay on the idle default: nothing to act on. */
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
