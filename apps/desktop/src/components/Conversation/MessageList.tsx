@@ -1,5 +1,7 @@
 import type { ChatMessage } from "@artemis/core";
+import { buildTimeline } from "../../chat/activityGroups";
 import type { TurnRecord } from "../../chat/reduce";
+import { ActivityGroupSegment } from "../segments/ActivityGroupSegment";
 import { BlockSegment } from "../segments/BlockSegments";
 import { StreamingFooter, TurnFooter } from "../segments/TurnFooters";
 import "./MessageList.css";
@@ -17,6 +19,20 @@ interface MessageListProps {
  * Dispatch lives in `BlockSegment`; this owns the per-turn framing — the user's
  * prompt as a bordered box, and the footer that closes a turn.
  */
+function Timeline({ blocks }: { blocks: ChatMessage["blocks"] }) {
+  return (
+    <>
+      {buildTimeline(blocks).map((item) =>
+        item.kind === "group" ? (
+          <ActivityGroupSegment group={item.group} key={item.group.id} />
+        ) : (
+          <BlockSegment block={item.block} key={item.block.id} />
+        )
+      )}
+    </>
+  );
+}
+
 export function MessageList({
   messages,
   turns,
@@ -37,9 +53,7 @@ export function MessageList({
               data-testid={`message-${message.role}`}
               key={message.id}
             >
-              {message.blocks.map((block) => (
-                <BlockSegment block={block} key={block.id} />
-              ))}
+              <Timeline blocks={message.blocks} />
             </article>
           );
         }
@@ -58,9 +72,7 @@ export function MessageList({
             data-testid="message-assistant"
             key={message.id}
           >
-            {message.blocks.map((block) => (
-              <BlockSegment block={block} key={block.id} />
-            ))}
+            <Timeline blocks={message.blocks} />
 
             {isLive ? <StreamingFooter turnId={message.turnId} /> : null}
             {!isLive && isFinished ? (

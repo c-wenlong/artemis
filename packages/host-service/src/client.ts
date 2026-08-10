@@ -7,6 +7,7 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
+  CreateChatSessionRequest,
   RuntimeEvent,
   ProjectRef,
   ReviewRuntime,
@@ -46,9 +47,17 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 /**
- * Streaming chat is owned by the Rust host (M1). This reference host cannot
- * stream, so it reports chat as unavailable rather than shipping a second,
- * divergent implementation.
+ * Mirrors `session_id_for_workspace` in the Rust host. Session identity is
+ * deterministic and shared, which is why browser mode can resolve a session and
+ * replay its log even though it cannot stream a new turn.
+ */
+function sessionIdForWorkspace(workspaceId: string): string {
+  return `chat-${workspaceId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+}
+
+/**
+ * Streaming is owned by the Rust host (M1). This reference host cannot stream,
+ * so it says so rather than shipping a second, divergent implementation.
  */
 const CHAT_UNSUPPORTED =
   "Streaming chat requires the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
@@ -79,8 +88,19 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
       return postJson(`${basePath}/launch`, request);
     },
 
-    createChatSession(): Promise<ChatSession> {
-      return Promise.reject(new Error(CHAT_UNSUPPORTED));
+    createChatSession(request: CreateChatSessionRequest): Promise<ChatSession> {
+      const now = new Date().toISOString();
+      const session: ChatSession = {
+        createdAt: now,
+        harnessId: request.harnessId,
+        id: sessionIdForWorkspace(request.workspaceId),
+        lastEventAt: now,
+        status: "idle",
+        title: request.title ?? "OpenCode session",
+        workspaceId: request.workspaceId,
+        workspacePath: request.workspacePath
+      };
+      return Promise.resolve(session);
     },
 
     streamChatMessage(): Promise<void> {
@@ -91,8 +111,15 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
       return Promise.resolve();
     },
 
-    replayChatSession(): Promise<RuntimeEvent[]> {
-      return Promise.resolve([]);
+    /**
+     * Reads a log the Rust host recorded. Streaming still requires Tauri, but
+     * a finished turn can be rendered here — which is what makes the browser
+     * preview usable for looking at the transcript.
+     */
+    replayChatSession(sessionId: string): Promise<RuntimeEvent[]> {
+      return getJson<RuntimeEvent[]>(
+        `${basePath}/chat/replay?sessionId=${encodeURIComponent(sessionId)}`
+      ).catch(() => []);
     },
 
     getRuntimeSettings(): Promise<RuntimeSettings> {

@@ -7,6 +7,7 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
+  CreateChatSessionRequest,
   RuntimeEvent,
   ProjectRef,
   ReviewRuntime,
@@ -42,9 +43,17 @@ const wait = (ms: number) =>
   });
 
 /**
- * Streaming chat is owned by the Rust host (M1). This reference host cannot
- * stream, so it reports chat as unavailable rather than shipping a second,
- * divergent implementation.
+ * Mirrors `session_id_for_workspace` in the Rust host. Session identity is
+ * deterministic and shared, which is why browser mode can resolve a session and
+ * replay its log even though it cannot stream a new turn.
+ */
+function sessionIdForWorkspace(workspaceId: string): string {
+  return `chat-${workspaceId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+}
+
+/**
+ * Streaming is owned by the Rust host (M1). This reference host cannot stream,
+ * so it says so rather than shipping a second, divergent implementation.
  */
 const CHAT_UNSUPPORTED =
   "Streaming chat requires the Tauri host. Run `pnpm dev` instead of `pnpm dev:web`.";
@@ -95,8 +104,19 @@ export function createLocalHostService(
       };
     },
 
-    async createChatSession(): Promise<ChatSession> {
-      throw new Error(CHAT_UNSUPPORTED);
+    async createChatSession(request: CreateChatSessionRequest): Promise<ChatSession> {
+      const now = new Date().toISOString();
+      const session: ChatSession = {
+        createdAt: now,
+        harnessId: request.harnessId,
+        id: sessionIdForWorkspace(request.workspaceId),
+        lastEventAt: now,
+        status: "idle",
+        title: request.title ?? "OpenCode session",
+        workspaceId: request.workspaceId,
+        workspacePath: request.workspacePath
+      };
+      return session;
     },
 
     async streamChatMessage(): Promise<void> {

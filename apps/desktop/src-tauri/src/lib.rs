@@ -12,7 +12,9 @@ mod launcher;
 mod proc;
 mod scanner;
 mod settings;
-mod workspace;
+
+/// Public so `tests/record_demo_log.rs` can resolve a real workspace.
+pub mod workspace;
 
 /// Public so `tests/parser.rs` can drive the opencode parser directly.
 pub mod chat;

@@ -33,6 +33,8 @@ const scanRoot =
   process.env.ARTEMIS_SCAN_ROOT ?? resolve(appDir, "../../../..");
 const settingsPath =
   process.env.ARTEMIS_SETTINGS_PATH ?? resolve(homedir(), ".artemis/settings.json");
+const sessionsDir =
+  process.env.ARTEMIS_SESSIONS_DIR ?? resolve(homedir(), ".artemis/sessions");
 
 function sendJson(response: import("node:http").ServerResponse, data: unknown) {
   response.statusCode = 200;
@@ -170,6 +172,32 @@ const tsHostPlugin: Plugin = {
               })
             );
           }
+        });
+
+        // Replays a real event log written by the Rust host. Browser mode
+        // cannot stream a turn, but it can render one that already happened —
+        // which is how the transcript gets looked at without driving the
+        // desktop window. Reads recorded data only; it never invents any.
+        server.middlewares.use("/api/artemis/chat/replay", (request, response) => {
+          const sessionId = readUrl(request).searchParams.get("sessionId") ?? "";
+          // Session ids reach the filesystem; keep them inside the directory.
+          const safe = sessionId.replace(/[^a-zA-Z0-9_-]/g, "_");
+          const path = resolve(sessionsDir, `${safe}.jsonl`);
+          if (!safe || !existsSync(path)) {
+            sendJson(response, []);
+            return;
+          }
+          const events = readFileSync(path, "utf8")
+            .split("\n")
+            .filter(Boolean)
+            .flatMap((line) => {
+              try {
+                return [JSON.parse(line)];
+              } catch {
+                return [];
+              }
+            });
+          sendJson(response, events);
         });
 
         server.middlewares.use("/api/artemis/snapshot", (_request, response) => {

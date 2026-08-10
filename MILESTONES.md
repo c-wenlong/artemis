@@ -223,14 +223,56 @@ opencode turn is worth a look on the next run.
 
 **Depends:** M1, M2.
 
-## M4. Activity grouping
+## M4. Activity grouping ✅
 
-- Consecutive tool/command segments collapse into one group with a past-tense
-  summary (`Ran 3 commands, used 2 tools ›`)
-- Reasoning promoted out of groups, rendered inline
-- Elapsed heartbeat on the collapsed header while active
+- [x] Consecutive tool calls collapse into one group with a past-tense summary
+      (`Ran 4 tools · bash · read`)
+- [x] Reasoning promoted out of groups, rendered inline
+- [x] Elapsed heartbeat on the collapsed header while active
 
-**Exit:** a 30-tool-call turn reads as roughly five lines of prose.
+**Exit:** met, and confirmed against a recorded live turn rather than fixtures.
+A real ten-call turn now reads:
+
+```
+[prompt]
+› Thought for a moment
+› Ran 4 tools   tool · bash
+› Thought for a moment
+› Ran 6 tools   bash · read
+› Thought for a moment
+Files under apps/desktop/src-tauri/src/ (line counts): …
+Worked for 41s
+```
+
+Rules, mostly Traycer's:
+
+- **A run of one is not a group** — same information, one more layer to open.
+- **Reasoning splits a run.** It renders inline, so folding across it would put
+  the group's second half above reasoning that preceded it.
+- **The group is the card, its calls are rows.** That is what the two primitives
+  are for; nesting cards would make thirty calls look like thirty events of
+  equal weight.
+- **A group never hides a failure.** It says `2 failed`, takes the destructive
+  tone, and opens itself.
+
+Verification changed shape this milestone. Rather than skip the visual check
+again, `tests/record_demo_log.rs` records a real opencode turn into a session
+log, and the reference host gained a replay endpoint that reads it. Browser mode
+still cannot stream, but it can now render a turn that actually happened — which
+is how the next two bugs were found.
+
+Bugs found:
+
+- **`defaultOpen` only fires at mount**, so a call that failed *after* the group
+  appeared — the normal case mid-run — stayed folded shut around the error.
+  `SegmentCard` takes controlled open state now, and the group opens on the
+  transition into failure while still letting the reader close it.
+- **Dangling tool calls never resolved.** Real opencode emits `tool_call.started`
+  without a matching completion often enough to be the normal case; three of ten
+  calls in the recorded turn had none. The transcript showed `Running 4 tools`
+  with a heartbeat climbing past the turn's own recorded duration. Calls still
+  running when a turn ends now resolve to whatever happened to the turn.
+
 **Depends:** M3.
 
 > **v0.1 — the vertical slice.** One agent, fully rendered, in a shell you'd

@@ -83,6 +83,32 @@ function withAssistant(
 }
 
 /**
+ * Resolve tool calls still marked running when their turn ends.
+ *
+ * Real opencode emits `tool_call.started` without a matching completion often
+ * enough that this is the normal case, not an edge one. Left alone the
+ * transcript shows a spinner and a climbing heartbeat on a turn that finished
+ * — so the call is resolved to whatever happened to the turn that owned it:
+ * completed if it completed, failed if it failed or was stopped.
+ */
+function resolveDanglingCalls(
+  messages: ChatMessage[],
+  turnId: string,
+  outcome: "completed" | "errored"
+): ChatMessage[] {
+  return messages.map((message) => {
+    if (message.turnId !== turnId) return message;
+    let changed = false;
+    const blocks = message.blocks.map((block) => {
+      if (block.type !== "tool_call" || block.status !== "running") return block;
+      changed = true;
+      return { ...block, status: outcome };
+    });
+    return changed ? { ...message, blocks } : message;
+  });
+}
+
+/**
  * Fold events into a transcript. Pure and incremental: applying events one at a
  * time gives the same result as applying them in a batch, which is what lets the
  * UI take whatever batch size the host happens to send.
@@ -182,6 +208,7 @@ export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcr
           completedAt: event.timestamp,
           status: "completed"
         });
+        messages = resolveDanglingCalls(messages, event.turnId, "completed");
         opencodeSessionId = event.opencodeSessionId ?? opencodeSessionId;
         break;
       }
@@ -197,6 +224,7 @@ export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcr
             type: "error"
           })
         );
+        messages = resolveDanglingCalls(messages, event.turnId, "errored");
         break;
       }
 

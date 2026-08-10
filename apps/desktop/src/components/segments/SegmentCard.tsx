@@ -12,6 +12,9 @@ interface SegmentCardProps {
   /** Trailing control outside the toggle, e.g. a copy button. */
   headerAction?: ReactNode;
   defaultOpen?: boolean;
+  /** Controlled open state. Omit to let the card manage its own. */
+  open?: boolean;
+  onOpenChange?(open: boolean): void;
   tone?: SegmentTone;
   className?: string;
 }
@@ -34,12 +37,22 @@ export function SegmentCard({
   collapsedPreview,
   headerAction,
   defaultOpen = false,
+  open: controlledOpen,
+  onOpenChange,
   tone = "default",
   className
 }: SegmentCardProps) {
   const expandable = children !== undefined && children !== null;
-  const [open, setOpen] = useState(defaultOpen && expandable);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen && expandable);
+  const isControlled = controlledOpen !== undefined;
+  const open = (isControlled ? controlledOpen : uncontrolledOpen) && expandable;
   const bodyId = useId();
+
+  const toggle = () => {
+    const next = !open;
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
 
   return (
     <div
@@ -54,7 +67,7 @@ export function SegmentCard({
             aria-controls={bodyId}
             aria-expanded={open}
             className="segment-card-trigger"
-            onClick={() => setOpen((current) => !current)}
+            onClick={toggle}
             type="button"
           >
             <span aria-hidden className="segment-card-chevron" data-open={open}>
