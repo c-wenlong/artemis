@@ -420,27 +420,72 @@ dangerous shape — the first two fixes made the flake move rather than go away.
 
 # Phase 3 — Review and trust
 
-## M8. File changes and review
+## M8. Conversation surface
+
+Codex's transcript chrome, which the user walked through screenshot by
+screenshot. The palette stays ours — light and calm, per the decision of record.
+What is being borrowed is the structure, not the theme.
+
+- File chips: a type icon plus the name, tinted, in both user prompts and
+  assistant prose. Document, `$` for shell, extensible from the start
+- Citations as `name.ext (line N)` chips — rendering only; resolving a click to
+  the file is M9
+- Inline code spans as pills, distinct from fenced blocks
+- User prompt metadata: sent timestamp, copy button
+- Long messages truncate to a line budget with **Show more**
+- `Worked for 2m 24s` promoted from footer to a collapsible turn header
+- Assistant footer: copy, fork, finished-at timestamp. No thumbs up/down — the
+  user was explicit that satisfaction tracing is not wanted
+- Edit summary card: `Edited N files`, `+87 -0`, one row per file with its own
+  counts. Read-only here; the buttons on it are M8b
+
+**Exit:** a transcript reads like Codex's — a prompt with its metadata, a turn
+header, prose carrying file chips and code pills, and a summary of what was
+edited — without any of it being clickable yet.
+**Depends:** M3, M4.
+
+## M8b. File diffs, undo and review
+
+The rest of the old M8. Split out because M8 renders the *summary* of an edit
+and this renders and reverses the edit itself.
 
 - `file_change` / `file_change_group` block kinds and their renderers
-- Inline diffs in the transcript; revert affordance
+- Inline diffs in the transcript
+- **Undo** on the edit summary card — revert the agent's edit from the transcript
+- **Review** on the edit summary card — open the change set for approval
 - Diffstat in the composer bar; changed-file list per workspace
 
 **Exit:** an agent edit appears as a diff in the conversation and can be reverted
 from there.
-**Depends:** M3, M5.
+**Depends:** M5, M8.
+
+## M8c. Transcript verbosity
+
+Right now every tool call is rendered. Codex shows the output and hides the
+mechanics. Which is right depends on whether you are debugging the agent or
+reading its answer, so it should be a setting rather than a default.
+
+- Developer settings toggle: show everything / show output only
+- Applies to tool-call segments and activity groups
+- The choice is also a context-cost lever — it governs how much of a long tool
+  sequence is worth keeping in view
+
+**Exit:** the same session reads as either a full trace or a clean answer,
+switched from settings.
+**Depends:** M4, M8.
 
 ## M9. Citations
 
 Cursor's pattern, and what makes a hidden-mechanics transcript trustworthy.
+M8 draws the chips; this makes them mean something.
 
-- `file:line` chips in rendered markdown, resolving to the workspace
+- `file:line` chips resolve against the workspace
 - Click opens the file at the range; `terminal:N-M` resolves to dock output
 - Linkifier fallback for harnesses that don't emit ranges
 
 **Exit:** claims in an answer carry clickable references that land in the right
 file at the right line.
-**Depends:** M3, M8.
+**Depends:** M8.
 
 > **v0.3 — auditable.** You can trust what the agent says without reading a log.
 
@@ -472,6 +517,22 @@ with a warning, never a crash.
 
 **Exit:** three harnesses render as segments; the fourth still works, in the dock.
 **Depends:** M3, M6.
+
+## M11b. Sub-agents
+
+A harness that fans work out to sub-agents currently renders as an
+undifferentiated run of tool calls. Codex names them, and lets you open one.
+
+- Sub-agent chips inline in the transcript — name, per-agent icon and colour,
+  `started working` state
+- Clicking a chip opens that sub-agent's own transcript in a side panel
+- Sub-agent activity stays collapsed in the main thread; the panel is where the
+  detail lives
+- Depends on the harness reporting sub-agent identity, which not all will
+
+**Exit:** a fan-out reads as "two named agents are working", and either one can
+be opened and read on its own.
+**Depends:** M8c, M11.
 
 ## M12. Multi-harness comparison
 
