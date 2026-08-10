@@ -237,7 +237,12 @@ export default defineConfig({
   // overlay does; keep the dev server quiet and let the shell report.
   clearScreen: false,
   server: {
-    port: 4637,
+    // 4637 is what `tauri.conf.json` pins as `devUrl`, so the Tauri flow needs
+    // exactly this port. Browser mode does not, and honouring PORT lets a
+    // supervisor place the server somewhere free.
+    port: Number(process.env.PORT ?? 4637),
+    // Fail loudly rather than drifting to another port: under Tauri a silent
+    // drift means the window loads nothing.
     strictPort: true
   }
 });

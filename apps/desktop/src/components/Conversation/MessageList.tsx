@@ -1,80 +1,74 @@
-import type { ChatBlock, ChatMessage } from "@artemis/core";
+import type { ChatMessage } from "@artemis/core";
+import type { TurnRecord } from "../../chat/reduce";
+import { BlockSegment } from "../segments/BlockSegments";
+import { StreamingFooter, TurnFooter } from "../segments/TurnFooters";
 import "./MessageList.css";
 
-/**
- * Minimal typed rendering of a transcript.
- *
- * M1's job is the stream; M3 replaces this with the SegmentCard / SegmentRow
- * vocabulary from docs/UI_DIRECTION.md — collapsible tool cards, activity
- * grouping, markdown. What matters here is that every block kind already has
- * its own element and `data-testid`, so M3 swaps presentation without touching
- * the data path.
- */
-
-function Block({ block }: { block: ChatBlock }) {
-  switch (block.type) {
-    case "text":
-      return (
-        <p className="block-text" data-testid="block-text">
-          {block.text}
-        </p>
-      );
-
-    case "reasoning":
-      return (
-        <details className="block-reasoning" data-testid="block-reasoning">
-          <summary className="block-reasoning-summary">Thinking</summary>
-          <p className="block-reasoning-body">{block.text}</p>
-        </details>
-      );
-
-    case "tool_call":
-      return (
-        <div
-          className="block-tool"
-          data-status={block.status}
-          data-testid="block-tool_call"
-        >
-          <div className="block-tool-header">
-            <span className="block-tool-name mono">{block.name}</span>
-            <span className="block-tool-status">{block.status}</span>
-          </div>
-          {block.input ? (
-            <pre className="block-tool-detail mono">{block.input}</pre>
-          ) : null}
-          {block.output ? (
-            <pre className="block-tool-detail mono">{block.output}</pre>
-          ) : null}
-        </div>
-      );
-
-    case "error":
-      return (
-        <p className="block-error" data-testid="block-error">
-          {block.message}
-        </p>
-      );
-
-    default:
-      return null;
-  }
+interface MessageListProps {
+  messages: ChatMessage[];
+  turns: Record<string, TurnRecord>;
+  /** Whether a turn is actually streaming right now. */
+  isStreaming?: boolean;
 }
 
-export function MessageList({ messages }: { messages: ChatMessage[] }) {
+/**
+ * A transcript as typed segments.
+ *
+ * Dispatch lives in `BlockSegment`; this owns the per-turn framing — the user's
+ * prompt as a bordered box, and the footer that closes a turn.
+ */
+export function MessageList({
+  messages,
+  turns,
+  isStreaming = false
+}: MessageListProps) {
+  const lastTurnId = messages.at(-1)?.turnId;
+
   return (
     <div className="message-list">
-      {messages.map((message) => (
-        <article
-          className="message"
-          data-role={message.role}
-          data-testid={`message-${message.role}`}
-          key={message.id}
-        >
-          {message.blocks.map((block) => (
-            <Block block={block} key={block.id} />
-          ))}
-        </article>
-      ))}
+      {messages.map((message) => {
+        const turn = turns[message.turnId];
+        // The footer belongs to the assistant half of a turn.
+        if (message.role !== "assistant") {
+          return (
+            <article
+              className="message"
+              data-role={message.role}
+              data-testid={`message-${message.role}`}
+              key={message.id}
+            >
+              {message.blocks.map((block) => (
+                <BlockSegment block={block} key={block.id} />
+              ))}
+            </article>
+          );
+        }
+
+        // A live heartbeat requires the session to actually be streaming, not
+        // merely a turn record that says "running". A log whose terminal event
+        // was never written replays as an unfinished turn, and animating a
+        // ticking timer for work that stopped hours ago is a lie.
+        const isLive = isStreaming && message.turnId === lastTurnId;
+        const isFinished = turn?.status === "completed" || turn?.status === "failed";
+
+        return (
+          <article
+            className="message"
+            data-role={message.role}
+            data-testid="message-assistant"
+            key={message.id}
+          >
+            {message.blocks.map((block) => (
+              <BlockSegment block={block} key={block.id} />
+            ))}
+
+            {isLive ? <StreamingFooter turnId={message.turnId} /> : null}
+            {!isLive && isFinished ? (
+              <TurnFooter completedAt={turn?.completedAt} startedAt={turn?.startedAt} />
+            ) : null}
+          </article>
+        );
+      })}
     </div>
   );
 }

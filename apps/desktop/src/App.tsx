@@ -152,7 +152,9 @@ export function App({ host }: AppProps = {}) {
         conversation={
           <Conversation
             harnessLabel={selectedHarness?.label ?? null}
+            isStreaming={chat.isRunning}
             messages={chat.transcript.messages}
+            turns={chat.transcript.turns}
           />
         }
         rail={

@@ -13,15 +13,29 @@ import type {
  * stream and the replay of a recorded log — which is what makes reopening a
  * session show exactly what streamed.
  */
+export type TurnStatus = "running" | "completed" | "failed";
+
+/**
+ * Timing for one turn. Both ends are optional because a truncated log can be
+ * missing either, and an invented duration is worse than none.
+ */
+export interface TurnRecord {
+  startedAt?: string;
+  completedAt?: string;
+  status: TurnStatus;
+}
+
 export interface Transcript {
   messages: ChatMessage[];
   status: ChatSessionStatus;
+  /** Per-turn timing, for the elapsed heartbeat and the "Worked for" footer. */
+  turns: Record<string, TurnRecord>;
   /** Set by `turn.completed`; needed to resume the opencode conversation. */
   opencodeSessionId?: string;
 }
 
 export function emptyTranscript(): Transcript {
-  return { messages: [], status: "idle" };
+  return { messages: [], status: "idle", turns: {} };
 }
 
 function upsertBlock(blocks: ChatBlock[], block: ChatBlock): ChatBlock[] {
@@ -76,12 +90,19 @@ function withAssistant(
 export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcript {
   let messages = state.messages;
   let status = state.status;
+  let turns = state.turns;
   let opencodeSessionId = state.opencodeSessionId;
+
+  const recordTurn = (turnId: string, patch: Partial<TurnRecord>) => {
+    const existing = turns[turnId] ?? { status: "running" as TurnStatus };
+    turns = { ...turns, [turnId]: { ...existing, ...patch } };
+  };
 
   for (const event of events) {
     switch (event.type) {
       case "turn.started": {
         status = "running";
+        recordTurn(event.turnId, { startedAt: event.timestamp, status: "running" });
         break;
       }
 
@@ -157,12 +178,17 @@ export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcr
 
       case "turn.completed": {
         status = "idle";
+        recordTurn(event.turnId, {
+          completedAt: event.timestamp,
+          status: "completed"
+        });
         opencodeSessionId = event.opencodeSessionId ?? opencodeSessionId;
         break;
       }
 
       case "turn.errored": {
         status = "failed";
+        recordTurn(event.turnId, { completedAt: event.timestamp, status: "failed" });
         messages = withAssistant(messages, event, (blocks) =>
           upsertBlock(blocks, {
             id: `${event.turnId}-error`,
@@ -181,5 +207,5 @@ export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcr
     }
   }
 
-  return { messages, status, opencodeSessionId };
+  return { messages, status, turns, opencodeSessionId };
 }

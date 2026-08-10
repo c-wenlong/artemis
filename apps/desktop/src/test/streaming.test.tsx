@@ -142,10 +142,12 @@ describe("streaming a turn", () => {
     const log = screen.getByRole("log", { name: /conversation/i });
     await waitFor(() => expect(log).toHaveTextContent("Done."));
 
-    expect(within(log).getByTestId("block-reasoning")).toHaveTextContent(
-      "weighing options"
-    );
-    const tool = within(log).getByTestId("block-tool_call");
+    // M3 collapses reasoning behind a header; it is context, not the answer.
+    const reasoning = within(log).getByTestId("segment-reasoning");
+    expect(reasoning).not.toHaveTextContent("weighing options");
+    await user.click(within(reasoning).getByRole("button"));
+    expect(reasoning).toHaveTextContent("weighing options");
+    const tool = within(log).getByTestId("segment-tool_call");
     expect(tool).toHaveTextContent("bash");
     expect(tool).toHaveAttribute("data-status", "completed");
   });
@@ -180,7 +182,7 @@ describe("streaming a turn", () => {
     await send(user, "go");
 
     await waitFor(() =>
-      expect(screen.getByTestId("block-error")).toHaveTextContent(
+      expect(screen.getByTestId("segment-error")).toHaveTextContent(
         "OpenCode is out of credits."
       )
     );

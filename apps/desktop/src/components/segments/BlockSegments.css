@@ -1,0 +1,64 @@
+.segment-muted {
+  color: var(--text-tertiary);
+}
+
+.segment-reasoning-body {
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}
+
+.segment-tool-name {
+  flex: none;
+  color: var(--text-primary);
+}
+
+/* The summary takes the slack and truncates; the name and status never do. */
+.segment-tool-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-tertiary);
+}
+
+.segment-tool-status {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+}
+
+.segment-tool[data-status="running"] .segment-tool-status {
+  color: var(--state-running);
+}
+
+.segment-tool[data-status="errored"] .segment-tool-status {
+  color: var(--state-error);
+}
+
+.segment-tool-label {
+  margin: 0 0 var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.segment-tool-pre {
+  margin: 0 0 var(--space-3);
+  max-height: 16rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}
+
+.segment-tool-pre:last-child {
+  margin-bottom: 0;
+}
+
+.segment-error-message {
+  color: var(--state-error);
+}

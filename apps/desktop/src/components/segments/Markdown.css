@@ -1,0 +1,110 @@
+.markdown {
+  color: var(--text-primary);
+  line-height: var(--leading-prose);
+  overflow-wrap: anywhere;
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown p {
+  margin: 0 0 var(--space-4);
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  margin: var(--space-5) 0 var(--space-3);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.markdown h1 {
+  font-size: var(--text-display);
+}
+
+.markdown h2 {
+  font-size: var(--text-heading);
+}
+
+.markdown h3,
+.markdown h4 {
+  font-size: var(--text-ui);
+}
+
+.markdown ul,
+.markdown ol {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-5);
+}
+
+.markdown li {
+  margin-bottom: var(--space-1);
+}
+
+.markdown li > p {
+  margin-bottom: var(--space-2);
+}
+
+/* Inline code: a chip, not a block. */
+.markdown :not(pre) > code {
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.markdown-pre {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  overflow-x: auto;
+}
+
+.markdown-pre code {
+  font-family: var(--font-mono);
+  font-size: var(--text-ui-sm);
+  line-height: 1.55;
+}
+
+.markdown a {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown blockquote {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.markdown table {
+  width: 100%;
+  margin-bottom: var(--space-4);
+  border-collapse: collapse;
+  font-size: var(--text-ui-sm);
+}
+
+.markdown th,
+.markdown td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.markdown hr {
+  margin: var(--space-5) 0;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+}

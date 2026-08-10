@@ -1,0 +1,64 @@
+/* No border, no background — hierarchy belongs to the parent segment. */
+.segment-row {
+  font-size: var(--text-ui-sm);
+}
+
+.segment-row-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-1);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.segment-row-trigger:hover {
+  background: var(--accent-muted);
+  color: var(--text-primary);
+}
+
+.segment-row-trigger--static {
+  cursor: default;
+}
+
+.segment-row[data-tone="destructive"] .segment-row-trigger {
+  color: var(--state-error);
+}
+
+.segment-row-chevron {
+  flex: none;
+  width: 0.75rem;
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
+}
+
+.segment-row-chevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.segment-row-chevron--hidden {
+  visibility: hidden;
+}
+
+.segment-row-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+/* Indented to sit under the header text, past the chevron. */
+.segment-row-body,
+.segment-row-footer {
+  margin-left: 1.25rem;
+}
+
+.segment-row-footer {
+  padding-bottom: var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+}

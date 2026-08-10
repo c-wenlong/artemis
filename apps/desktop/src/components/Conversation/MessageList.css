@@ -10,104 +10,15 @@
   gap: var(--space-3);
 }
 
-/* The user's message echoes the input it came from — a bordered box, not a
-   chat bubble. Cursor Web's treatment. */
-.message[data-role="user"] .block-text {
+/*
+ * The user's message echoes the input it came from — a bordered box, not a
+ * chat bubble. Cursor Web's treatment: it reads as "here is what you asked"
+ * rather than as one side of an instant-message thread.
+ */
+.message[data-role="user"] .segment-text {
   padding: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
   color: var(--text-secondary);
-}
-
-.block-text {
-  margin: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.block-reasoning {
-  border-left: 2px solid var(--border-subtle);
-  padding-left: var(--space-3);
-  color: var(--text-tertiary);
-}
-
-.block-reasoning-summary {
-  cursor: pointer;
-  font-size: var(--text-ui-sm);
-  list-style: none;
-}
-
-.block-reasoning-summary::-webkit-details-marker {
-  display: none;
-}
-
-.block-reasoning-summary::before {
-  content: "› ";
-}
-
-.block-reasoning[open] .block-reasoning-summary::before {
-  content: "⌄ ";
-}
-
-.block-reasoning-body {
-  margin: var(--space-2) 0 0;
-  white-space: pre-wrap;
-  font-size: var(--text-ui-sm);
-}
-
-.block-tool {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface-sunken);
-  overflow: hidden;
-}
-
-.block-tool[data-status="errored"] {
-  border-color: var(--state-error);
-}
-
-.block-tool-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-ui-sm);
-}
-
-.block-tool-name {
-  color: var(--text-primary);
-}
-
-.block-tool-status {
-  color: var(--text-tertiary);
-  font-size: var(--text-ui-xs);
-}
-
-.block-tool[data-status="running"] .block-tool-status {
-  color: var(--state-running);
-}
-
-.block-tool[data-status="errored"] .block-tool-status {
-  color: var(--state-error);
-}
-
-.block-tool-detail {
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  border-top: 1px solid var(--border-subtle);
-  max-height: 12rem;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  color: var(--text-secondary);
-}
-
-.block-error {
-  margin: 0;
-  padding: var(--space-3);
-  border: 1px solid var(--state-error);
-  border-radius: var(--radius-md);
-  color: var(--state-error);
 }

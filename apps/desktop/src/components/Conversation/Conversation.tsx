@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import type { ChatMessage } from "@artemis/core";
+import type { TurnRecord } from "../../chat/reduce";
 import { MessageList } from "./MessageList";
 import "./Conversation.css";
 
@@ -7,6 +8,8 @@ interface ConversationProps {
   /** Label of the harness the next turn will go to. */
   harnessLabel: string | null;
   messages?: ChatMessage[];
+  turns?: Record<string, TurnRecord>;
+  isStreaming?: boolean;
   children?: ReactNode;
 }
 
@@ -20,6 +23,8 @@ interface ConversationProps {
 export function Conversation({
   harnessLabel,
   messages = [],
+  turns = {},
+  isStreaming = false,
   children
 }: ConversationProps) {
   const isEmpty = messages.length === 0 && (children === undefined || children === null);
@@ -34,7 +39,13 @@ export function Conversation({
   return (
     <div aria-label="Conversation" className="conversation" role="log">
       <div className="conversation-column" data-testid="conversation-column">
-        {messages.length > 0 ? <MessageList messages={messages} /> : null}
+        {messages.length > 0 ? (
+          <MessageList
+            isStreaming={isStreaming}
+            messages={messages}
+            turns={turns}
+          />
+        ) : null}
         {isEmpty ? (
           <div className="conversation-empty" data-testid="conversation-empty">
             <p className="conversation-empty-title">

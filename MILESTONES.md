@@ -178,18 +178,49 @@ that is UI work with no home until there is a settings surface worth extending.
 
 **Depends:** M0.
 
-## M3. Segment renderer
+## M3. Segment renderer ✅
 
-- `SegmentCard` (bordered, top-level, three tones) and `SegmentRow` (borderless,
-  nested) — Traycer's primitives, whole-header click target, no chevron when the
-  header says everything
-- Renderers for the four existing block kinds: `text` (markdown), `reasoning`,
-  `tool_call`, `error`
-- Streaming states: in-progress indicator, elapsed heartbeat, working verb
-- User message as bordered full-width box; `Worked for 27s` turn footer
+- [x] `SegmentCard` (bordered, top-level, three tones) and `SegmentRow`
+      (borderless, nested) — Traycer's primitives, whole-header click target, no
+      chevron when the header says everything
+- [x] Renderers for the four existing block kinds: `text` (markdown),
+      `reasoning`, `tool_call`, `error`
+- [x] Streaming states: in-progress indicator, elapsed heartbeat, working verb
+- [x] User message as bordered full-width box; `Worked for 27s` turn footer
 
-**Exit:** a full opencode turn renders as typed segments with no raw text
-fallback anywhere.
+**Exit:** met. `BlockSegment` dispatches over the union with no default text
+fallback, and a test asserts every kind resolves to its own renderer.
+
+Notes:
+
+- **Markdown is `react-markdown` with raw HTML left off.** Model output is
+  untrusted input arriving straight from a harness; embedded markup renders as
+  text. A test asserts an `<img onerror>` never becomes an element.
+- **Reasoning collapses by default.** It is context for the answer, not the
+  answer — a transcript that leads with the model's deliberation buries what was
+  asked for.
+- **Tool headers summarise rather than dump.** JSON input is reduced to its most
+  identifying string value (the path, the command) and truncated; the full input
+  and output stay one click away.
+- **The working verb is seeded per turn and never changes mid-turn.** Text that
+  churns while you read it is worse than text that says nothing.
+
+Two bugs found during implementation:
+
+- **A replayed unfinished turn animated a live heartbeat.** A log whose terminal
+  event was never written replays as `status: "running"`, so the transcript
+  ticked a timer for work that had stopped. The live footer now requires the
+  session to actually be streaming *and* the turn to be the last one.
+- **Elapsed was computed against the host's timestamp**, which read as tens of
+  minutes on a freshly opened window. It now counts from when the footer
+  mounted — a live turn only ever gets a footer at the moment it starts, so the
+  two agree where it matters and clock differences cannot leak in.
+
+Not visually verified end-to-end: browser mode cannot render a transcript
+because M1 made chat Tauri-only, and driving the desktop window was out of
+scope for this pass. Structure is covered by tests; how it *looks* with a real
+opencode turn is worth a look on the next run.
+
 **Depends:** M1, M2.
 
 ## M4. Activity grouping
