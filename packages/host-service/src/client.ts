@@ -8,6 +8,8 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
+  Comparison,
+  ComparisonRuntime,
   FileWindow,
   CreateChatSessionRequest,
   RuntimeEvent,
@@ -30,6 +32,7 @@ export interface ArtemisHostClient
     ChatRuntime,
     RuntimeSettingsRuntime,
     ReviewRuntime,
+    ComparisonRuntime,
     TerminalRuntime {}
 
 async function getJson<T>(path: string): Promise<T> {
@@ -206,6 +209,24 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
     /** Reading the user's files needs the host too; the browser has no disk. */
     peekFile(): Promise<FileWindow> {
       return Promise.reject(new Error("Opening a file requires the desktop app."));
+    },
+
+    startComparison(): Promise<Comparison> {
+      return Promise.reject(
+        new Error("Comparing harnesses requires the desktop app.")
+      );
+    },
+
+    resolveComparison(): Promise<void> {
+      return Promise.reject(
+        new Error("Comparing harnesses requires the desktop app.")
+      );
+    },
+
+    abandonComparison(): Promise<void> {
+      return Promise.reject(
+        new Error("Comparing harnesses requires the desktop app.")
+      );
     },
 
     getRuntimeSettings(): Promise<RuntimeSettings> {

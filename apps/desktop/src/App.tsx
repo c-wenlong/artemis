@@ -10,11 +10,16 @@ import type {
 import type { ArtemisHostClient } from "@artemis/host-service/client";
 import { createHostClient } from "./host";
 import { useChat } from "./chat/useChat";
+import { useComparison } from "./chat/useComparison";
 import { useLaunchPreset } from "./chat/useLaunchPreset";
 import { useTerminals } from "./chat/useTerminals";
 import { AppShell } from "./components/AppShell/AppShell";
 import { Composer } from "./components/Composer/Composer";
 import { Conversation } from "./components/Conversation/Conversation";
+import {
+  ComparisonPanel,
+  ComparisonSetup
+} from "./components/Comparison/ComparisonPanel";
 import { PeekDialog } from "./components/Conversation/PeekDialog";
 import { CitationProvider } from "./components/segments/CitationContext";
 import { Rail } from "./components/Rail/Rail";
@@ -51,6 +56,8 @@ export function App({ host }: AppProps = {}) {
   const [review, setReview] = useState<ReviewSnapshot | null>(null);
   const [peek, setPeek] = useState<{ line?: number; window: FileWindow } | null>(null);
   const [peekError, setPeekError] = useState<string | null>(null);
+  const [comparingOpen, setComparingOpen] = useState(false);
+  const comparison = useComparison(hostService);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [newWorktreeProjectId, setNewWorktreeProjectId] = useState<string | null>(null);
@@ -224,6 +231,9 @@ export function App({ host }: AppProps = {}) {
           />
         }
         conversation={
+          comparison.run ? (
+            <ComparisonPanel comparison={comparison} harnesses={readyHarnesses} />
+          ) : (
           <CitationProvider value={selectedWorkspace ? openCitation : null}>
           <Conversation
             harnessLabel={selectedHarness?.label ?? null}
@@ -269,6 +279,7 @@ export function App({ host }: AppProps = {}) {
             </p>
           ) : null}
           </CitationProvider>
+          )
         }
         dock={
           terminals.isVisible ? (
@@ -287,6 +298,7 @@ export function App({ host }: AppProps = {}) {
           <Rail
             onDeleteWorktree={setDeletingWorkspaceId}
             onNewWorktree={setNewWorktreeProjectId}
+            onCompare={() => setComparingOpen(true)}
             onOpenSettings={() => setSettingsOpen(true)}
             onSelectWorkspace={setSelectedWorkspaceId}
             projects={data.projects}
@@ -318,6 +330,20 @@ export function App({ host }: AppProps = {}) {
           null
         }
       />
+      {comparingOpen ? (
+        <ComparisonSetup
+          harnesses={readyHarnesses.filter(
+            (harness) => harness.supportsStreaming !== false
+          )}
+          onClose={() => setComparingOpen(false)}
+          onStart={(prompt, harnessIds) => {
+            setComparingOpen(false);
+            const projectId = selectedWorkspace?.projectId ?? data.projects[0]?.id;
+            if (projectId) void comparison.start(projectId, prompt, harnessIds);
+          }}
+        />
+      ) : null}
+
       <SettingsDialog
         host={hostService}
         inventory={data.inventory}

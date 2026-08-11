@@ -7,6 +7,7 @@ import type {
   AssetInventorySnapshot,
   ChatEventListener,
   ChatSession,
+  Comparison,
   FileWindow,
   CreateChatSessionRequest,
   LaunchPreset,
@@ -83,6 +84,22 @@ export function createTauriHostClient(): ArtemisHostClient {
       line?: number
     ): Promise<FileWindow> {
       return invoke("peek_file", { workspacePath, relativePath, line });
+    },
+
+    startComparison(
+      projectId: string,
+      prompt: string,
+      harnessIds: string[]
+    ): Promise<Comparison> {
+      return invoke("start_comparison", { projectId, prompt, harnessIds });
+    },
+
+    resolveComparison(run: Comparison, winnerWorkspaceId: string): Promise<void> {
+      return invoke("resolve_comparison", { run, winnerWorkspaceId });
+    },
+
+    abandonComparison(run: Comparison): Promise<void> {
+      return invoke("abandon_comparison", { run });
     },
 
     getRuntimeSettings(): Promise<RuntimeSettings> {

@@ -33,6 +33,8 @@ pub mod workspace;
 
 /// Public so `tests/parser.rs` can drive the opencode parser directly.
 pub mod chat;
+/// Public so `tests/comparison.rs` can drive real repositories.
+pub mod comparison;
 /// Public so `tests/contract.rs` can assert the serialized wire shape against
 /// what `@artemis/core` declares.
 pub mod types;
@@ -315,6 +317,48 @@ async fn peek_file(
     .map_err(|error| error.to_string())?
 }
 
+/// Plan and start a comparison: one worktree per harness, all from head.
+#[tauri::command]
+async fn start_comparison(
+    project_id: String,
+    prompt: String,
+    harness_ids: Vec<String>,
+) -> Result<comparison::Comparison, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let plan = comparison::plan(&project_id, &prompt, &harness_ids)?;
+        let (repo, worktrees) = workspace::comparison_roots(&project_id)?;
+        Ok(comparison::start_in(&repo, &worktrees, &plan))
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+/// Keep one entry and discard the rest. Destroys the losers' uncommitted work,
+/// which is the point — and why an unrecognised winner is refused outright.
+#[tauri::command]
+async fn resolve_comparison(
+    run: comparison::Comparison,
+    winner_workspace_id: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (repo, _) = workspace::comparison_roots(&run.project_id)?;
+        comparison::resolve_in(&repo, &run, &winner_workspace_id)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+/// Discard every entry, when none of the answers is worth keeping.
+#[tauri::command]
+async fn abandon_comparison(run: comparison::Comparison) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (repo, _) = workspace::comparison_roots(&run.project_id)?;
+        comparison::abandon_in(&repo, &run)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[tauri::command]
 async fn open_terminal(
     store: State<'_, Arc<PtyStore>>,
@@ -427,6 +471,9 @@ pub fn run() {
             fork_chat_session,
             revert_file_change,
             peek_file,
+            start_comparison,
+            resolve_comparison,
+            abandon_comparison,
             open_terminal,
             list_terminals,
             subscribe_terminal,

@@ -7,6 +7,8 @@ interface RailProps {
   workspaces: WorkspaceSummary[];
   selectedWorkspaceId: string | null;
   onSelectWorkspace(workspaceId: string): void;
+  /** Start a comparison: one prompt, several harnesses. */
+  onCompare?(): void;
   onOpenSettings(): void;
   onNewWorktree(projectId: string): void;
   onDeleteWorktree(workspaceId: string): void;
@@ -58,6 +60,7 @@ export function Rail({
   workspaces,
   selectedWorkspaceId,
   onSelectWorkspace,
+  onCompare,
   onOpenSettings,
   onNewWorktree,
   onDeleteWorktree
@@ -141,6 +144,11 @@ export function Rail({
       </nav>
 
       <div className="rail-footer">
+        {onCompare ? (
+          <button className="rail-footer-button" onClick={onCompare} type="button">
+            Compare
+          </button>
+        ) : null}
         <button className="rail-footer-button" onClick={onOpenSettings} type="button">
           Settings
         </button>

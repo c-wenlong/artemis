@@ -8,6 +8,8 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
+  Comparison,
+  ComparisonRuntime,
   FileWindow,
   CreateChatSessionRequest,
   RuntimeEvent,
@@ -37,6 +39,7 @@ export interface ArtemisHostService
     ChatRuntime,
     RuntimeSettingsRuntime,
     ReviewRuntime,
+    ComparisonRuntime,
     TerminalRuntime {}
 
 export interface LocalHostServiceOptions {
@@ -210,6 +213,19 @@ export function createLocalHostService(
 
     async peekFile(): Promise<FileWindow> {
       throw new Error("Opening a file requires the desktop app.");
+    },
+
+    // A comparison creates git worktrees, which only the Rust host does.
+    async startComparison(): Promise<Comparison> {
+      throw new Error("Comparing harnesses requires the desktop app.");
+    },
+
+    async resolveComparison(): Promise<void> {
+      throw new Error("Comparing harnesses requires the desktop app.");
+    },
+
+    async abandonComparison(): Promise<void> {
+      throw new Error("Comparing harnesses requires the desktop app.");
     },
 
     async getRuntimeSettings(): Promise<RuntimeSettings> {

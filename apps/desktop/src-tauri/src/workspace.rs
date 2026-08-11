@@ -206,6 +206,23 @@ pub fn list_workspaces(project_id: Option<&str>) -> Vec<WorkspaceSummary> {
 }
 
 /// Create a worktree for `branch` in `project_id`, returning the new workspace.
+/// The repository and worktree directory a comparison runs in.
+///
+/// Resolved here rather than in `comparison`, which takes explicit paths so it
+/// can be tested against throwaway repositories without touching the scan root.
+pub fn comparison_roots(project_id: &str) -> Result<(PathBuf, PathBuf), String> {
+    let project = list_projects()
+        .into_iter()
+        .find(|candidate| candidate.id == project_id)
+        .ok_or_else(|| format!("Unknown project: {project_id}"))?;
+
+    let root = PathBuf::from(&project.root_path);
+    if !git::is_repo(&root) {
+        return Err(format!("{} is not a git repository.", project.name));
+    }
+    Ok((root, worktrees_root(project_id)))
+}
+
 pub fn create_workspace(project_id: &str, branch: &str) -> Result<WorkspaceSummary, String> {
     let project = list_projects()
         .into_iter()

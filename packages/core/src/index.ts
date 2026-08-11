@@ -57,3 +57,9 @@ export type {
   TerminalSession,
   TerminalSpec
 } from "./terminal/types";
+
+export type {
+  Comparison,
+  ComparisonEntry,
+  ComparisonRuntime
+} from "./comparison/types";

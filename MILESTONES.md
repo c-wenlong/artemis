@@ -676,15 +676,40 @@ undifferentiated run of tool calls. Codex names them, and lets you open one.
 be opened and read on its own.
 **Depends:** M8c, M11.
 
-## M12. Multi-harness comparison
+## M12. Multi-harness comparison ✅
 
 The wedge. No competitor does this across vendors.
 
-- One prompt fans out to N harnesses in isolated worktrees
-- Tabbed results, Cursor's model-tabs pattern; per-tab status and diffstat
-- Pick a winner: keep one branch, discard the rest
+- One prompt fans out to N harnesses, each in its own worktree from the same commit
+- Tabs per harness with status; the transcript and diff read one at a time
+- Keep one: the winner's worktree survives, the rest are discarded
 
-**Exit:** one prompt, three harnesses, three diffs, one kept.
+**Exit:** met, and proven with real agents rather than fixtures.
+`live_comparison_of_two_real_harnesses` runs opencode and Codex on one prompt
+and asserts each edited only its own worktree — two independent `seed.txt +1`
+diffs — then keeps one and checks the other is gone.
+
+**Resolution is the one place Artemis destroys work on purpose.** Discarding the
+losers throws away uncommitted changes an agent spent real time and money on,
+with no undo. Three guards: an unrecognised winner is refused outright rather
+than read as "discard everything"; nothing outside the comparison is ever
+touched (there is a test with a bystander worktree); and the UI names the
+harnesses about to be discarded before it asks.
+
+**No `force` parameter on resolve**, deliberately. A loser always has
+uncommitted work — that is what an agent produces — so a flag would be required
+every time, which teaches the caller to pass it blindly. The winner's identity
+is the guard instead.
+
+**A model belongs to one harness, never to a run.** Found the hard way: the
+first live attempt passed opencode's model id to Codex, whose model refresh then
+timed out and took the whole entry down. The comparison sends only a prompt.
+Per-harness model choice is the natural follow-up.
+
+**Not done:** per-tab diffstat in the tab strip itself, and reading two diffs
+side by side rather than one at a time. Tabs were the deliberate choice — three
+transcripts abreast are unreadable at any window width — but a compact
+diffstat per tab would help pick which to read first.
 **Depends:** M11, M5.
 
 > **v0.4 — the reason Artemis exists** rather than Superset or Pane.

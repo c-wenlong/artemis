@@ -6,6 +6,7 @@ import type {
   AssetInventorySnapshot,
   ChatEventListener,
   ChatSession,
+  Comparison,
   FileWindow,
   CreateChatSessionRequest,
   LaunchPreset,
@@ -141,6 +142,10 @@ export const fakeReview: ReviewSnapshot = {
 export const fakeSessions: AgentSessionSummary[] = [];
 
 export interface FakeHostOptions {
+  /** Message the host refuses to start a comparison with. */
+  comparisonError?: string;
+  /** Per-harness setup failures, keyed by harness id. */
+  comparisonEntryErrors?: Record<string, string>;
   /** Override the whole inventory, e.g. to model an older host. */
   inventory?: AssetInventorySnapshot;
   settings?: RuntimeSettings;
@@ -186,6 +191,9 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   forks: Array<{ sessionId: string; throughTurnId: string }>;
   reverted: Array<{ patch: string; relativePath: string; workspacePath: string }>;
   peeked: Array<{ line?: number; relativePath: string; workspacePath: string }>;
+  comparisons: Array<{ harnessIds: string[]; projectId: string; prompt: string }>;
+  resolved: Array<{ runId: string; winner: string }>;
+  abandoned: string[];
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -218,6 +226,13 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     relativePath: string;
     workspacePath: string;
   }> = [];
+  const comparisons: Array<{
+    harnessIds: string[];
+    projectId: string;
+    prompt: string;
+  }> = [];
+  const resolved: Array<{ runId: string; winner: string }> = [];
+  const abandoned: string[] = [];
 
   // Mirrors the Rust catalog in appicon.rs.
   const iconCatalog: AppIcon[] = [
@@ -252,6 +267,9 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     forks,
     reverted,
     peeked,
+    comparisons,
+    resolved,
+    abandoned,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> =>
       options.inventory ?? fakeInventory,
@@ -448,6 +466,45 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
         startLine,
         totalLines
       };
+    },
+
+    /** Mirrors the host: one worktree per harness, branched from head. */
+    startComparison: async (
+      projectId: string,
+      prompt: string,
+      harnessIds: string[]
+    ): Promise<Comparison> => {
+      comparisons.push({ harnessIds, projectId, prompt });
+      if (options.comparisonError) throw new Error(options.comparisonError);
+      const unique = [...new Set(harnessIds)];
+      return {
+        entries: unique.map((harnessId) => ({
+          branch: `compare/run/${harnessId}`,
+          error: options.comparisonEntryErrors?.[harnessId],
+          harnessId,
+          path: options.comparisonEntryErrors?.[harnessId]
+            ? undefined
+            : `/work/worktrees/${harnessId}`,
+          workspaceId: `cmp-run-${harnessId}`
+        })),
+        id: "cmp-run",
+        projectId,
+        prompt
+      };
+    },
+
+    resolveComparison: async (
+      run: Comparison,
+      winnerWorkspaceId: string
+    ): Promise<void> => {
+      if (!run.entries.some((entry) => entry.workspaceId === winnerWorkspaceId)) {
+        throw new Error("That run is not part of this comparison.");
+      }
+      resolved.push({ runId: run.id, winner: winnerWorkspaceId });
+    },
+
+    abandonComparison: async (run: Comparison): Promise<void> => {
+      abandoned.push(run.id);
     },
 
     forkChatSession: async (
