@@ -113,6 +113,8 @@ implied:
   the rest needs.
 - [docs/QUIVER_SCHEMA.md](docs/QUIVER_SCHEMA.md) — the on-disk shapes Artemis
   reads from Quiver.
+- [SECURITY.md](SECURITY.md) — the threat model, what is enforced and tested,
+  and how to report a vulnerability.
 
 ## A note on how this was built
 
