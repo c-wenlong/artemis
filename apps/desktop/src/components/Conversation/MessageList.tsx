@@ -4,6 +4,7 @@ import { buildTimeline } from "../../chat/activityGroups";
 import { deriveFileEdits, type FileEdit } from "../../chat/fileEdits";
 import type { TurnRecord } from "../../chat/reduce";
 import { ActivityGroupSegment } from "../segments/ActivityGroupSegment";
+import { SubAgentSegment } from "../segments/SubAgentSegment";
 import { BlockSegment } from "../segments/BlockSegments";
 import { StreamingFooter } from "../segments/TurnFooters";
 import {
@@ -45,13 +46,15 @@ function plainText(blocks: readonly ChatBlock[]): string {
 function Timeline({ blocks }: { blocks: ChatMessage["blocks"] }) {
   return (
     <>
-      {buildTimeline(blocks).map((item) =>
-        item.kind === "group" ? (
-          <ActivityGroupSegment group={item.group} key={item.group.id} />
-        ) : (
-          <BlockSegment block={item.block} key={item.block.id} />
-        )
-      )}
+      {buildTimeline(blocks).map((item) => {
+        if (item.kind === "agent") {
+          return <SubAgentSegment group={item.group} key={item.group.id} />;
+        }
+        if (item.kind === "group") {
+          return <ActivityGroupSegment group={item.group} key={item.group.id} />;
+        }
+        return <BlockSegment block={item.block} key={item.block.id} />;
+      })}
     </>
   );
 }

@@ -42,7 +42,26 @@ export interface ReasoningDeltaEvent extends RuntimeEventBase {
   type: "reasoning.delta";
 }
 
+/**
+ * The sub-agent a tool call belongs to, when the harness says which.
+ *
+ * Optional throughout, and it will stay optional: a harness that does not
+ * delegate has nothing to report, and one that delegates without naming the
+ * worker gives us an `id` and no useful `name`. Absent means "the main thread
+ * did this", which is the only safe reading — attributing a call to an agent
+ * that did not make it is worse than not attributing it at all.
+ *
+ * `id` is what identity means here, not `name`. Two agents of the same kind
+ * running in parallel are two agents, and a fan-out of three `explore` workers
+ * is the case the feature exists for.
+ */
+export interface AgentRef {
+  id: string;
+  name: string;
+}
+
 export interface ToolCallStartedEvent extends RuntimeEventBase {
+  agent?: AgentRef;
   blockId: string;
   input?: string;
   name: string;
@@ -69,6 +88,7 @@ export interface FileChange {
 }
 
 export interface ToolCallCompletedEvent extends RuntimeEventBase {
+  agent?: AgentRef;
   blockId: string;
   /** Files the call changed, when the harness reports them. */
   fileChanges?: FileChange[];
@@ -84,6 +104,7 @@ export interface ToolCallCompletedEvent extends RuntimeEventBase {
 }
 
 export interface ToolCallErroredEvent extends RuntimeEventBase {
+  agent?: AgentRef;
   blockId: string;
   message: string;
   name?: string;
@@ -129,6 +150,8 @@ export interface ReasoningChatBlock {
 }
 
 export interface ToolCallChatBlock {
+  /** Set when a sub-agent made this call rather than the main thread. */
+  agent?: AgentRef;
   fileChanges?: FileChange[];
   id: string;
   input?: string;

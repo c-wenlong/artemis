@@ -25,6 +25,7 @@ export type {
 } from "./session/types";
 export type {
   ChatBlock,
+  AgentRef,
   ChatEventListener,
   ChatBlockStatus,
   ChatMessage,

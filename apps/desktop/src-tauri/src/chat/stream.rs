@@ -431,6 +431,7 @@ mod tests {
                 session_id: "s".into(),
                 timestamp: "t".into(),
                 turn_id: "turn".into(),
+                agent: None,
                 block_id: "tool-1".into(),
                 name: "bash".into(),
                 input: None,

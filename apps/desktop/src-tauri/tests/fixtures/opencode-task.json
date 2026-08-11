@@ -1,0 +1,30 @@
+{
+  "type": "part",
+  "part": {
+    "type": "tool",
+    "callID": "call_example",
+    "tool": "task",
+    "state": {
+      "status": "completed",
+      "input": {
+        "description": "Find every route handler",
+        "prompt": "List the route handlers under src/ and report the count.",
+        "subagent_type": "explore"
+      },
+      "output": "Found 4 route handlers under src/routes.",
+      "title": "Explore codebase structure",
+      "metadata": {
+        "sessionId": "ses_childexample",
+        "model": {
+          "modelID": "claude-opus-4.6",
+          "providerID": "github-copilot"
+        },
+        "truncated": false
+      },
+      "time": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  }
+}

@@ -173,6 +173,7 @@ export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcr
       case "tool_call.started": {
         messages = withAssistant(messages, event, (blocks) =>
           upsertBlock(blocks, {
+            agent: event.agent,
             id: event.blockId,
             input: event.input,
             name: event.name,
@@ -190,6 +191,11 @@ export function reduceEvents(state: Transcript, events: RuntimeEvent[]): Transcr
           const existing = findBlock(blocks, event.blockId);
           const previous = existing?.type === "tool_call" ? existing : undefined;
           return upsertBlock(blocks, {
+            // Whichever frame named the agent wins. opencode reports a tool
+            // once, already finished, so for it the completion is the only
+            // frame there is; a harness that streams a start may name it there
+            // and not repeat itself.
+            agent: event.agent ?? previous?.agent,
             id: event.blockId,
             fileChanges: isError ? previous?.fileChanges : event.fileChanges,
             // Usually the start event carried it, but `opencode run --format

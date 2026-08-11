@@ -382,3 +382,168 @@ mod live_apply_patch {
         );
     }
 }
+
+// ---------------------------------------------------------------- sub-agents
+
+/// A delegated task, in the shape opencode actually reports it.
+///
+/// Read off 164 real `task` calls in opencode's own session store rather than
+/// from documentation. Two things came out of that reading which a guess would
+/// have missed:
+///
+/// - **The sub-agent is one tool call, not a nested stream.** The child agent's
+///   own tool calls belong to a *separate session* — `session.parent_id` points
+///   back — and never appear in the parent's `run --format json` output. So the
+///   `task` call is the whole of what a transcript can show, and the panel shows
+///   what came back rather than how it was reached.
+/// - **`state.metadata.sessionId` is the child session id**, which resolved to a
+///   real child session in every one of the 164. It is the identity worth
+///   carrying: two `explore` workers running at once share a name and a tool
+///   name, and only differ here.
+fn task_part(session_id: &str, subagent: &str, call_id: &str) -> serde_json::Value {
+    json!({
+        "type": "part",
+        "part": {
+            "type": "tool",
+            "tool": "task",
+            "callID": call_id,
+            "state": {
+                "status": "completed",
+                "input": {
+                    "description": "Find every route handler",
+                    "prompt": "List the route handlers under src/.",
+                    "subagent_type": subagent
+                },
+                "output": "Found 4 route handlers.",
+                "metadata": { "sessionId": session_id, "model": "sonnet" }
+            }
+        }
+    })
+}
+
+#[test]
+fn attributes_a_task_call_to_the_sub_agent_that_ran_it() {
+    let mut parser = parser();
+    let events = parser.parse_line(&task_part("ses_child", "explore", "call_1").to_string());
+
+    let agent = events
+        .iter()
+        .find_map(|event| match event {
+            RuntimeEvent::ToolCallCompleted { agent, .. } => agent.as_ref(),
+            _ => None,
+        })
+        .expect("the task call carries an agent");
+
+    assert_eq!(agent.name, "explore");
+    // The child session, not the call id: identity has to survive two workers
+    // of the same kind running together.
+    assert_eq!(agent.id, "ses_child");
+}
+
+/// Two `explore` workers are two agents. Sharing a name is exactly the case the
+/// attribution exists for, so they must not collapse into one.
+#[test]
+fn tells_two_workers_of_the_same_kind_apart() {
+    let mut parser = parser();
+    let first = parser.parse_line(&task_part("ses_a", "explore", "call_1").to_string());
+    let second = parser.parse_line(&task_part("ses_b", "explore", "call_2").to_string());
+
+    let id_of = |events: &[RuntimeEvent]| {
+        events
+            .iter()
+            .find_map(|event| match event {
+                RuntimeEvent::ToolCallCompleted { agent, .. } => {
+                    agent.as_ref().map(|agent| agent.id.clone())
+                }
+                _ => None,
+            })
+            .expect("an agent")
+    };
+
+    assert_ne!(id_of(&first), id_of(&second));
+}
+
+/// An ordinary tool call is the main thread's own work, and attributing it to
+/// an agent that did not make it is worse than not attributing it at all.
+#[test]
+fn leaves_an_ordinary_tool_call_unattributed() {
+    let mut parser = parser();
+    let events = parser.parse_line(
+        &json!({
+            "type": "part",
+            "part": {
+                "type": "tool",
+                "tool": "bash",
+                "callID": "call_9",
+                "state": { "status": "completed", "output": "ok" }
+            }
+        })
+        .to_string(),
+    );
+
+    assert!(events
+        .iter()
+        .any(|event| matches!(event, RuntimeEvent::ToolCallCompleted { agent: None, .. })));
+}
+
+/// Without a name there is nothing to put on a chip, so the call renders as the
+/// ordinary tool call it is rather than as an anonymous agent.
+#[test]
+fn refuses_to_invent_a_name_for_an_unnamed_task() {
+    let mut parser = parser();
+    let events = parser.parse_line(
+        &json!({
+            "type": "part",
+            "part": {
+                "type": "tool",
+                "tool": "task",
+                "callID": "call_2",
+                "state": {
+                    "status": "completed",
+                    "input": { "description": "Do a thing" },
+                    "metadata": { "sessionId": "ses_child" }
+                }
+            }
+        })
+        .to_string(),
+    );
+
+    assert!(events
+        .iter()
+        .any(|event| matches!(event, RuntimeEvent::ToolCallCompleted { agent: None, .. })));
+}
+
+/// The same thing again, but against a part lifted out of opencode's own store
+/// rather than typed out here.
+///
+/// Transcribing a shape by hand is how you end up testing your reading of it.
+/// This one is real: every key and nesting level is opencode's, with only the
+/// free text replaced — and it carries `state.title` and `state.time`, which the
+/// hand-written case above does not, because reading a truncated row is how you
+/// miss a field.
+#[test]
+fn reads_a_task_part_recorded_from_opencode() {
+    let raw = include_str!("fixtures/opencode-task.json");
+    let line = raw.replace('\n', "");
+
+    let mut parser = parser();
+    let events = parser.parse_line(&line);
+
+    let agent = events
+        .iter()
+        .find_map(|event| match event {
+            RuntimeEvent::ToolCallCompleted { agent, .. } => agent.as_ref(),
+            _ => None,
+        })
+        .expect("a real task part carries an agent");
+
+    assert!(
+        !agent.name.is_empty(),
+        "the sub-agent's name comes from state.input.subagent_type"
+    );
+    assert!(
+        agent.id.starts_with("ses_"),
+        "identity is the child session, got {}",
+        agent.id
+    );
+}

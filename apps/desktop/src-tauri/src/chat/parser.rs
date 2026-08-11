@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::types::{FileChange, RuntimeEvent};
+use crate::types::{AgentRef, FileChange, RuntimeEvent};
 
 pub struct OpenCodeParser {
     session_id: String,
@@ -41,6 +41,7 @@ enum Part {
     Tool {
         id: String,
         name: String,
+        agent: Option<AgentRef>,
         input: Option<String>,
         output: Option<String>,
         status: ToolStatus,
@@ -162,6 +163,7 @@ impl OpenCodeParser {
                 Part::Tool {
                     id,
                     name,
+                    agent,
                     input,
                     output,
                     status,
@@ -174,6 +176,7 @@ impl OpenCodeParser {
                             session_id: self.session_id.clone(),
                             timestamp: now(),
                             turn_id: self.turn_id.clone(),
+                            agent,
                             block_id: id,
                             name: Some(name),
                             message: output.unwrap_or_else(|| "Tool call failed.".into()),
@@ -186,6 +189,7 @@ impl OpenCodeParser {
                             session_id: self.session_id.clone(),
                             timestamp: now(),
                             turn_id: self.turn_id.clone(),
+                            agent,
                             block_id: id,
                             name: Some(name),
                             input,
@@ -201,6 +205,7 @@ impl OpenCodeParser {
                                 session_id: self.session_id.clone(),
                                 timestamp: now(),
                                 turn_id: self.turn_id.clone(),
+                                agent,
                                 block_id: id,
                                 name,
                                 input,
@@ -361,6 +366,48 @@ fn read_file_changes(part: &Value, root: Option<&Path>) -> Option<Vec<FileChange
     (!changes.is_empty()).then_some(changes)
 }
 
+/// The sub-agent behind a `task` call, when opencode named one.
+///
+/// opencode delegates through a single tool named `task`: the child agent runs
+/// in a *separate session* whose `parent_id` points back here, and none of its
+/// own tool calls appear in this stream. So this one call is the whole of what
+/// the transcript can attribute, and `state.metadata.sessionId` — the child
+/// session — is the identity to carry. Read off opencode's own session store,
+/// where it resolved to a real child session in all 164 recorded `task` calls.
+///
+/// The call id is the fallback rather than the first choice: two `explore`
+/// workers running at once share a name, and the session is what tells them
+/// apart in the store. Without `subagent_type` there is no name to put on a
+/// chip, so the call stays unattributed and renders as the ordinary tool call
+/// it is — inventing a name would be worse than showing none.
+fn read_agent(name: &str, part: &Value) -> Option<AgentRef> {
+    if name != "task" {
+        return None;
+    }
+    let state = tool_state(part)?;
+    let subagent = state
+        .get("input")?
+        .get("subagent_type")?
+        .as_str()?
+        .trim()
+        .to_string();
+    if subagent.is_empty() {
+        return None;
+    }
+    let id = state
+        .get("metadata")
+        .and_then(|metadata| metadata.get("sessionId"))
+        .and_then(Value::as_str)
+        .or_else(|| {
+            ["callID", "callId", "id"]
+                .iter()
+                .find_map(|key| part.get(*key).and_then(Value::as_str))
+        })?
+        .to_string();
+
+    Some(AgentRef { id, name: subagent })
+}
+
 fn is_tool(part_type: &str, raw_type: &str, part: &Value) -> bool {
     part_type.contains("tool")
         || raw_type.to_lowercase().contains("tool")
@@ -444,6 +491,7 @@ fn extract_parts(raw: &Value, raw_type: &str, root: Option<&Path>) -> Vec<Part> 
                 .to_string();
             let state = tool_state(part);
             let from_state = |key: &str| state.and_then(|state| state.get(key));
+            let agent = read_agent(&name, part);
             parts.push(Part::Tool {
                 id,
                 name,
@@ -456,6 +504,7 @@ fn extract_parts(raw: &Value, raw_type: &str, root: Option<&Path>) -> Vec<Part> 
                 output: stringify(from_state("output"))
                     .or_else(|| read_text(part))
                     .or_else(|| stringify(part.get("output").or_else(|| part.get("error")))),
+                agent,
                 status: read_tool_status(&part_type, raw_type, part),
                 file_changes: read_file_changes(part, root),
             });

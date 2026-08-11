@@ -660,20 +660,58 @@ What the captures taught, none of which was in any documentation:
 through the actual run loop — 12 events, thread id captured, file really edited.
 **Depends:** M3, M6.
 
-## M11b. Sub-agents
+## M11b. Sub-agents — met for opencode
 
-A harness that fans work out to sub-agents currently renders as an
-undifferentiated run of tool calls. Codex names them, and lets you open one.
+A harness that fans work out to sub-agents rendered as an undifferentiated run
+of tool calls.
 
-- Sub-agent chips inline in the transcript — name, per-agent icon and colour,
+- ✅ Sub-agent chips inline in the transcript — name, per-agent colour,
   `started working` state
-- Clicking a chip opens that sub-agent's own transcript in a side panel
-- Sub-agent activity stays collapsed in the main thread; the panel is where the
-  detail lives
-- Depends on the harness reporting sub-agent identity, which not all will
+- ✅ Clicking a chip opens that agent's work; the main thread stays collapsed
+- ✅ `agent?: AgentRef` on the three `tool_call` events, omitted when absent
+- ⛔ Codex and Claude attribution — neither capture shows a sub-agent frame
 
-**Exit:** a fan-out reads as "two named agents are working", and either one can
-be opened and read on its own.
+**What a sub-agent actually is, in opencode.** Not a nested stream. Delegation
+goes through a single tool named `task`, and the child runs in a **separate
+session** whose `parent_id` points back at the caller; none of its own tool calls
+appear in the parent's `run --format json` output. So the `task` call is the
+whole of what a transcript can attribute, and the panel shows what came back
+rather than how it was reached.
+
+That was read off **164 real `task` calls** in opencode's own session store, and
+two things came out of it that a guess would have missed:
+
+- **`state.metadata.sessionId` is the child session id** — it resolved to a real
+  child session in all 164. That is the identity worth carrying, because two
+  `explore` workers running at once share a name *and* a tool name, and differ
+  only here. Grouping is on id for the same reason.
+- **`subagent_type` is always present.** An earlier reading said it was
+  sometimes missing; that was a truncated row, not a missing field. The parser
+  still refuses to attribute a `task` call without one rather than inventing a
+  name.
+
+**Verified against a real recorded part**, not a transcription of one:
+`tests/fixtures/opencode-task.json` is lifted out of the store with only its
+free text replaced. It carries `state.title` and `state.time`, which the
+hand-written case above it does not — reading a truncated row is how you miss a
+field, so the fixture is there to catch that.
+
+**Not verified live.** Three `opencode run` captures were started and none
+produced a byte: `--format json` buffers to the end of the turn, and each was
+killed after 12–35 minutes. The shape is real, from opencode's own database; the
+end-to-end path is not exercised, and there is no screenshot of a chip in a live
+transcript. Closing that needs one completed live turn, following
+`record_demo_log.rs`.
+
+**Colour is hashed from the agent id**, not assigned by order of appearance, so
+one agent keeps its accent across a reload. Six accents: past that, a fan-out has
+a legibility problem no palette fixes, and hashing into a larger set puts
+near-identical hues side by side.
+
+**Exit: partly met.** A fan-out reads as named agents and either can be opened —
+for opencode. For Codex and Claude the field stays absent, which renders exactly
+as it did before, because attributing a call to an agent that did not make it is
+worse than not attributing it.
 **Depends:** M8c, M11.
 
 ## M12. Multi-harness comparison ✅

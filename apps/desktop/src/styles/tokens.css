@@ -33,6 +33,23 @@
   --accent-muted: #ede9e3;
   --focus-ring: #7a95c4;
 
+  /*
+   * Sub-agent accents. Six, because a fan-out of more than six named workers
+   * has a legibility problem no palette solves, and hashing into a larger set
+   * would put two near-identical hues next to each other.
+   *
+   * Muted on purpose: these sit inside a transcript whose only other colour is
+   * state, and an agent's identity must not read as a warning. Chosen for
+   * distinctness at chip size rather than for range.
+   */
+  --agent-0: #5b7c99;
+  --agent-1: #7d6a9c;
+  --agent-2: #4f8a72;
+  --agent-3: #a37449;
+  --agent-4: #8a6580;
+  --agent-5: #6b7f52;
+
+
   /* ---- State: the only place colour carries meaning ---- */
   --state-idle: #b5afa8;
   --state-ready: #2f7d5c;
@@ -120,6 +137,13 @@
     --accent: #f2efea;
     --accent-text: #131211;
     --accent-muted: #2b2825;
+  --agent-0: #8fb0cc;
+  --agent-1: #b09ecf;
+  --agent-2: #7fbda3;
+  --agent-3: #d3a578;
+  --agent-4: #bd97b2;
+  --agent-5: #9db283;
+
     --focus-ring: #8fa8d4;
 
     --state-idle: #6b645d;
@@ -159,6 +183,13 @@
   --accent: #f2efea;
   --accent-text: #131211;
   --accent-muted: #2b2825;
+  --agent-0: #8fb0cc;
+  --agent-1: #b09ecf;
+  --agent-2: #7fbda3;
+  --agent-3: #d3a578;
+  --agent-4: #bd97b2;
+  --agent-5: #9db283;
+
   --focus-ring: #8fa8d4;
 
   --state-idle: #6b645d;
@@ -194,6 +225,13 @@
   --accent-text: #fcfcfb;
   --accent-muted: #ede9e3;
   --focus-ring: #7a95c4;
+
+  --agent-0: #5b7c99;
+  --agent-1: #7d6a9c;
+  --agent-2: #4f8a72;
+  --agent-3: #a37449;
+  --agent-4: #8a6580;
+  --agent-5: #6b7f52;
 
   --state-idle: #b5afa8;
   --state-ready: #2f7d5c;

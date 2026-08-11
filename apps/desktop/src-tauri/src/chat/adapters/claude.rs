@@ -73,6 +73,7 @@ impl ClaudeAdapter {
                 session_id,
                 timestamp,
                 turn_id,
+                agent: None,
                 block_id: block.get("id")?.as_str()?.to_string(),
                 name: block.get("name")?.as_str()?.to_string(),
                 // The arguments are an object here, unlike opencode's string.
@@ -98,6 +99,7 @@ impl ClaudeAdapter {
                         session_id,
                         timestamp,
                         turn_id,
+                        agent: None,
                         block_id,
                         name: None,
                         message: output.unwrap_or_else(|| "The tool failed.".into()),
@@ -109,6 +111,7 @@ impl ClaudeAdapter {
                     session_id,
                     timestamp,
                     turn_id,
+                    agent: None,
                     block_id,
                     name: None,
                     // The arguments were on the `tool_use`; only the result is

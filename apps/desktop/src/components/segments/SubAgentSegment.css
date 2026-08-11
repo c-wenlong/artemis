@@ -1,0 +1,162 @@
+/*
+ * A sub-agent reads as a named participant, not as a card of mechanics.
+ *
+ * The chip is deliberately lighter than an activity group: an activity group is
+ * the main thread's own work folded up, whereas this is a reference to someone
+ * else's. Giving both the same weight would make a delegated read look as
+ * significant as the answer it fed.
+ */
+
+.sub-agent {
+  margin: var(--space-2) 0;
+}
+
+.sub-agent-chip {
+  align-items: center;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-sans);
+  font-size: var(--text-ui-sm);
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  text-align: left;
+  width: 100%;
+}
+
+.sub-agent-chip:hover {
+  border-color: var(--border-strong);
+}
+
+.sub-agent-chip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* The agent's identity, at the smallest size that still reads as identity. */
+.sub-agent-dot {
+  background: var(--agent-0);
+  border-radius: 50%;
+  flex: none;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.sub-agent-chip[data-tone="1"] .sub-agent-dot {
+  background: var(--agent-1);
+}
+
+.sub-agent-chip[data-tone="2"] .sub-agent-dot {
+  background: var(--agent-2);
+}
+
+.sub-agent-chip[data-tone="3"] .sub-agent-dot {
+  background: var(--agent-3);
+}
+
+.sub-agent-chip[data-tone="4"] .sub-agent-dot {
+  background: var(--agent-4);
+}
+
+.sub-agent-chip[data-tone="5"] .sub-agent-dot {
+  background: var(--agent-5);
+}
+
+.sub-agent-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.sub-agent-label {
+  color: var(--text-secondary);
+}
+
+.sub-agent-summary {
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A running agent gets the same pulse as any other work in progress. */
+.sub-agent[data-active="true"] .sub-agent-dot {
+  animation: sub-agent-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sub-agent-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sub-agent[data-active="true"] .sub-agent-dot {
+    animation: none;
+  }
+}
+
+/*
+ * The panel is indented under the chip rather than floated over the transcript.
+ * A drawer would cover the conversation the reader opened it from, and the
+ * question a sub-agent panel answers is almost always "what did that do, in
+ * context" — which needs the context still visible.
+ */
+.sub-agent-panel {
+  border-left: 2px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0 var(--space-3);
+  padding-left: var(--space-3);
+}
+
+.sub-agent-call {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-ui-sm);
+  gap: var(--space-2);
+}
+
+.sub-agent-call-name {
+  color: var(--text-primary);
+}
+
+.sub-agent-call-summary {
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-agent-call-status {
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+  margin-left: auto;
+}
+
+.sub-agent-call-status[data-status="errored"] {
+  color: var(--state-error);
+}
+
+.sub-agent-call-status[data-status="running"] {
+  color: var(--state-running);
+}
+
+.sub-agent-call-pre {
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-ui-xs);
+  margin: 0;
+  max-height: 12rem;
+  overflow: auto;
+  padding: var(--space-2);
+  white-space: pre-wrap;
+  width: 100%;
+}

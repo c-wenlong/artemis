@@ -279,6 +279,59 @@ fn file_change_matches_core() {
     assert!(to_json(&countless).get("patch").is_none());
 }
 
+/// A sub-agent's calls have to arrive attributed, or the transcript cannot tell
+/// a fan-out from one long run of tools.
+///
+/// `agent` is omitted rather than sent as null when absent, which is what makes
+/// "the main thread did this" the reading for every harness that does not
+/// delegate — and for every event recorded before this field existed.
+#[test]
+fn agent_ref_matches_core() {
+    // export interface AgentRef {
+    //   id: string;
+    //   name: string;
+    // }
+    let agent = AgentRef {
+        id: "ses_01".into(),
+        name: "explore".into(),
+    };
+    assert_eq!(
+        to_json(&agent),
+        json!({ "id": "ses_01", "name": "explore" })
+    );
+
+    let delegated = RuntimeEvent::ToolCallCompleted {
+        id: "e1".into(),
+        session_id: "s1".into(),
+        timestamp: "2026-08-11T09:00:00Z".into(),
+        turn_id: "t1".into(),
+        block_id: "b1".into(),
+        agent: Some(agent),
+        name: Some("grep".into()),
+        input: None,
+        output: None,
+        file_changes: None,
+    };
+    assert_eq!(
+        to_json(&delegated).get("agent"),
+        Some(&json!({ "id": "ses_01", "name": "explore" }))
+    );
+
+    let direct = RuntimeEvent::ToolCallCompleted {
+        id: "e2".into(),
+        session_id: "s1".into(),
+        timestamp: "2026-08-11T09:00:00Z".into(),
+        turn_id: "t1".into(),
+        block_id: "b2".into(),
+        agent: None,
+        name: Some("grep".into()),
+        input: None,
+        output: None,
+        file_changes: None,
+    };
+    assert!(to_json(&direct).get("agent").is_none());
+}
+
 /// The completion carries `input` and `fileChanges` because
 /// `opencode run --format json` reports each tool exactly once, already
 /// finished — there is no start event to have carried them.
@@ -289,6 +342,7 @@ fn tool_call_completed_matches_core() {
         session_id: "s1".into(),
         timestamp: "2026-08-11T09:00:00Z".into(),
         turn_id: "t1".into(),
+        agent: None,
         block_id: "b1".into(),
         name: Some("apply_patch".into()),
         input: Some(r#"{"patchText":"..."}"#.into()),
@@ -326,6 +380,7 @@ fn tool_call_completed_omits_what_it_does_not_have() {
         session_id: "s1".into(),
         timestamp: "2026-08-11T09:00:00Z".into(),
         turn_id: "t1".into(),
+        agent: None,
         block_id: "b1".into(),
         name: None,
         input: None,

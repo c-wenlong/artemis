@@ -284,6 +284,21 @@ pub struct FileChange {
     pub patch: Option<String>,
 }
 
+/// The sub-agent a tool call belongs to, when the harness says which.
+///
+/// Optional everywhere it appears, and skipped rather than serialised as null:
+/// a harness that does not delegate has nothing to report, and every event
+/// recorded before this field existed must keep replaying as main-thread work.
+///
+/// `id` is identity, not `name` — a fan-out of three `explore` workers is three
+/// agents, and reading them as one would report the fan-out as a single run.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentRef {
+    pub id: String,
+    pub name: String,
+}
+
 /// Mirrors the `RuntimeEvent` union in `packages/core/src/chat/types.ts`.
 ///
 /// Internally tagged on `type`, whose values carry dots (`turn.started`), so
@@ -335,6 +350,9 @@ pub enum RuntimeEvent {
         turn_id: String,
         block_id: String,
         name: String,
+        /// The sub-agent that made this call, when the harness attributes it.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        agent: Option<AgentRef>,
         #[serde(skip_serializing_if = "Option::is_none")]
         input: Option<String>,
     },
@@ -345,6 +363,9 @@ pub enum RuntimeEvent {
         timestamp: String,
         turn_id: String,
         block_id: String,
+        /// The sub-agent that made this call, when the harness attributes it.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        agent: Option<AgentRef>,
         #[serde(skip_serializing_if = "Option::is_none")]
         name: Option<String>,
         /// What the call was given. Present here as well as on the start event
@@ -367,6 +388,9 @@ pub enum RuntimeEvent {
         timestamp: String,
         turn_id: String,
         block_id: String,
+        /// The sub-agent that made this call, when the harness attributes it.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        agent: Option<AgentRef>,
         #[serde(skip_serializing_if = "Option::is_none")]
         name: Option<String>,
         message: String,
