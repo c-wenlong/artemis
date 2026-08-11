@@ -163,6 +163,26 @@ fn nothing_that_looks_like_a_credential_is_committed() {
     assert!(offenders.is_empty(), "{offenders:?}");
 }
 
+/// Account names that identify a machine rather than a person.
+///
+/// A CI runner's home directory is `/home/runner`, so the derived username is
+/// `runner` — which appears legitimately in `.github/workflows/ci.yml` and in
+/// lockfile paths, and made this test fail on all three platforms the first
+/// time CI was ever able to run. These names are not personal data by
+/// definition, so matching them says nothing.
+///
+/// Listed explicitly rather than skipping the whole check under `CI`: the check
+/// is worth most exactly where the repository gets published from.
+const SERVICE_ACCOUNTS: [&str; 7] = [
+    "runner",
+    "root",
+    "ubuntu",
+    "runneradmin",
+    "administrator",
+    "circleci",
+    "vsts",
+];
+
 /// The account name of whoever is running this.
 ///
 /// Derived rather than hardcoded, for two reasons: a test that names one
@@ -171,6 +191,12 @@ fn nothing_that_looks_like_a_credential_is_committed() {
 fn current_username() -> Option<String> {
     let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
     let name = Path::new(&home).file_name()?.to_string_lossy().into_owned();
+    if SERVICE_ACCOUNTS
+        .iter()
+        .any(|account| account.eq_ignore_ascii_case(&name))
+    {
+        return None;
+    }
     (name.len() > 2).then_some(name)
 }
 

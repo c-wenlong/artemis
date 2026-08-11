@@ -465,10 +465,30 @@ mod tests {
     }
 
     /// A stand-in for opencode: emits the same JSON line shapes.
-    fn fake_harness(script: &str) -> (String, Vec<String>) {
+    ///
+    /// A compiled helper rather than `/bin/sh -c`, which does not exist on
+    /// Windows — all three streaming tests failed there on a code path that was
+    /// correct. Cargo builds this for whatever target the tests run on.
+    fn fake_harness(args: &[&str]) -> (String, Vec<String>) {
+        // Resolved at runtime rather than through `CARGO_BIN_EXE_fake_harness`,
+        // which cargo only defines for integration tests — these are lib unit
+        // tests. The test binary lives in `target/<profile>/deps/`, and the
+        // helper cargo built alongside it is one directory up. `EXE_SUFFIX` is
+        // what makes that `.exe` on Windows.
+        let mut path = std::env::current_exe().expect("test binary path");
+        path.pop();
+        if path.ends_with("deps") {
+            path.pop();
+        }
+        let binary = path.join(format!("fake_harness{}", std::env::consts::EXE_SUFFIX));
+        assert!(
+            binary.is_file(),
+            "fake_harness was not built next to the tests: {}",
+            binary.display()
+        );
         (
-            "/bin/sh".to_string(),
-            vec!["-c".to_string(), script.to_string()],
+            binary.to_string_lossy().into_owned(),
+            args.iter().map(|arg| (*arg).to_string()).collect(),
         )
     }
 
@@ -476,9 +496,12 @@ mod tests {
     fn streams_a_turn_from_start_to_completion() {
         let dir = temp_sessions_dir("complete");
         let sink = Arc::new(Collector::default());
-        let (command, args) = fake_harness(
-            r#"printf '%s\n' '{"type":"text","id":"p1","text":"Hel"}' '{"type":"text","id":"p1","text":"Hello"}'"#,
-        );
+        let (command, args) = fake_harness(&[
+            "--line",
+            r#"{"type":"text","id":"p1","text":"Hel"}"#,
+            "--line",
+            r#"{"type":"text","id":"p1","text":"Hello"}"#,
+        ]);
 
         let outcome = run_turn(
             TurnRequest {
@@ -521,7 +544,7 @@ mod tests {
     fn a_nonzero_exit_ends_the_turn_with_an_error() {
         let dir = temp_sessions_dir("failure");
         let sink = Arc::new(Collector::default());
-        let (command, args) = fake_harness("echo 'boom' >&2; exit 3");
+        let (command, args) = fake_harness(&["--stderr", "boom", "--exit", "3"]);
 
         let outcome = run_turn(
             TurnRequest {
@@ -590,8 +613,12 @@ mod tests {
         let cancel_handle = handle.clone();
 
         // Emits one line, then would run for 30s.
-        let (command, args) =
-            fake_harness(r#"printf '%s\n' '{"type":"text","id":"p1","text":"working"}'; sleep 30"#);
+        let (command, args) = fake_harness(&[
+            "--line",
+            r#"{"type":"text","id":"p1","text":"working"}"#,
+            "--sleep-ms",
+            "30000",
+        ]);
 
         std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(300));
@@ -638,7 +665,7 @@ mod tests {
         let dir = temp_sessions_dir("replay");
         let sink = Arc::new(Collector::default());
         let (command, args) =
-            fake_harness(r#"printf '%s\n' '{"type":"text","id":"p1","text":"persisted"}'"#);
+            fake_harness(&["--line", r#"{"type":"text","id":"p1","text":"persisted"}"#]);
 
         run_turn(
             TurnRequest {
