@@ -72,11 +72,17 @@ fn a_worktree_round_trips_from_creation_to_deletion() {
     // still one location. On Windows `std::env::temp_dir()` hands back the 8.3
     // short form — `RUNNER~1` — while git reports the long one, so the prefix
     // check failed on paths that were in fact the same directory.
+    let created_real =
+        std::fs::canonicalize(&created.worktree_path).expect("the new worktree exists");
+    let worktrees_real = std::fs::canonicalize(&worktrees).expect("the worktree root exists");
     assert!(
-        std::fs::canonicalize(&created.worktree_path)
-            .expect("the new worktree exists")
-            .starts_with(std::fs::canonicalize(&worktrees).expect("the worktree root exists")),
-        "worktrees live outside the repository, not inside it"
+        created_real.starts_with(&worktrees_real),
+        "worktrees live outside the repository, not inside it\n  \
+         created:  {created_real:?}\n  \
+         root:     {worktrees_real:?}\n  \
+         raw path: {:?}\n  \
+         raw root: {worktrees:?}",
+        created.worktree_path
     );
 
     // ---- it appears in the list, under the id create returned ----
