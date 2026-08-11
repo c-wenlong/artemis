@@ -61,11 +61,21 @@ Artemis's own code; they resolve when Tauri moves to GTK4.
 
 ## History
 
-Commits before the 2026-08-11 audit contain the author's home directory in four
-files, and the pre-scrub Quiver fixture. Nothing in history is a credential —
-every blob across every commit was scanned for private keys and provider tokens,
-and there were none. Removing the rest needs a history rewrite, which has not
-been done.
+**Not yet clean.** Commits from before the 2026-08-11 audit contain the author's
+home directory, real project names, and two student identifiers that were in the
+Quiver fixture before it was neutralised.
+
+Nothing in history is a credential — every blob in every commit was scanned for
+private keys and provider tokens, and there were none. What remains is personal
+data, and a git history is permanent once published.
+
+`scripts/scrub-history.sh` removes it. The rewrite has been verified read-only
+against all 569 reachable blobs: after scrubbing, none carries an account name,
+identifier, project name or home directory. The script backs up the old history
+to a branch first, refuses to continue if the current tree changes, re-runs the
+scan afterwards, and does not push unless asked.
+
+**Run it before making this repository public.**
 
 ## What is not protected against
 
