@@ -787,11 +787,29 @@ directory, which would let a repository choose which binary Artemis runs.
 `x86_64-pc-windows-msvc` — checked by lifting it into a standalone crate,
 because a full cross-build cannot be done from macOS (`libsqlite3-sys` compiles
 C and needs the MSVC toolchain). CI is what actually builds all three.
-**Neither Linux nor Windows has ever been run**, only compiled and tested.
+**Linux and macOS now pass.** Making the repository public gave it free Actions
+minutes, which is what unblocked CI after five runs that had died on billing
+without executing a step. The first run that actually ran caught three things,
+all real and none in the feature being built at the time:
 
-CI also immediately caught two things the looser local gate did not: a `fmt`
-violation and an `unused_mut` that only exists off Windows, both under
-`clippy -D warnings`.
+- **Three streaming tests were POSIX-only.** The fake harness was `/bin/sh -c`
+  with a `printf` script, and that shell does not exist on Windows. The code
+  under test was correct. Now a compiled `src/bin/fake_harness.rs`, which cargo
+  builds for whatever target runs.
+- **The privacy audit failed everywhere.** It derives the username from `$HOME`
+  so it protects whoever runs it, but a runner's home is `/home/runner`, and
+  `runner` appears legitimately in the workflow file and lockfile paths.
+- **A worktree test asserted bytes on Windows.** `core.autocrlf` is on by
+  default there, so a correct checkout of `alpha\n` reads back `alpha\r\n`. The
+  test now asserts what it means — that every worktree holds identical content.
+
+**Open, and not yet investigated: what CRLF does to a comparison.** If a Windows
+checkout is CRLF and an agent writes LF, a diff could report every touched line
+as changed, which would make the diff view and Undo noisy rather than wrong.
+Nothing here tests that, and no Windows machine has run the app.
+
+Earlier, CI also caught a `fmt` violation and an `unused_mut` that only exists
+off Windows, both under `clippy -D warnings`.
 **Depends:** everything.
 **Depends:** v0.4.
 

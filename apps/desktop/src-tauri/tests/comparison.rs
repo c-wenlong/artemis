@@ -160,16 +160,34 @@ fn every_harness_gets_a_worktree_of_its_own() {
 }
 
 /// Each starts from the same commit, so the diffs are comparable.
+///
+/// The claim is that every worktree holds the *same* content, not that it holds
+/// a particular byte string. Asserting the latter failed on Windows, where git's
+/// `core.autocrlf` is on by default and checkout rewrites `alpha\n` to
+/// `alpha\r\n` — a correct checkout that the assertion called a bug.
+///
+/// Comparing the worktrees to each other says what the test means and holds on
+/// every platform. The line ending is still checked, against whatever git
+/// produced in the source repository, so a worktree that somehow disagreed with
+/// its own origin would still fail.
 #[test]
 fn every_worktree_starts_from_the_same_place() {
     let f = fixture("same_base");
     let started = comparison::start_in(&f.repo, &f.worktrees, &plan("go", &["codex", "claude"]));
 
+    let expected = std::fs::read_to_string(f.repo.join("seed.txt")).unwrap();
+    assert_eq!(
+        expected.trim_end(),
+        "alpha",
+        "the fixture seeded something else"
+    );
+
     for entry in &started.entries {
         let path = entry.path.as_ref().expect("a worktree");
         assert_eq!(
             std::fs::read_to_string(path.join("seed.txt")).unwrap(),
-            "alpha\n"
+            expected,
+            "worktrees must start from identical content"
         );
     }
 }
