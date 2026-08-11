@@ -47,11 +47,21 @@ and what it changed.*
 `Worked for 2m 24s` header. File references in the text become chips you can
 click to see the lines they name. Long prompts collapse behind *Show more*.
 
+![A file opened at a cited line: retry.py, lines 18 to 30 of 45, with line 24
+marked as the one the answer referred to.](docs/images/peek.png)
+
+*Following a citation reads the file from disk. A citation whose line no longer
+exists still opens the file, and says so rather than highlighting whatever moved
+into its place.*
+
 **Shows what changed, and takes it back.** Every turn ends with what it edited
 and by how much. Opening a file shows its diff; **Undo** reverse-applies that
 one file's patch — so an unrelated edit of yours in the same file survives,
 which restoring from git would not. If the file has moved on since, the undo is
 refused with a reason rather than forced.
+
+![An inline diff with old and new line numbers in separate gutters, additions
+tinted green and the removal tinted red.](docs/images/diff.png)
 
 **Runs several agents on one prompt.** Each gets its own git worktree off the
 same commit, so they cannot see each other's work. You read the diffs side by
