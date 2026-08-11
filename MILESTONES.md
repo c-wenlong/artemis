@@ -349,6 +349,21 @@ with `stty`, and `cmd.exe` has no equivalent that prints it, so that one case is
 nothing proves a program on the far side sees the new dimensions. Marked rather
 than deleted, so the gap is visible instead of implied by an absence.
 
+**⛔ Terminal output does not work on Windows.** Every output-reading test there
+returns exactly `\u{1b}[6n` and nothing else. That sequence is ConPTY's own
+cursor-position probe, so the master is being read correctly — what never
+arrives is anything the child wrote. It reproduces with a shell and with a plain
+program spawned directly, so it is neither shell syntax nor line endings; both
+were ruled out first, along with the `/bin/zsh` default that came before them.
+
+The cause is unknown and is **not** being guessed at through CI. Iterating on a
+platform you cannot run is slow, and every round risks a change that makes the
+symptom move rather than the bug go. It needs a Windows machine.
+
+Those five tests are `#[cfg(unix)]` so the suite states what it actually
+verifies. The honest claim for Windows is not "untested" but "the terminal dock
+probably does not work", and it stays that way until someone runs it.
+
 Design:
 
 - **The PTY lives in the host, the window is only a subscriber.** Everything

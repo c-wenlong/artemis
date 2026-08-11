@@ -126,6 +126,12 @@ impl PtyStore {
             .spawn_command(builder)
             .map_err(|error| format!("Could not start {}: {error}", spec.command))?;
 
+        // portable-pty asks for the slave to be released once the child holds
+        // it; while it is alive the master may never see EOF. It was previously
+        // dropped at the end of this function, which is late enough to be
+        // accidental rather than intended.
+        drop(pair.slave);
+
         let reader = pair
             .master
             .try_clone_reader()
