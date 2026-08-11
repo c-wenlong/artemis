@@ -61,10 +61,11 @@ Artemis's own code; they resolve when Tauri moves to GTK4.
 
 ## History
 
-**Rewritten and clean, locally.** Commits from before the 2026-08-11 audit
-contained the author's home directory, real project names and two student
-identifiers left over from the Quiver fixture. All 36 commits were rewritten on
-that date with `scripts/scrub-history.sh`.
+**Rewritten and clean.** Commits from before the 2026-08-11 audit contained the
+author's home directory, real project names and two student identifiers left
+over from the Quiver fixture. All 36 commits were rewritten on that date with
+`scripts/scrub-history.sh`, and the remote this repository is published from was
+created fresh from the rewritten history.
 
 Nothing in history was ever a credential — every blob in every commit was
 scanned for private keys and provider tokens, and there were none. What was
@@ -101,21 +102,23 @@ Three things the first version of this got wrong, all found by testing it:
 - **The repository audit was failing.** Two checks in `tests/repo.rs` had gone
   red when the token list was committed, and were not noticed.
 
-### Still outstanding: the remote
+### Why the remote was replaced rather than force-pushed
 
-The rewrite is local. `origin` has not been force-pushed, and **a force-push
-would not be enough on its own** — GitHub keeps the old commits fetchable by SHA
-until it garbage-collects, which can take a long time. Before this repository is
-made public, one of:
+**A force-push would not have been enough.** Rewriting history locally makes the
+old commits unreachable; it does not remove them from GitHub, where they stay
+fetchable by SHA until the server garbage-collects — which can take a long time
+and is not something you can trigger or observe. Anyone who had ever seen an old
+SHA could still fetch the personal data from a repository that looked clean.
 
-- push the rewritten history to a **freshly created** repository, and delete the
-  old one; or
-- force-push, then ask GitHub support to garbage-collect this repository, and
-  confirm an old SHA no longer resolves before flipping it public.
+So the remote was rebuilt instead: a new repository, the rewritten history
+pushed to it, and the original deleted. Verified afterwards by asking GitHub for
+three pre-rewrite SHAs by name — all now 404. That was cheap here, with 36
+commits, no forks, no pull requests and no other collaborators; on a repository
+with history worth keeping, the alternative is to force-push and then ask GitHub
+support to garbage-collect, confirming an old SHA no longer resolves before
+making it public.
 
-The first is airtight and cheap here — 36 commits, no forks, no pull requests,
-no other collaborators. The script cleans your history; only this step cleans
-the remote's.
+The old history is kept locally on `backup/pre-scrub-5ad2d88` and nowhere else.
 
 ## What is not protected against
 
