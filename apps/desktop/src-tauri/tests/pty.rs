@@ -2,7 +2,7 @@
 //!
 //! A PTY is not a pipe: it echoes, it has a window size, it delivers signals.
 //! Testing this against a mock would only prove the mock behaves like the mock,
-//! so these drive `/bin/sh` and read what actually comes back.
+//! so these drive the platform's own shell and read what actually comes back.
 //!
 //! The exit criterion for M6 is that a terminal survives a UI reload. That
 //! works because the PTY lives in the host process and the webview is only a
@@ -45,6 +45,14 @@ fn spec() -> TerminalSpec {
     }
 }
 
+/// Commands are submitted with a carriage return, not a newline.
+///
+/// `cmd.exe` under ConPTY does not treat a bare `\n` as Enter, so every test
+/// that typed a command got back only ConPTY's cursor-position query and no
+/// output. A PTY on Unix maps CR to NL for input (`ICRNL`), so `\r` is the
+/// submission that works on both — and it is what xterm.js sends for Enter, so
+/// the tests now type what the app actually types.
+///
 /// Polls rather than sleeping a fixed amount: a shell's first prompt arrives
 /// when it arrives.
 fn wait_for(deadline: Duration, mut done: impl FnMut() -> bool) -> bool {
@@ -78,7 +86,7 @@ fn runs_a_command_and_streams_its_output() {
     store.subscribe(&terminal.id, sink.clone());
 
     store
-        .write(&terminal.id, "echo artemis-was-here\n")
+        .write(&terminal.id, "echo artemis-was-here\r")
         .unwrap();
 
     assert!(
@@ -101,14 +109,14 @@ fn output_survives_a_subscriber_going_away() {
     let terminal = store.open(spec()).unwrap();
     store.subscribe(&terminal.id, first.clone());
 
-    store.write(&terminal.id, "echo before-reload\n").unwrap();
+    store.write(&terminal.id, "echo before-reload\r").unwrap();
     assert!(wait_for(Duration::from_secs(5), || first
         .text()
         .contains("before-reload")));
 
     // The UI goes away.
     store.unsubscribe(&terminal.id);
-    store.write(&terminal.id, "echo during-reload\n").unwrap();
+    store.write(&terminal.id, "echo during-reload\r").unwrap();
     std::thread::sleep(Duration::from_millis(300));
 
     // …and comes back.
@@ -130,33 +138,50 @@ fn output_survives_a_subscriber_going_away() {
     store.close(&terminal.id);
 }
 
+/// Runs a chatty program directly rather than asking a shell to loop.
+///
+/// The loop was `for i in $(seq 1 4000)`, which `cmd.exe` cannot run. What the
+/// test needs is a process that says a great deal, not a shell.
+///
+/// **This test never tested anything, on any platform.** Two mistakes cancelled
+/// each other out. 4000 numbered lines is about 43 KB against a 256 KiB bound,
+/// so nothing was ever dropped — and the assertion that the oldest line was gone
+/// looked for `line-1\n`, which a PTY never emits, because it ends lines with
+/// CRLF on Unix too. It could not fail. Normalising the line endings for the
+/// Windows run is what exposed it.
+///
+/// It now writes past the bound, so truncation actually happens.
 #[test]
 fn scrollback_is_bounded_so_a_chatty_process_cannot_grow_forever() {
-    let store = PtyStore::default();
-    let terminal = store.open(spec()).unwrap();
+    // Comfortably past MAX_SCROLLBACK_BYTES: ~40k numbered lines is ~470 KB.
+    const LINES: u32 = 40_000;
 
-    // Far more than the retained window.
-    store
-        .write(
-            &terminal.id,
-            "for i in $(seq 1 4000); do echo line-$i; done\n",
-        )
+    let store = PtyStore::default();
+    let terminal = store
+        .open(TerminalSpec {
+            command: env!("CARGO_BIN_EXE_fake_harness").to_string(),
+            args: vec!["--count-to".into(), LINES.to_string()],
+            ..spec()
+        })
         .unwrap();
 
-    let bounded = wait_for(Duration::from_secs(20), || {
-        let scrollback = store.scrollback(&terminal.id);
-        scrollback.contains("line-4000")
+    let last = format!("line-{LINES}");
+    let bounded = wait_for(Duration::from_secs(30), || {
+        store.scrollback(&terminal.id).contains(&last)
     });
     assert!(bounded, "the run should finish");
 
-    let scrollback = store.scrollback(&terminal.id);
+    let raw = store.scrollback(&terminal.id);
     assert!(
-        scrollback.len() <= PtyStore::MAX_SCROLLBACK_BYTES,
+        raw.len() <= PtyStore::MAX_SCROLLBACK_BYTES,
         "scrollback grew to {} bytes",
-        scrollback.len()
+        raw.len()
     );
+    // A PTY ends lines with CRLF, so the line-boundary checks are made on
+    // normalised text. That is what makes them capable of failing at all.
+    let scrollback = raw.replace('\r', "");
     // The tail is what a terminal shows, so that is what must be kept.
-    assert!(scrollback.contains("line-4000"));
+    assert!(scrollback.contains(&last), "the newest output must survive");
     assert!(
         !scrollback.contains("line-1\n"),
         "the oldest output should have been dropped"
@@ -182,7 +207,7 @@ fn resizing_changes_the_size_the_program_sees() {
     store.subscribe(&terminal.id, sink.clone());
 
     store.resize(&terminal.id, 100, 40).unwrap();
-    store.write(&terminal.id, "stty size\n").unwrap();
+    store.write(&terminal.id, "stty size\r").unwrap();
 
     assert!(
         wait_for(Duration::from_secs(5), || sink.text().contains("40 100")),
@@ -210,7 +235,7 @@ fn notices_when_the_shell_exits_on_its_own() {
     let store = PtyStore::default();
     let terminal = store.open(spec()).unwrap();
 
-    store.write(&terminal.id, "exit\n").unwrap();
+    store.write(&terminal.id, "exit\r").unwrap();
 
     assert!(
         wait_for(Duration::from_secs(5), || store
@@ -255,7 +280,7 @@ fn several_terminals_stay_independent() {
     store.subscribe(&first.id, one.clone());
     store.subscribe(&second.id, two.clone());
 
-    store.write(&first.id, "echo first-only\n").unwrap();
+    store.write(&first.id, "echo first-only\r").unwrap();
 
     assert!(wait_for(Duration::from_secs(5), || one
         .text()

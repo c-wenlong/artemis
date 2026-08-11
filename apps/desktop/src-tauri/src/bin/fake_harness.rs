@@ -38,6 +38,16 @@ fn main() {
                 let message = args.next().unwrap_or_default();
                 eprintln!("{message}");
             }
+            // A chatty process, for the scrollback bound. The shell version of
+            // this was `for i in $(seq 1 4000)`, which cmd.exe cannot run.
+            "--count-to" => {
+                let last: u32 = args.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+                let mut handle = stdout.lock();
+                for number in 1..=last {
+                    let _ = writeln!(handle, "line-{number}");
+                }
+                let _ = handle.flush();
+            }
             "--exit" => code = args.next().and_then(|v| v.parse().ok()).unwrap_or(0),
             "--sleep-ms" => sleep_ms = args.next().and_then(|v| v.parse().ok()).unwrap_or(0),
             other => {
