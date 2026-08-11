@@ -33,6 +33,14 @@ pnpm dev
 it cannot stream a turn, open a terminal or read a file, because all of that
 lives in the Rust host. It says so where it matters rather than failing quietly.
 
+![A finished turn in Artemis: the prompt with its timestamp, a "Worked for 40s"
+header, collapsed reasoning and tool activity, the answer, and a card showing
+one file edited +27 −2 with Undo and Review.](docs/images/transcript.png)
+
+*A real turn, recorded against a throwaway repository. opencode was asked to add
+retry logic; the transcript shows what it thought, what it ran, what it said,
+and what it changed.*
+
 ## What it does
 
 **Reads a turn properly.** Prose is the answer; tool calls fold behind a
@@ -70,9 +78,6 @@ implied:
   [docs/RELEASING.md](docs/RELEASING.md).
 - **Linux and Windows are compiled and tested, never run.** CI builds all three
   platforms; nobody has yet launched it on two of them.
-
-There are no screenshots here yet. The interface only renders a real transcript
-in the desktop app, and a mocked one would misrepresent it.
 
 ## Documentation
 

@@ -68,9 +68,13 @@ fn record_a_demo_turn() {
         SendChatMessageRequest {
             // Phrased to make the agent read a few files, so the transcript has
             // a run of tool calls worth grouping.
-            prompt: "List the Rust source files under src-tauri/src and say in one \
-                     sentence what each of the three smallest ones does."
-                .into(),
+            prompt: std::env::var("ARTEMIS_DEMO_PROMPT").unwrap_or_else(|_| {
+                // Phrased to make the agent read a few files, so the transcript
+                // has a run of tool calls worth grouping.
+                "List the Rust source files under src-tauri/src and say in one \
+                 sentence what each of the three smallest ones does."
+                    .to_string()
+            }),
             start_path: None,
         },
         Arc::new(Printer),

@@ -72,6 +72,21 @@ const PLACEHOLDER_HOMES: &[&str] = &[
     r"C:\Users\you",
 ];
 
+/// True when `marker` is followed by something that could be an account name.
+///
+/// Prose mentions the prefix too — this file's own commentary and the roadmap
+/// entry describing this check both contain a bare `/Users/`. Requiring a name
+/// after the separator keeps those out without weakening the check: every real
+/// leak found so far had one.
+fn names_a_directory_after(line: &str, marker: &str) -> bool {
+    line.match_indices(marker).any(|(at, _)| {
+        line[at + marker.len()..]
+            .chars()
+            .next()
+            .is_some_and(|next| next.is_alphanumeric())
+    })
+}
+
 fn is_placeholder(line: &str) -> bool {
     PLACEHOLDER_HOMES
         .iter()
@@ -91,7 +106,10 @@ fn no_home_directory_is_committed() {
             if is_placeholder(line) {
                 continue;
             }
-            if line.contains("/Users/") || line.contains("/home/") || line.contains(r"C:\Users\") {
+            if [r"/Users/", r"/home/", r"C:\Users\"]
+                .iter()
+                .any(|marker| names_a_directory_after(line, marker))
+            {
                 offenders.push(format!(
                     "{}:{}",
                     path.strip_prefix(repo_root()).unwrap_or(&path).display(),

@@ -762,8 +762,7 @@ violation and an `unused_mut` that only exists off Windows, both under
 - ✅ README rewritten, CONTRIBUTING, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), MIT LICENSE
 - ✅ Issue and PR templates; this file is the public roadmap
 - ✅ A privacy audit that runs over every tracked file
-- ❌ Screenshots — the interface only renders a real transcript in the desktop
-  app, and a mocked one would misrepresent it
+- ✅ Screenshot — a real turn, captured from the running desktop app
 - ⛔ Repo public — the user's call, deliberately deferred
 - ⛔ CI required — needs a run on GitHub first; CI has still never executed
 
@@ -786,6 +785,11 @@ into a file that is about to be published.
 **Exit: not met.** The documentation half is done — a stranger can build, run
 and land a change. The repository is still private by choice, and CI has never
 run, so "green and required" is unverified.
+
+**The screenshot is a real turn**, not a mock: opencode was asked to add retry
+logic to a throwaway repository, and `tests/record_demo_log.rs` recorded what it
+actually emitted. Captured by window id rather than screen region — a region
+capture picked up an unrelated window sitting over the app, twice.
 **Depends:** M13.
 
 > **v1.0.**
