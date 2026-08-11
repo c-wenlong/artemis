@@ -61,19 +61,24 @@ Artemis's own code; they resolve when Tauri moves to GTK4.
 
 ## History
 
-**Not yet clean.** Commits from before the 2026-08-11 audit contain the author's
-home directory, real project names, and two student identifiers that were in the
-Quiver fixture before it was neutralised.
+**Rewritten and clean, locally.** Commits from before the 2026-08-11 audit
+contained the author's home directory, real project names and two student
+identifiers left over from the Quiver fixture. All 36 commits were rewritten on
+that date with `scripts/scrub-history.sh`.
 
-Nothing in history is a credential — every blob in every commit was scanned for
-private keys and provider tokens, and there were none. What remains is personal
-data, and a git history is permanent once published.
+Nothing in history was ever a credential — every blob in every commit was
+scanned for private keys and provider tokens, and there were none. What was
+there was personal data, and a git history is permanent once published.
 
-`scripts/scrub-history.sh` removes it. The rewrite is verified read-only against
-all 573 reachable blobs: 14 findings before, none after. The script backs up the
-branch first, refuses to continue if the current tree changes, reports any
-commit `--prune-empty` dropped, re-runs the scan afterwards, and does not push
-unless asked.
+Verified after the rewrite: 575 reachable blobs, 104 of them binary, **none
+carrying an account name, identifier, project name or home directory**. HEAD's
+tree is byte-identical to what it was before (`c7cdbaade2`), no commit was
+pruned, and the full suite still passes on the rewritten history. The old
+history is kept locally on `backup/pre-scrub-5ad2d88`.
+
+The script backs the branch up first, refuses to continue if the current tree
+changes, reports any commit `--prune-empty` dropped, re-runs the scan afterwards,
+and does not push unless asked.
 
 The strings it removes are **not in this repository**. They live in
 `scripts/scrub-tokens.txt`, which is gitignored;
@@ -96,11 +101,21 @@ Three things the first version of this got wrong, all found by testing it:
 - **The repository audit was failing.** Two checks in `tests/repo.rs` had gone
   red when the token list was committed, and were not noticed.
 
-**Run it before making this repository public** — and note that a force-push
-does not remove the old commits from GitHub. They stay fetchable by SHA until
-GitHub garbage-collects. Ask GitHub support to GC the repository, or push the
-rewritten history to a freshly created one. The script cleans your history; only
-that step cleans the remote's.
+### Still outstanding: the remote
+
+The rewrite is local. `origin` has not been force-pushed, and **a force-push
+would not be enough on its own** — GitHub keeps the old commits fetchable by SHA
+until it garbage-collects, which can take a long time. Before this repository is
+made public, one of:
+
+- push the rewritten history to a **freshly created** repository, and delete the
+  old one; or
+- force-push, then ask GitHub support to garbage-collect this repository, and
+  confirm an old SHA no longer resolves before flipping it public.
+
+The first is airtight and cheap here — 36 commits, no forks, no pull requests,
+no other collaborators. The script cleans your history; only this step cleans
+the remote's.
 
 ## What is not protected against
 
