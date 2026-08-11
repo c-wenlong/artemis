@@ -718,13 +718,43 @@ diffstat per tab would help pick which to read first.
 
 # Phase 5 — Release
 
-## M13. Cross-platform and packaging
+## M13. Cross-platform and packaging — partly blocked
 
-- Linux and Windows builds; path assumptions audited out of the scanners
-- Signed macOS builds, notarization; auto-update
-- CI matrix on all three platforms
+- ✅ Path assumptions audited out of the scanners, with tests
+- ✅ CI matrix on macOS, Linux and Windows
+- ✅ Bundling job for all three, on demand
+- ⛔ Signed macOS builds and notarization — needs an Apple Developer ID
+- ⛔ Auto-update — needs a keypair, an endpoint, and a version scheme
 
-**Exit:** a stranger installs from a release artifact on all three OSes.
+**Exit: not met, and cannot be from inside this repository.** A stranger cannot
+install the macOS artifact today: unsigned, it is quarantined by Gatekeeper and
+refuses to open. That needs a paid Apple Developer Program membership and
+notarization credentials. Everything up to that point is done, and
+[docs/RELEASING.md](docs/RELEASING.md) says exactly which secrets close it.
+
+**Three real bugs found and fixed**, each of which alone would have made Artemis
+find *no harnesses at all* on Windows:
+
+- `PATH` was split on `':'`, which shreds `C:\tools;C:\bin` into four fragments
+  naming nothing. Now `std::env::split_paths`.
+- Nothing on a Windows `PATH` is called plain `opencode`. Now every `PATHEXT`
+  extension is tried, and a command that already has one is left alone.
+- `contains('/')` was the test for "this is a path", so `C:\tools\opencode.exe`
+  was hunted for on `PATH` as a bare command name.
+
+Empty `PATH` entries are now dropped too. A shell reads one as the working
+directory, which would let a repository choose which binary Artemis runs.
+
+**What is verified and what is not.** The `#[cfg(windows)]` code compiles for
+`x86_64-pc-windows-msvc` — checked by lifting it into a standalone crate,
+because a full cross-build cannot be done from macOS (`libsqlite3-sys` compiles
+C and needs the MSVC toolchain). CI is what actually builds all three.
+**Neither Linux nor Windows has ever been run**, only compiled and tested.
+
+CI also immediately caught two things the looser local gate did not: a `fmt`
+violation and an `unused_mut` that only exists off Windows, both under
+`clippy -D warnings`.
+**Depends:** everything.
 **Depends:** v0.4.
 
 ## M14. Open-source readiness

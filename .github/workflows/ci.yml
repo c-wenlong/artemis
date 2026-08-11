@@ -1,0 +1,144 @@
+# Artemis CI.
+#
+# Two jobs, deliberately shaped differently. `check` runs everywhere the app is
+# meant to ship, because the bugs this repository actually had were
+# platform-specific — splitting PATH on ":" finds nothing on Windows, and no
+# amount of macOS testing would have caught it. `build` only runs on demand,
+# because bundling three installers on every push is slow and rarely what you
+# want to know.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      bundle:
+        description: Build installers for every platform
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # One platform failing should not hide the others: which platforms broke
+      # is the whole reason this matrix exists.
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # webkit2gtk is Tauri's Linux webview; without it the Rust build fails
+      # with a pkg-config error that reads like a Rust problem.
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libssl-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      # No TTY on a runner, and pnpm's installer prompts without it.
+      - name: Install
+        run: CI=true pnpm install --frozen-lockfile
+        shell: bash
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test (front end)
+        run: pnpm test
+
+      - name: Format
+        working-directory: apps/desktop/src-tauri
+        run: cargo fmt --check
+
+      - name: Clippy
+        working-directory: apps/desktop/src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+
+      # The ignored tests are excluded on purpose: they run real agents, cost
+      # money, and need credentials no runner has.
+      - name: Test (host)
+        working-directory: apps/desktop/src-tauri
+        run: cargo test
+
+  build:
+    name: bundle (${{ matrix.os }})
+    if: github.event_name == 'workflow_dispatch' && inputs.bundle
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libssl-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install
+        run: CI=true pnpm install --frozen-lockfile
+        shell: bash
+
+      # Unsigned. Signing needs an Apple Developer ID and notarization
+      # credentials that are not in this repository — see docs/RELEASING.md.
+      - name: Bundle
+        working-directory: apps/desktop
+        run: pnpm exec tauri build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artemis-${{ matrix.os }}
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/**/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/**/*.AppImage
+            apps/desktop/src-tauri/target/release/bundle/**/*.deb
+            apps/desktop/src-tauri/target/release/bundle/**/*.msi
+            apps/desktop/src-tauri/target/release/bundle/**/*.exe
+          if-no-files-found: error

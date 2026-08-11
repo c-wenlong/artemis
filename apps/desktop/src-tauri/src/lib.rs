@@ -21,7 +21,8 @@ pub mod peek;
 mod proc;
 /// Public so `tests/quiver.rs` can read fixture directories directly.
 pub mod quiver;
-mod scanner;
+/// Public so `tests/portability.rs` can check the platform assumptions.
+pub mod scanner;
 mod settings;
 
 /// Public so `tests/persistence.rs` can exercise migrations and recovery.

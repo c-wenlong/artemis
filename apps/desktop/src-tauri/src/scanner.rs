@@ -78,6 +78,58 @@ fn expand_home(path: &str, home: &Path) -> PathBuf {
     }
 }
 
+/// Split a `PATH`-shaped string using the platform's own separator.
+///
+/// `split(':')` is the obvious thing and is wrong on Windows twice over: the
+/// separator is `;`, and every absolute path contains a colon after the drive
+/// letter, so a colon split turns `C:\tools;C:\bin` into four fragments that
+/// name nothing. `std::env::split_paths` knows which platform it is on.
+///
+/// Empty entries are dropped. An empty `PATH` element means "the current
+/// directory" to a shell, and resolving a harness out of the working directory
+/// would let a repository choose which binary Artemis runs.
+pub fn split_path_env(value: &str) -> impl Iterator<Item = PathBuf> + '_ {
+    std::env::split_paths(value).filter(|entry| !entry.as_os_str().is_empty())
+}
+
+/// The names a command might actually have on disk.
+///
+/// On Unix that is the command itself. On Windows runnability lives in the
+/// extension, and nothing on `PATH` is called plain `opencode` — so every
+/// entry in `PATHEXT` is tried, in the order Windows would try them.
+pub fn executable_names(command: &str) -> impl Iterator<Item = String> {
+    // `mut` is only reached under cfg(windows); on Unix there is one name.
+    #[cfg_attr(not(windows), allow(unused_mut))]
+    let mut names = vec![command.to_string()];
+
+    #[cfg(windows)]
+    {
+        // A command that already carries a known extension is left alone;
+        // `opencode.exe.exe` finds nothing.
+        let has_extension = std::path::Path::new(command).extension().is_some();
+        if !has_extension {
+            let pathext =
+                std::env::var("PATHEXT").unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".to_string());
+            for extension in pathext.split(';') {
+                let extension = extension.trim();
+                if !extension.is_empty() {
+                    names.push(format!("{command}{}", extension.to_lowercase()));
+                }
+            }
+        }
+    }
+
+    names.into_iter()
+}
+
+/// Whether a command names a location rather than something to find on `PATH`.
+///
+/// Windows writes `C:\tools\opencode.exe`; checking only for `/` would send
+/// the scanner hunting for that whole string as a bare command name.
+pub fn looks_like_path(command: &str) -> bool {
+    command.contains('/') || command.contains('\\')
+}
+
 pub fn home_dir() -> PathBuf {
     std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
@@ -92,9 +144,9 @@ fn path_dirs() -> Vec<PathBuf> {
     let mut dirs = Vec::new();
 
     let path_env = std::env::var("PATH").unwrap_or_default();
-    let candidates = path_env
-        .split(':')
-        .map(PathBuf::from)
+    let candidates = split_path_env(&path_env)
+        .collect::<Vec<_>>()
+        .into_iter()
         .chain(EXTRA_BIN_DIRS.iter().map(|dir| expand_home(dir, &home)));
 
     for candidate in candidates {
@@ -131,14 +183,30 @@ pub fn executable_at(path: &str) -> bool {
     is_executable(Path::new(path))
 }
 
-fn resolve_executable(command: &str, dirs: &[PathBuf]) -> Option<String> {
-    if command.contains('/') && is_executable(Path::new(command)) {
+/// Find `command` in `dirs`, trying each name the platform would.
+pub fn resolve_in_dirs(command: &str, dirs: &[PathBuf]) -> Option<String> {
+    if looks_like_path(command) && is_executable(Path::new(command)) {
         return Some(command.to_string());
     }
-    dirs.iter()
-        .map(|dir| dir.join(command))
-        .find(|candidate| is_executable(candidate))
-        .map(|candidate| candidate.to_string_lossy().into_owned())
+    for name in executable_names(command) {
+        if let Some(found) = dirs
+            .iter()
+            .map(|dir| dir.join(&name))
+            .find(|candidate| is_executable(candidate))
+        {
+            return Some(found.to_string_lossy().into_owned());
+        }
+    }
+    None
+}
+
+/// The directories a harness is looked for in. Existing ones only.
+pub fn search_dirs() -> Vec<PathBuf> {
+    path_dirs()
+}
+
+fn resolve_executable(command: &str, dirs: &[PathBuf]) -> Option<String> {
+    resolve_in_dirs(command, dirs)
 }
 
 fn read_version(command_path: &str, version_args: &[&str]) -> Option<String> {
