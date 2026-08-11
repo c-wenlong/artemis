@@ -15,11 +15,32 @@ use crate::types::{
 
 const MAX_PROJECTS: usize = 60;
 
+/// A stable id for a project, derived from its path.
+///
+/// This becomes a directory name under the worktrees root, so it must be **one
+/// path segment on every platform**. It previously replaced only `/`, spaces and
+/// `.`, which leaves a Windows path nearly intact: `C:\Users\you\repo` became the
+/// id `c-users-you-repo`, still drive-qualified. `join` does not append a
+/// drive-qualified path — it replaces what it is joined to — so the worktrees
+/// root was discarded and worktrees were created *inside the repository*, where
+/// the comparison feature would later delete them as losers.
+///
+/// Anything that is not clearly safe in a filename is folded to `-`, rather than
+/// listing the separators to remove. A deny-list is how the backslash was
+/// missed.
 fn project_id_for(path: &Path) -> String {
-    path.to_string_lossy()
-        .trim_matches('/')
-        .replace(['/', ' ', '.'], "-")
-        .to_lowercase()
+    let folded: String = path
+        .to_string_lossy()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    folded.trim_matches('-').to_string()
 }
 
 fn display_name(path: &Path) -> String {
@@ -309,5 +330,54 @@ pub fn review_snapshot(workspace_id: &str) -> ReviewSnapshot {
         base_branch: git::base_branch(&path),
         files: git::changed_files(&path),
         artifact_paths: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A project id becomes a directory name under the worktrees root, so it has
+    /// to be **one path segment on every platform**.
+    ///
+    /// It was built by replacing `/`, spaces and `.` — which leaves a Windows
+    /// path almost intact. `C:\Users\you\repo` became the id `c-users-you-repo`,
+    /// still drive-qualified, and `join` on Windows does not append a
+    /// drive-qualified path, it replaces what it is joined to. So the worktrees
+    /// root was discarded and every worktree was created **inside the
+    /// repository** — where the comparison feature would later delete it as a
+    /// loser, from inside the user's own checkout.
+    ///
+    /// Found by CI on Windows. It is the same shape as the path-traversal bug in
+    /// `paths.rs`: a derived string used as a path segment turns out to be
+    /// absolute somewhere, and `join` silently obeys it.
+    #[test]
+    fn a_project_id_is_a_single_path_segment() {
+        for raw in [
+            r"C:\Users\you\code\repo",
+            r"\\server\share\repo",
+            "/Users/you/code/repo",
+            "/home/user/my project/repo",
+        ] {
+            let id = project_id_for(Path::new(raw));
+            assert!(
+                !id.contains(['/', '\\', ':']),
+                "{raw:?} produced an id that is not one segment: {id:?}"
+            );
+            assert!(!id.is_empty(), "{raw:?} produced an empty id");
+        }
+    }
+
+    /// The consequence, stated directly: joining the id must stay under the root.
+    #[test]
+    fn the_worktrees_root_survives_joining_a_project_id() {
+        let root = Path::new("/tmp/artemis/worktrees");
+        for raw in [r"C:\Users\you\repo", "/Users/you/repo"] {
+            let id = project_id_for(Path::new(raw));
+            assert!(
+                root.join(&id).starts_with(root),
+                "joining {id:?} escaped the worktrees root"
+            );
+        }
     }
 }
