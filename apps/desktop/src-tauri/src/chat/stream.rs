@@ -10,9 +10,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use crate::chat::adapters::{self, HarnessAdapter};
 use crate::chat::log::EventLog;
 use crate::chat::parser::OpenCodeParser;
-use crate::types::RuntimeEvent;
+use crate::types::{HarnessKind, RuntimeEvent};
 
 /// Where streamed events go. Implemented by a Tauri channel in the app and by a
 /// collecting vector in tests.
@@ -122,6 +123,9 @@ impl TurnHandle {
 pub struct TurnRequest<'a> {
     pub session_id: String,
     pub turn_id: String,
+    /// Which protocol the harness speaks. Decides the adapter, and whether the
+    /// prompt goes on the command line or down stdin.
+    pub kind: HarnessKind,
     pub command: String,
     pub args: Vec<String>,
     pub cwd: &'a Path,
@@ -186,7 +190,11 @@ pub fn run_turn(
         .args(&request.args)
         .current_dir(request.cwd)
         .env("NO_COLOR", "1")
-        .stdin(Stdio::null())
+        .stdin(if adapters::prompt_via_stdin(request.kind) {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -219,6 +227,16 @@ pub fn run_turn(
         }
     };
 
+    // Codex takes the prompt on stdin, and does not begin work until it sees
+    // EOF — so the handle is dropped immediately after writing.
+    if adapters::prompt_via_stdin(request.kind) {
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            let _ = stdin.write_all(request.prompt.as_bytes());
+            let _ = stdin.write_all(b"\n");
+        }
+    }
+
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
 
@@ -241,8 +259,20 @@ pub fn run_turn(
         *guard = Some(child);
     }
 
-    let mut parser = OpenCodeParser::new(request.session_id.clone(), request.turn_id.clone())
-        .rooted_at(request.cwd);
+    // A harness with no adapter never reaches here — the UI routes it to the
+    // terminal dock — but falling back to opencode's parser is a safer failure
+    // than unwrapping on a None in the middle of a running turn.
+    let mut parser: Box<dyn HarnessAdapter> = adapters::for_kind(
+        request.kind,
+        request.session_id.clone(),
+        request.turn_id.clone(),
+    )
+    .unwrap_or_else(|| {
+        Box::new(
+            OpenCodeParser::new(request.session_id.clone(), request.turn_id.clone())
+                .rooted_at(request.cwd),
+        )
+    });
     let mut pending: Vec<RuntimeEvent> = Vec::new();
     let mut last_flush = Instant::now();
 
@@ -451,6 +481,7 @@ mod tests {
 
         let outcome = run_turn(
             TurnRequest {
+                kind: HarnessKind::Opencode,
                 session_id: "s1".into(),
                 turn_id: "t1".into(),
                 command,
@@ -493,6 +524,7 @@ mod tests {
 
         let outcome = run_turn(
             TurnRequest {
+                kind: HarnessKind::Opencode,
                 session_id: "s2".into(),
                 turn_id: "t1".into(),
                 command,
@@ -530,6 +562,7 @@ mod tests {
 
         run_turn(
             TurnRequest {
+                kind: HarnessKind::Opencode,
                 session_id: "s3".into(),
                 turn_id: "t1".into(),
                 command: "/nonexistent/harness".into(),
@@ -567,6 +600,7 @@ mod tests {
         let started = Instant::now();
         let outcome = run_turn(
             TurnRequest {
+                kind: HarnessKind::Opencode,
                 session_id: "s4".into(),
                 turn_id: "t1".into(),
                 command,
@@ -607,6 +641,7 @@ mod tests {
 
         run_turn(
             TurnRequest {
+                kind: HarnessKind::Opencode,
                 session_id: "s5".into(),
                 turn_id: "t1".into(),
                 command,

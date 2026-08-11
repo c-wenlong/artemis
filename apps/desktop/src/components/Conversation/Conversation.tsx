@@ -16,6 +16,11 @@ interface ConversationProps {
   onRevert?(file: { patch?: string; path: string }): Promise<void>;
   /** How much of a finished turn to render. */
   verbosity?: TranscriptVerbosity;
+  /**
+   * Set when the chosen harness has no adapter. It is not broken — Artemis
+   * simply cannot parse it into segments, and a terminal runs it properly.
+   */
+  onOpenInTerminal?(): void;
   children?: ReactNode;
 }
 
@@ -34,6 +39,7 @@ export function Conversation({
   onFork,
   onRevert,
   verbosity,
+  onOpenInTerminal,
   children
 }: ConversationProps) {
   const isEmpty = messages.length === 0 && (children === undefined || children === null);
@@ -58,7 +64,25 @@ export function Conversation({
             verbosity={verbosity}
           />
         ) : null}
-        {isEmpty ? (
+        {isEmpty && onOpenInTerminal ? (
+          <div className="conversation-empty" data-testid="dock-only-notice">
+            <p className="conversation-empty-title">
+              {harnessLabel ?? "This harness"} runs in a terminal.
+            </p>
+            <p className="conversation-empty-body">
+              Artemis renders a transcript for the harnesses it can parse.
+              This one it cannot, so it runs for real in the dock instead of
+              being shown half-rendered here.
+            </p>
+            <button
+              className="settings-save"
+              onClick={onOpenInTerminal}
+              type="button"
+            >
+              Open in terminal
+            </button>
+          </div>
+        ) : isEmpty ? (
           <div className="conversation-empty" data-testid="conversation-empty">
             <p className="conversation-empty-title">
               {harnessLabel ?? "No harness"} is ready.

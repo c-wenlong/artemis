@@ -33,6 +33,14 @@ export interface HarnessAsset {
   description?: string;
   workspaceMentions?: string[];
   lastUsedAt?: string;
+  /**
+   * Whether Artemis can render this harness as a transcript.
+   *
+   * False does not mean broken. Artemis supports far more harnesses than it can
+   * parse, and the honest answer for the rest is the terminal dock — a real
+   * terminal running the real tool — rather than a half-rendered transcript.
+   */
+  supportsStreaming?: boolean;
 }
 
 export interface SkillAsset {

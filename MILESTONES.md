@@ -621,13 +621,43 @@ scans already cover what the inventory needs, and importing them now would be
 duplicate data with no consumer.
 **Depends:** M7.
 
-## M11. Harness adapters
+## M11. Harness adapters ✅
 
-- `RuntimeEvent` adapters for Claude Code and Codex
-- Adapter conformance test suite — one fixture set, every adapter
-- Graceful degradation to the terminal dock when an adapter is absent
+- `HarnessAdapter` trait; opencode, Codex and Claude Code implementations
+- Conformance suite — the same assertions over every adapter's own capture
+- Per-harness argv, including how each one is resumed
+- Degradation to the terminal dock when an adapter is absent
 
-**Exit:** three harnesses render as segments; the fourth still works, in the dock.
+**Exit:** met. Three harnesses render as segments; a fourth — Amp, installed and
+perfectly usable — routes to the dock instead, with the Run control withheld
+rather than offered and then refused.
+
+**A trait, unlike M10.** Here there really are several implementations chosen at
+runtime by the harness the user picked, and a fourth harness legitimately has
+none. That is polymorphism; the Quiver source was a boolean.
+
+**Captured, not documented.** `codex.jsonl` is a real `codex exec --json` run
+that edited a file. Claude Code's OAuth had expired on this machine, so its
+fixture pairs the envelope from a real `--output-format stream-json` run with
+content-block shapes read out of Claude Code's own session logs — every key and
+type observed, the prose invented. **Still owed: a live Claude turn**, once its
+session is re-authenticated, following `opencode_live.rs`.
+
+What the captures taught, none of which was in any documentation:
+
+- Codex reads its prompt from **stdin** and hangs forever without it. It also
+  emits `file_change` as a first-class item — the only harness that does —
+  though it names files without diffing them, so there is nothing to count and
+  nothing for M8b's Undo to reverse.
+- Claude reports tool output as a **`user`-role** message, because that is how
+  the Messages API models it. Read naively, the model's own tool results appear
+  in the transcript as things the human said.
+- Claude's hook frames (`hook_started`, `hook_response`) are machinery, not
+  conversation.
+- `codex exec resume <ID>` and `claude --resume <ID>`, both read off `--help`.
+
+**Verified live:** `a_real_codex_turn_streams_and_edits` runs a Codex turn
+through the actual run loop — 12 events, thread id captured, file really edited.
 **Depends:** M3, M6.
 
 ## M11b. Sub-agents

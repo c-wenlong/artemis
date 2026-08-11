@@ -3,6 +3,12 @@ import type { HarnessAsset, ReviewSnapshot, WorkspaceSummary } from "@artemis/co
 import "./Composer.css";
 
 interface ComposerProps {
+  /**
+   * Set when the chosen harness has no adapter. Running it would stream a page
+   * of unrendered JSON into the transcript, so the control is withheld rather
+   * than offered and then refused by the host.
+   */
+  dockOnly?: boolean;
   workspace: WorkspaceSummary | null;
   review: ReviewSnapshot | null;
   harnesses: HarnessAsset[];
@@ -36,6 +42,7 @@ function diffTotals(review: ReviewSnapshot | null) {
  * conversation to see.
  */
 export function Composer({
+  dockOnly = false,
   workspace,
   review,
   harnesses,
@@ -139,7 +146,12 @@ export function Composer({
             Stop
           </button>
         ) : (
-          <button className="composer-run" disabled={isBusy} type="submit">
+          <button
+            className="composer-run"
+            disabled={isBusy || dockOnly}
+            title={dockOnly ? "This harness runs in the terminal dock." : undefined}
+            type="submit"
+          >
             {isBusy ? "Running…" : "Run"}
           </button>
         )}

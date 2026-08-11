@@ -55,6 +55,20 @@ enum ToolStatus {
     Errored,
 }
 
+impl crate::chat::adapters::HarnessAdapter for OpenCodeParser {
+    fn parse_line(&mut self, line: &str) -> Vec<RuntimeEvent> {
+        OpenCodeParser::parse_line(self, line)
+    }
+
+    fn observed_session_id(&self) -> Option<&str> {
+        OpenCodeParser::observed_session_id(self)
+    }
+
+    fn error_message(&self) -> Option<&str> {
+        OpenCodeParser::error_message(self)
+    }
+}
+
 impl OpenCodeParser {
     pub fn new(session_id: String, turn_id: String) -> Self {
         OpenCodeParser {

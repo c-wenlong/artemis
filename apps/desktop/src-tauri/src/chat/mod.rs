@@ -1,5 +1,6 @@
 //! Chat: sessions, streamed turns, and the event log behind them.
 
+pub mod adapters;
 pub mod log;
 pub mod parser;
 pub mod stream;
@@ -28,6 +29,22 @@ use stream::{new_turn_handle, run_turn, EventSink, TurnHandle, TurnRequest};
 pub struct ChatStore {
     db: Arc<Db>,
     running: Mutex<HashMap<String, TurnHandle>>,
+}
+
+/// The protocol a session's harness speaks.
+///
+/// `harness_kind` is recorded on the session when known; otherwise the id is
+/// the best signal, and an unrecognised one is `Custom` — which has no adapter
+/// and belongs in the terminal dock.
+fn harness_kind_of(session: &ChatSession) -> HarnessKind {
+    session
+        .harness_kind
+        .unwrap_or_else(|| match session.harness_id.to_lowercase().as_str() {
+            "opencode" => HarnessKind::Opencode,
+            "codex" => HarnessKind::Codex,
+            "claude" => HarnessKind::Claude,
+            _ => HarnessKind::Custom,
+        })
 }
 
 fn now() -> String {
@@ -246,29 +263,35 @@ impl ChatStore {
             ));
         }
 
+        // A harness Artemis cannot parse must not be launched as a transcript:
+        // it would stream a page of unrendered JSON. The dock runs it properly.
+        let kind = harness_kind_of(&session);
+        if !adapters::supports_streaming(kind) {
+            return Err(format!(
+                "{} does not stream a transcript. Open it in the terminal dock instead.",
+                session.harness_id
+            ));
+        }
+
         let settings = settings::read();
         let model = session
             .model
             .clone()
             .or_else(|| settings.opencode_default_model.clone());
 
-        let mut args = vec![
-            "run".to_string(),
-            "--format".to_string(),
-            "json".to_string(),
-            "--thinking".to_string(),
-            "--dir".to_string(),
-            cwd.to_string_lossy().into_owned(),
-        ];
-        if let Some(model) = &model {
-            args.push("--model".to_string());
-            args.push(model.clone());
+        // Each harness speaks its own dialect and wants its own flags; the
+        // adapter layer owns both, so nothing here knows which one is running.
+        let mut args = adapters::argv(
+            kind,
+            &cwd.to_string_lossy(),
+            model.as_deref(),
+            session.opencode_session_id.as_deref(),
+        );
+        // Codex reads the prompt from stdin; the rest take it as a trailing
+        // argument. The run loop opens the pipe when it is the former.
+        if !adapters::prompt_via_stdin(kind) {
+            args.push(prompt.clone());
         }
-        if let Some(opencode_session) = &session.opencode_session_id {
-            args.push("--session".to_string());
-            args.push(opencode_session.clone());
-        }
-        args.push(prompt.clone());
 
         let turn_id = format!("turn-{}", now().replace([':', '.', '-', '+'], ""));
         let handle = new_turn_handle();
@@ -287,6 +310,7 @@ impl ChatStore {
             TurnRequest {
                 session_id: session.id.clone(),
                 turn_id,
+                kind,
                 command: executable,
                 args,
                 cwd: &cwd,

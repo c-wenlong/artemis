@@ -218,6 +218,7 @@ export function App({ host }: AppProps = {}) {
               terminals.isVisible ? terminals.hide() : void terminals.open()
             }
             review={review}
+            dockOnly={selectedHarness?.supportsStreaming === false}
             selectedHarnessId={selectedHarnessId}
             workspace={selectedWorkspace}
           />
@@ -243,6 +244,13 @@ export function App({ host }: AppProps = {}) {
               setReview(await hostService.getReviewSnapshot(selectedWorkspace.id));
             }}
             turns={chat.transcript.turns}
+            onOpenInTerminal={
+              // Absent capability means an older host; assume it streams
+              // rather than pushing every harness into the dock.
+              selectedHarness && selectedHarness.supportsStreaming === false
+                ? () => void terminals.openNew()
+                : undefined
+            }
             verbosity={data.settings.transcriptVerbosity ?? "full"}
           />
           {peek ? (

@@ -299,6 +299,7 @@ pub fn scan_harnesses(options: &ScanOptions) -> Vec<HarnessAsset> {
                 description: Some(harness.description.to_string()),
                 workspace_mentions: Some(workspace_mentions),
                 last_used_at: None,
+                supports_streaming: crate::chat::adapters::supports_streaming(harness.kind),
             }
         })
         .collect();
@@ -357,6 +358,9 @@ fn scan_unknown_executables(dirs: &[PathBuf], include_versions: bool) -> Vec<Har
                 description: Some("Discovered executable on PATH".to_string()),
                 workspace_mentions: Some(Vec::new()),
                 last_used_at: None,
+                // An executable found by name alone is Custom, so it has no
+                // adapter — the dock is where it belongs.
+                supports_streaming: false,
             });
         }
     }

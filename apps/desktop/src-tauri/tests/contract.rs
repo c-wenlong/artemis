@@ -84,6 +84,7 @@ fn harness_asset_serializes_camel_case() {
         description: Some("Open source AI coding agent".into()),
         workspace_mentions: Some(vec!["AGENTS.md".into()]),
         last_used_at: None,
+        supports_streaming: true,
     };
 
     assert_eq!(
@@ -99,7 +100,8 @@ fn harness_asset_serializes_camel_case() {
             "source": "path",
             "executablePath": "/usr/local/bin/opencode",
             "description": "Open source AI coding agent",
-            "workspaceMentions": ["AGENTS.md"]
+            "workspaceMentions": ["AGENTS.md"],
+            "supportsStreaming": true
         })
     );
 }
@@ -121,6 +123,7 @@ fn unset_optionals_are_omitted() {
         description: None,
         workspace_mentions: None,
         last_used_at: None,
+        supports_streaming: true,
     };
 
     let value = to_json(&asset);

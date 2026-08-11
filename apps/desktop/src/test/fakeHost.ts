@@ -72,7 +72,8 @@ export const fakeInventory: AssetInventorySnapshot = {
       aliases: ["oc"],
       health: "ready",
       source: "path",
-      executablePath: "/usr/local/bin/opencode"
+      executablePath: "/usr/local/bin/opencode",
+      supportsStreaming: true
     },
     {
       id: "claude",
@@ -83,7 +84,22 @@ export const fakeInventory: AssetInventorySnapshot = {
       aliases: ["cc"],
       health: "ready",
       source: "path",
-      executablePath: "/opt/homebrew/bin/claude"
+      executablePath: "/opt/homebrew/bin/claude",
+      supportsStreaming: true
+    },
+    {
+      // Installed and perfectly usable, but Artemis has no adapter for its
+      // output — the realistic dock case, and the common one.
+      id: "amp",
+      kind: "amp",
+      label: "Amp",
+      command: "amp",
+      version: "0.0.1",
+      aliases: [],
+      health: "ready",
+      source: "path",
+      executablePath: "/usr/local/bin/amp",
+      supportsStreaming: false
     },
     {
       id: "aider",
@@ -92,7 +108,9 @@ export const fakeInventory: AssetInventorySnapshot = {
       command: "aider",
       aliases: [],
       health: "missing",
-      source: "quiver-catalog"
+      source: "quiver-catalog",
+      // No adapter: Artemis cannot parse it, so it belongs in the dock.
+      supportsStreaming: false
     }
   ],
   skills: [
@@ -123,6 +141,8 @@ export const fakeReview: ReviewSnapshot = {
 export const fakeSessions: AgentSessionSummary[] = [];
 
 export interface FakeHostOptions {
+  /** Override the whole inventory, e.g. to model an older host. */
+  inventory?: AssetInventorySnapshot;
   settings?: RuntimeSettings;
   workspaces?: WorkspaceSummary[];
   review?: ReviewSnapshot;
@@ -233,7 +253,8 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     reverted,
     peeked,
 
-    getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
+    getSnapshot: async (): Promise<AssetInventorySnapshot> =>
+      options.inventory ?? fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => projects,
     listWorkspaces: async (projectId?: string): Promise<WorkspaceSummary[]> =>
       projectId

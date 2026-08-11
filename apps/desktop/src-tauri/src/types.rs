@@ -75,6 +75,10 @@ pub struct HarnessAsset {
     pub workspace_mentions: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_used_at: Option<String>,
+    /// Whether Artemis can render this harness as a transcript. False means it
+    /// works, but in the terminal dock — which is a routing decision the UI has
+    /// to make before launching anything.
+    pub supports_streaming: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

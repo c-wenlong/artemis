@@ -241,7 +241,14 @@ describe("App data flow", () => {
     await screen.findByRole("button", { name: /^artemis$/i });
     const harness = screen.getByRole("combobox", { name: /harness/i });
     await waitFor(() => expect(harness).toHaveValue("opencode"));
-    expect(within(harness).getAllByRole("option")).toHaveLength(2);
+    // Named rather than counted: the point is that the missing harness is
+    // absent, not how many happen to be installed in the fixture. Amp is ready
+    // but unadapted, which is a dock decision, not a readiness one.
+    expect(
+      within(harness)
+        .getAllByRole("option")
+        .map((option) => option.textContent)
+    ).toEqual(["OpenCode", "Claude Code", "Amp"]);
   });
 });
 

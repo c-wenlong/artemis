@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 
 use artemis_host::chat::log::EventLog;
 use artemis_host::chat::stream::{new_turn_handle, run_turn, EventSink, TurnRequest};
-use artemis_host::types::RuntimeEvent;
+use artemis_host::types::{HarnessKind, RuntimeEvent};
 
 #[derive(Default)]
 struct Collector {
@@ -57,6 +57,7 @@ fn streams_a_real_opencode_turn() {
 
     let outcome = run_turn(
         TurnRequest {
+            kind: HarnessKind::Opencode,
             session_id: "live-session".into(),
             turn_id: "live-turn".into(),
             command: binary,
@@ -172,6 +173,7 @@ fn reports_the_files_a_real_turn_edited() {
     let log = EventLog::in_dir(dir.clone(), "live-edit");
     let outcome = run_turn(
         TurnRequest {
+            kind: HarnessKind::Opencode,
             session_id: "live-edit".into(),
             turn_id: "live-edit-turn".into(),
             command: binary,
@@ -286,6 +288,7 @@ fn undo_reverses_a_real_edit() {
     let log = EventLog::in_dir(dir.clone(), "live-undo");
     let outcome = run_turn(
         TurnRequest {
+            kind: HarnessKind::Opencode,
             session_id: "live-undo".into(),
             turn_id: "live-undo-turn".into(),
             command: binary,
@@ -326,5 +329,77 @@ fn undo_reverses_a_real_edit() {
         std::fs::read_to_string(dir.join("seed.txt")).unwrap(),
         original,
         "undo should have put the file back exactly"
+    );
+}
+
+/// Codex, end to end through the same run loop.
+///
+/// The adapter is checked against a recorded capture in `tests/adapters.rs`;
+/// this checks the parts a capture cannot — that the argv is right, that the
+/// prompt reaches a harness which reads it from stdin, and that the events come
+/// back through `run_turn` rather than only through the parser.
+///
+/// ```text
+/// CODEX_BIN=$(command -v codex) \
+///   cargo test --test opencode_live codex_turn -- --ignored --nocapture
+/// ```
+#[test]
+#[ignore]
+fn a_real_codex_turn_streams_and_edits() {
+    let Ok(binary) = std::env::var("CODEX_BIN") else {
+        eprintln!("set CODEX_BIN to run this");
+        return;
+    };
+
+    let dir = std::env::temp_dir().join("artemis-codex-live");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("seed.txt"), "alpha\nbeta\ngamma\n").unwrap();
+
+    let prompt = "Add a line reading 'delta' to the end of seed.txt.";
+    let mut args =
+        artemis_host::chat::adapters::argv(HarnessKind::Codex, &dir.to_string_lossy(), None, None);
+    // The sandbox is already a throwaway directory; approvals would block a
+    // non-interactive run forever.
+    args.insert(1, "--dangerously-bypass-approvals-and-sandbox".into());
+
+    let sink = Arc::new(Collector::default());
+    let log = EventLog::in_dir(dir.clone(), "codex-live");
+    let outcome = run_turn(
+        TurnRequest {
+            kind: HarnessKind::Codex,
+            session_id: "codex-live".into(),
+            turn_id: "codex-live-turn".into(),
+            command: binary,
+            args,
+            cwd: &dir,
+            prompt: prompt.into(),
+            harness_id: "codex".into(),
+            workspace_id: "ws-live".into(),
+        },
+        new_turn_handle(),
+        sink.clone(),
+        &log,
+    );
+
+    let batches = sink.batches.lock().unwrap();
+    let events: Vec<&RuntimeEvent> = batches.iter().flatten().collect();
+    println!("{} events, failed={}", events.len(), outcome.failed);
+
+    assert!(!outcome.failed, "the turn should succeed");
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, RuntimeEvent::TextDelta { .. })),
+        "codex should have said something"
+    );
+    assert!(
+        outcome.opencode_session_id.is_some(),
+        "the thread id is what lets the next turn resume"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("seed.txt")).unwrap(),
+        "alpha\nbeta\ngamma\ndelta\n",
+        "and the edit should really have happened"
     );
 }

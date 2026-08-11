@@ -47,6 +47,7 @@ fn native(id: &str, health: AssetHealth) -> HarnessAsset {
         description: None,
         workspace_mentions: None,
         last_used_at: None,
+        supports_streaming: false,
     }
 }
 
