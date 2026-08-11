@@ -1,129 +1,105 @@
 # Artemis
 
-A local-first desktop control plane for AI coding agents.
+A desktop app for running AI coding agents and actually reading what they did.
 
-Artemis puts the assets agents depend on — harnesses, skills, MCP servers,
-providers, projects, workspaces, and sessions — behind one operational UI, then
-lets you launch agents against them and review what they changed.
+Agents are good and their output is unreadable. A terminal gives you a scrolling
+wall in which the answer, the reasoning, forty tool calls and the file edits all
+look the same. Artemis renders a turn as structured blocks — the answer first,
+the mechanics behind a header, the edits as a diff you can undo — and it does
+that for several agents at once, in isolated git worktrees, so you can compare
+their answers and keep one.
 
-> **Status: early prototype.** The harness scanner, agent launcher, opencode
-> chat runtime, and settings store run against your real machine. Projects,
-> workspaces, sessions, and review data are still partly seeded. See
-> [What's real today](#whats-real-today).
+Local-first. Nothing is sent anywhere except by the agent you launched.
 
-## Why
+## Requirements
 
-Running more than one AI coding CLI means every tool has its own launch flags,
-its own session format, its own MCP config, and its own idea of where skills
-live. [Quiver](https://github.com/c-wenlong/quiver) solves the CLI half of that
-problem. Artemis is the GUI half: a cockpit for launching agents into workspaces,
-watching them run, and reviewing the diff.
-
-Artemis is a fresh design, not a fork. It borrows product lessons from Superset
-(host-service boundary, workspace lifecycle) and Pane (terminal-first ergonomics,
-panel model) while keeping its own stable core contracts.
+- **Node 22+** and **pnpm**
+- A **Rust toolchain** (for the desktop host)
+- On Linux, Tauri's system dependencies — see
+  [the Tauri prerequisites](https://tauri.app/start/prerequisites/); the exact
+  apt list is in `.github/workflows/ci.yml`
+- At least one agent on your `PATH`: [opencode](https://opencode.ai),
+  [Codex](https://developers.openai.com/codex/cli), or
+  [Claude Code](https://claude.com/product/claude-code)
 
 ## Quick start
 
-Requires Node 22+ and pnpm 10.
-
 ```bash
 pnpm install
-```
-
-```bash
 pnpm dev
 ```
 
-The app serves on `http://127.0.0.1:4637`.
+`pnpm dev:web` runs the interface alone in a browser — faster for UI work, but
+it cannot stream a turn, open a terminal or read a file, because all of that
+lives in the Rust host. It says so where it matters rather than failing quietly.
 
-### Environment
+## What it does
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `ARTEMIS_SCAN_ROOT` | the workspace two levels above the repo | Root directory scanned for projects and agent config files |
-| `ARTEMIS_SETTINGS_PATH` | `~/.artemis/settings.json` | Where runtime settings are persisted |
+**Reads a turn properly.** Prose is the answer; tool calls fold behind a
+`Worked for 2m 24s` header. File references in the text become chips you can
+click to see the lines they name. Long prompts collapse behind *Show more*.
 
-## Architecture
+**Shows what changed, and takes it back.** Every turn ends with what it edited
+and by how much. Opening a file shows its diff; **Undo** reverse-applies that
+one file's patch — so an unrelated edit of yours in the same file survives,
+which restoring from git would not. If the file has moved on since, the undo is
+refused with a reason rather than forced.
 
-Three packages, with a deliberate boundary between contract, implementation, and UI:
+**Runs several agents on one prompt.** Each gets its own git worktree off the
+same commit, so they cannot see each other's work. You read the diffs side by
+side and keep one; the rest are discarded.
 
-```
-@artemis/core           domain contracts — no runtime, types only
-   ▲
-@artemis/host-service   local adapter — scanners, launcher, chat, seed data
-   ▲
-@artemis/desktop        React operational UI
-```
+**Speaks three protocols.** opencode, Codex and Claude Code each stream a
+different JSON dialect. A harness Artemis cannot parse is not broken — it runs
+for real in the terminal dock instead of being shown half-rendered.
 
-**`@artemis/core`** defines the interfaces every other package codes against:
-`AssetCatalog`, `WorkspaceRuntime`, `AgentRuntime`, `ChatRuntime`,
-`RuntimeSettingsRuntime`, and `ReviewRuntime`. It ships types only, so the UI
-never depends on how the host is implemented.
+**Forks a conversation.** Branch at any turn into a new session carrying
+everything up to that point.
 
-**`@artemis/host-service`** implements those interfaces twice. `createLocalHostService`
-is an in-process mock used for UI work without a machine scan.
-`src/node/*` holds the real implementations — harness scanner, agent launcher,
-opencode chat runtime, git-aware snapshot — and `createHttpHostClient` is the
-browser-side client that talks to them over HTTP.
+**Imports your history.** If you use [Quiver](https://github.com/c-wenlong/quiver),
+Artemis reads its session cache and offers past conversations across every
+harness you have used. Optional, read-only, and absent without it.
 
-**`@artemis/desktop`** is a React 19 + Vite app with five sections: Workbench,
-Projects, Chat, Review, and Settings.
+## Status
 
-### Transport
+Everything above works. Two things do not, and both are written down rather than
+implied:
 
-The Node-side host currently runs as **Vite dev-server middleware**, defined in
-`apps/desktop/vite.config.ts`, exposing:
+- **No signed builds.** A downloaded `.app` is quarantined by macOS and will not
+  open, because signing needs an Apple Developer ID. Build it yourself, or see
+  [docs/RELEASING.md](docs/RELEASING.md).
+- **Linux and Windows are compiled and tested, never run.** CI builds all three
+  platforms; nobody has yet launched it on two of them.
 
-```
-GET  /api/artemis/snapshot            asset inventory
-GET  /api/artemis/projects            projects under the scan root
-GET  /api/artemis/workspaces          workspaces (?projectId=)
-GET  /api/artemis/sessions            sessions (?workspaceId=)
-GET  /api/artemis/review              review snapshot (?workspaceId=)
-GET  /api/artemis/settings            runtime settings
-POST /api/artemis/settings            persist runtime settings
-POST /api/artemis/launch              launch an agent
-POST /api/artemis/chat/sessions       create a chat session
-POST /api/artemis/chat/sessions/:id/messages   send a turn
-```
+There are no screenshots here yet. The interface only renders a real transcript
+in the desktop app, and a mocked one would misrepresent it.
 
-This means the API only exists under `pnpm dev`. A production `vite build` +
-`preview` serves the UI with no host behind it. Extracting the host into its own
-process is the next structural milestone.
+## Documentation
 
-## What's real today
+- [MILESTONES.md](MILESTONES.md) — the real roadmap. What is done, what is
+  deliberately not being built, and what is blocked on something external.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the Rust host and the
+  webview fit together.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to run the checks, and what a change
+  is expected to look like.
+- [docs/RELEASING.md](docs/RELEASING.md) — what CI does, and which credentials
+  the rest needs.
+- [docs/QUIVER_SCHEMA.md](docs/QUIVER_SCHEMA.md) — the on-disk shapes Artemis
+  reads from Quiver.
 
-| Area | State |
-|---|---|
-| Harness discovery | **Real.** Scans `PATH` plus `~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`, `~/.npm-global/bin`, `~/go/bin`; resolves versions and finds workspace config mentions (`AGENTS.md`, `CLAUDE.md`, `.mcp.json`, `opencode.json`, …). Knows 12 harnesses: pi, claude, codex, gemini, cursor, opencode, copilot, amp, droid, aider, swe, runpane. |
-| Agent launch | **Real.** Spawns the resolved executable in the workspace directory with a 12s timeout; refuses harnesses that aren't `ready`. |
-| Chat | **Real, opencode only.** Shells out to `opencode run` with JSON output, parses blocks and tool calls, threads `--session` for continuity. |
-| Settings | **Real.** Persisted to `~/.artemis/settings.json`; currently opencode executable path and default model, which override the scanner's result. |
-| Workspaces | **Partly real.** Rows are seeded, but `branch` and `changedFileCount` are read from live `git`. |
-| Projects | **Seeded**, with `rootPath` pointed at the real scan root. |
-| Sessions, review | **Seeded.** |
-| Skills, MCP servers, providers | **Seeded** in the inventory snapshot. |
+## A note on how this was built
 
-## Roadmap
+Every harness adapter was written from a **captured live run**, never from
+documentation — and every time the two were compared, the documentation was
+wrong. opencode nests tool data under `state` and sends each call once, already
+finished. Codex reads its prompt from stdin and hangs forever without it. Claude
+reports tool output as a user-role message.
 
-1. Replace remaining seeded catalogs with filesystem scanners.
-2. Extract the host out of Vite middleware into a standalone local service.
-3. SQLite persistence for projects, workspaces, sessions, and launch presets.
-4. A real terminal host: PTY create / input / resize / subscribe.
-5. Git worktree create / adopt / delete flows with visible progress.
-6. Launch adapters for Codex, Claude, Gemini, Cursor, and custom commands.
-7. An optional Quiver import adapter, once the catalog contract is stable.
+The tests reflect that. Anything that can destroy work is tested against real
+git repositories, and the tests that run actual agents are `#[ignore]`d rather
+than mocked away, because a fixture only proves the parser handles the shape it
+was cut from.
 
-See [PROJECT_OUTLINE.md](PROJECT_OUTLINE.md) for product scope and open
-questions, and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the module
-split and vertical slice.
+## Licence
 
-## Scripts
-
-```bash
-pnpm dev         # desktop app + local host API on :4637
-pnpm build       # typecheck and build every package
-pnpm typecheck   # typecheck only
-pnpm clean       # remove build output
-```
+MIT. See [LICENSE](LICENSE).

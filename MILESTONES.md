@@ -757,14 +757,35 @@ violation and an `unused_mut` that only exists off Windows, both under
 **Depends:** everything.
 **Depends:** v0.4.
 
-## M14. Open-source readiness
+## M14. Open-source readiness — done except going public
 
-- README with real screenshots, CONTRIBUTING, architecture docs, LICENSE
-- Issue and PR templates; public roadmap
-- Test coverage on core contracts; CI green and required
-- Repo flipped public
+- ✅ README rewritten, CONTRIBUTING, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), MIT LICENSE
+- ✅ Issue and PR templates; this file is the public roadmap
+- ✅ A privacy audit that runs over every tracked file
+- ❌ Screenshots — the interface only renders a real transcript in the desktop
+  app, and a mocked one would misrepresent it
+- ⛔ Repo public — the user's call, deliberately deferred
+- ⛔ CI required — needs a run on GitHub first; CI has still never executed
 
-**Exit:** someone who has never seen the codebase can build, run, and land a PR.
+**Four real leaks found and fixed** before any of this could be published. The
+audit in `tests/repo.rs` reads every file git tracks:
+
+- A hardcoded `~/.local/bin` in the browser host's launcher — a privacy leak and
+  a portability bug in one, since it only ever worked on one machine.
+- Seed data with an absolute path to a personal projects directory.
+- A real project name in a Quiver documentation example.
+- An opencode fixture captured in a scratch directory whose *flattened* name
+  embedded the account name: `-Users-someone-Desktop-…`. No slashes, so a
+  `/Users/` search missed it entirely.
+
+That last one is why the test derives the current username from `$HOME` rather
+than searching for path shapes. It also means the check protects whoever runs
+it, not just the person who wrote it — and it does not need the name written
+into a file that is about to be published.
+
+**Exit: not met.** The documentation half is done — a stranger can build, run
+and land a change. The repository is still private by choice, and CI has never
+run, so "green and required" is unverified.
 **Depends:** M13.
 
 > **v1.0.**

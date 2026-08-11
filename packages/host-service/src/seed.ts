@@ -101,9 +101,9 @@ export const seedInventory: AssetInventorySnapshot = {
 
 export const seedProjects: ProjectRef[] = [
   {
-    id: "ai-engineering",
-    name: "AI Engineering",
-    rootPath: "/Users/example/Desktop/Personal/Internal/Projects/ai-engineering",
+    id: "example-project",
+    name: "Example Project",
+    rootPath: "/work/example-project",
     mainBranch: "main"
   }
 ];
@@ -111,10 +111,10 @@ export const seedProjects: ProjectRef[] = [
 export const seedWorkspaces: WorkspaceSummary[] = [
   {
     id: "ws-current-checkout",
-    projectId: "ai-engineering",
+    projectId: "example-project",
     name: "Current checkout",
     branch: "main",
-    worktreePath: "/Users/example/Desktop/Personal/Internal/Projects/ai-engineering",
+    worktreePath: "/work/example-project",
     status: "ready",
     activeSessionIds: [],
     changedFileCount: 0,

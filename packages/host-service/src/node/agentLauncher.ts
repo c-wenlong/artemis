@@ -5,7 +5,7 @@ import type {
 } from "@artemis/core";
 import { spawn } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { delimiter, resolve } from "node:path";
 
 interface LaunchNodeAgentOptions {
   harnesses: HarnessAsset[];
@@ -213,15 +213,24 @@ function runLaunchCommand({
   });
 }
 
+/**
+ * PATH for a launched agent.
+ *
+ * A GUI process does not inherit a login shell's PATH, so the usual install
+ * locations are added back. `~/.local/bin` is resolved from the running user's
+ * home rather than written out: the previous hardcoded path worked on exactly
+ * one machine and named its owner.
+ */
 function launchPath(): string {
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
   return [
     "/opt/homebrew/bin",
     "/usr/local/bin",
-    "/Users/example/.local/bin",
+    home ? `${home}/.local/bin` : "",
     process.env.PATH ?? ""
   ]
     .filter(Boolean)
-    .join(":");
+    .join(delimiter);
 }
 
 function requestHarnessLooksLikeAmp(command: string): boolean {

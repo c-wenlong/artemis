@@ -25,7 +25,7 @@ Read at `5373a2e`. The parts that matter to Artemis:
 {
   "timestamp": 1771974850400.0,
   "agent": "OpenCode",
-  "path": "/Users/example/Desktop/.../example-project",
+  "path": "/work/example-project",
   "title": "Codebase exploration for project understanding",
   "session_id": "ses_36e15853affenKV8GjzJMPpBJq",
   "tool_name": "opencode"
