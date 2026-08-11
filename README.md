@@ -57,6 +57,12 @@ refused with a reason rather than forced.
 same commit, so they cannot see each other's work. You read the diffs side by
 side and keep one; the rest are discarded.
 
+![The Compare harnesses dialog: one prompt field, and a checklist of Claude
+Code, Codex CLI and OpenCode with their versions.](docs/images/compare.png)
+
+*Only harnesses Artemis can parse are offered here — the rest run in the
+terminal dock instead.*
+
 **Speaks three protocols.** opencode, Codex and Claude Code each stream a
 different JSON dialect. A harness Artemis cannot parse is not broken — it runs
 for real in the terminal dock instead of being shown half-rendered.
@@ -67,6 +73,12 @@ everything up to that point.
 **Imports your history.** If you use [Quiver](https://github.com/c-wenlong/quiver),
 Artemis reads its session cache and offers past conversations across every
 harness you have used. Optional, read-only, and absent without it.
+
+![Settings, Appearance tab: a grid of eleven app icons with Olympian
+selected.](docs/images/settings-appearance.png)
+
+*The icon applies to the running app immediately. The one Finder shows is baked
+in at build time, and the panel says so rather than letting you wonder.*
 
 ## Status
 
