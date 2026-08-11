@@ -33,7 +33,10 @@ impl TerminalSink for Collector {
 
 fn spec() -> TerminalSpec {
     TerminalSpec {
-        command: "/bin/sh".into(),
+        // Empty means "the platform's shell", resolved by the host. Hardcoding
+        // `/bin/sh` made every test in this file fail on Windows, where it does
+        // not exist.
+        command: String::new(),
         args: vec![],
         cwd: std::env::temp_dir(),
         cols: 80,
@@ -164,6 +167,13 @@ fn scrollback_is_bounded_so_a_chatty_process_cannot_grow_forever() {
 
 /// A PTY has a window size, and programs read it. If resize did nothing,
 /// anything full-screen would render at the wrong dimensions.
+///
+/// Unix only, because it asks the shell for the size with `stty`, and there is
+/// no `cmd.exe` equivalent that prints it. **Resize is therefore unverified on
+/// Windows** — the call goes through `portable-pty` either way, but nothing here
+/// proves a program on the far side sees the new dimensions. Marked rather than
+/// deleted so the gap is visible instead of implied by an absence.
+#[cfg(unix)]
 #[test]
 fn resizing_changes_the_size_the_program_sees() {
     let store = PtyStore::default();

@@ -17,6 +17,27 @@ use std::sync::{Arc, Mutex};
 use portable_pty::{Child, CommandBuilder, MasterPty, NativePtySystem, PtySize, PtySystem};
 use serde::{Deserialize, Serialize};
 
+/// The platform's own shell, for a terminal opened without naming a program.
+///
+/// The webview used to choose this, and chose `/bin/zsh` — a path that does not
+/// exist on Windows, so the terminal dock could not open a plain shell there at
+/// all. The host is where the answer belongs: it is the half that knows what
+/// operating system this is.
+///
+/// An empty command means "a shell". Anything else is a program the caller
+/// actually asked for and is passed through untouched.
+pub fn default_shell_if_empty(command: &str) -> String {
+    if !command.trim().is_empty() {
+        return command.to_string();
+    }
+    if cfg!(windows) {
+        // ComSpec is what Windows itself uses to find the command processor.
+        std::env::var("ComSpec").unwrap_or_else(|_| "cmd.exe".to_string())
+    } else {
+        std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
+    }
+}
+
 /// Where a terminal's output goes. A Tauri channel in the app, a vector in tests.
 pub trait TerminalSink: Send + Sync + 'static {
     fn emit(&self, terminal_id: &str, chunk: &str);
@@ -91,7 +112,7 @@ impl PtyStore {
             })
             .map_err(|error| format!("Could not open a terminal: {error}"))?;
 
-        let mut builder = CommandBuilder::new(&spec.command);
+        let mut builder = CommandBuilder::new(default_shell_if_empty(&spec.command));
         for arg in &spec.args {
             builder.arg(arg);
         }

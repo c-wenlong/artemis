@@ -337,6 +337,18 @@ writing, reattaches, and finds both the earlier output in the replayed
 scrollback and the process still alive. On the UI side, the dock adopts whatever
 `listTerminals` reports rather than starting fresh.
 
+**It was broken on Windows the whole time.** The webview picked the shell, and
+picked `/bin/zsh` — a path that does not exist there, so the dock could not open
+a plain shell at all. Found once CI could finally run all three platforms. The
+choice now belongs to the host, which is the half that knows the operating
+system: an empty command means "a shell", resolved to `$SHELL` or `%ComSpec%`.
+
+**Resize is still unverified on Windows.** The test asks the shell for its size
+with `stty`, and `cmd.exe` has no equivalent that prints it, so that one case is
+`#[cfg(unix)]`. The resize call itself goes through `portable-pty` on both, but
+nothing proves a program on the far side sees the new dimensions. Marked rather
+than deleted, so the gap is visible instead of implied by an absence.
+
 Design:
 
 - **The PTY lives in the host, the window is only a subscriber.** Everything

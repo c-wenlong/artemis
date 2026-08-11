@@ -27,8 +27,10 @@ function commandFor(harness: HarnessAsset | null): { command: string; title: str
   if (harness?.executablePath) {
     return { command: harness.executablePath, title: harness.label };
   }
-  const shell = "/bin/zsh";
-  return { command: shell, title: "shell" };
+  // Empty means "the platform's shell", which the host resolves because it is
+  // the half that knows the operating system. This used to be `/bin/zsh`, which
+  // does not exist on Windows — the dock could not open a shell there at all.
+  return { command: "", title: "shell" };
 }
 
 /**
