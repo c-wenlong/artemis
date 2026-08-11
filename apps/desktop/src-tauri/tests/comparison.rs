@@ -46,6 +46,15 @@ fn fixture(name: &str) -> Fixture {
     run("git", &["init", "-q", "-b", "main"], &repo);
     run("git", &["config", "user.email", "t@example.com"], &repo);
     run("git", &["config", "user.name", "Test"], &repo);
+    // Windows turns `core.autocrlf` on by default, so a checkout rewrites the
+    // committed `alpha\n` to `alpha\r\n` while the seed file written here — which
+    // never goes through a checkout — stays LF. Pinning it off makes every
+    // worktree byte-identical to the commit on every platform, so these tests
+    // measure isolation rather than the runner's line-ending policy.
+    //
+    // This is the fixture's own config, not advice for real repositories. What
+    // CRLF does to a real comparison is an open question, noted in MILESTONES.
+    run("git", &["config", "core.autocrlf", "false"], &repo);
     std::fs::write(repo.join("seed.txt"), "alpha\n").expect("seed");
     run("git", &["add", "-A"], &repo);
     run("git", &["commit", "-qm", "init"], &repo);
@@ -161,34 +170,29 @@ fn every_harness_gets_a_worktree_of_its_own() {
 
 /// Each starts from the same commit, so the diffs are comparable.
 ///
-/// The claim is that every worktree holds the *same* content, not that it holds
-/// a particular byte string. Asserting the latter failed on Windows, where git's
-/// `core.autocrlf` is on by default and checkout rewrites `alpha\n` to
-/// `alpha\r\n` — a correct checkout that the assertion called a bug.
-///
-/// Comparing the worktrees to each other says what the test means and holds on
-/// every platform. The line ending is still checked, against whatever git
-/// produced in the source repository, so a worktree that somehow disagreed with
-/// its own origin would still fail.
+/// The line endings here are the fixture's doing, not this test's: it pins
+/// `core.autocrlf` off, because on Windows a checkout would otherwise rewrite
+/// the committed `alpha\n` and the worktrees would legitimately differ from the
+/// seed file, which never goes through a checkout at all. An earlier attempt to
+/// fix this by comparing worktrees against that seed file failed for exactly
+/// that reason — it compared checked-out files to one that was not.
 #[test]
 fn every_worktree_starts_from_the_same_place() {
     let f = fixture("same_base");
     let started = comparison::start_in(&f.repo, &f.worktrees, &plan("go", &["codex", "claude"]));
 
-    let expected = std::fs::read_to_string(f.repo.join("seed.txt")).unwrap();
-    assert_eq!(
-        expected.trim_end(),
-        "alpha",
-        "the fixture seeded something else"
-    );
+    let contents: Vec<String> = started
+        .entries
+        .iter()
+        .map(|entry| {
+            let path = entry.path.as_ref().expect("a worktree");
+            std::fs::read_to_string(path.join("seed.txt")).unwrap()
+        })
+        .collect();
 
-    for entry in &started.entries {
-        let path = entry.path.as_ref().expect("a worktree");
-        assert_eq!(
-            std::fs::read_to_string(path.join("seed.txt")).unwrap(),
-            expected,
-            "worktrees must start from identical content"
-        );
+    assert_eq!(contents.len(), 2, "both harnesses should have started");
+    for content in &contents {
+        assert_eq!(content, "alpha\n", "worktrees must match the commit");
     }
 }
 
