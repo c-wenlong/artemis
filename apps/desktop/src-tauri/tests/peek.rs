@@ -90,12 +90,39 @@ fn a_line_past_the_end_lands_on_the_last_one() {
     );
 }
 
+/// A path from a model is refused by **both** platforms' rules, whichever one
+/// is running.
+///
+/// `/etc/passwd` is not absolute on Windows — it has no drive letter — so
+/// `is_absolute()` let it through, and `join` there does not append a rooted
+/// path, it *replaces* the root: `C:\workspace` + `/etc/passwd` is `C:\etc\passwd`.
+/// It escaped, and only failed the test because that file happens not to exist
+/// on a runner. Named an existing Windows path, it would have been read.
+///
+/// The reverse holds too: `C:\Windows\...` is one ordinary filename on Unix,
+/// and `a\..\..\x` contains no `..` *component* there because a backslash is not
+/// a separator. Since the string comes from a model rather than from the host,
+/// the same input has to be refused everywhere.
 #[test]
 fn refuses_a_path_that_leaves_the_workspace() {
     let dir = workspace("escape");
     std::fs::write(dir.join("seed.txt"), "x").unwrap();
 
-    for escape in ["../secrets.txt", "/etc/passwd", "a/../../x"] {
+    for escape in [
+        "../secrets.txt",
+        "/etc/passwd",
+        "a/../../x",
+        // Rooted but driveless: the form that escaped on Windows.
+        "/Windows/System32/drivers/etc/hosts",
+        "\\Windows\\System32",
+        // Drive-qualified, absolute only on Windows.
+        "C:\\Windows\\System32\\config\\SAM",
+        "c:/Windows",
+        // Backslash traversal, invisible to component checks on Unix.
+        "a\\..\\..\\x",
+        // UNC: not a local path at all.
+        "\\\\server\\share\\x",
+    ] {
         let error = peek::read_window(&dir, escape, Some(1), 3)
             .expect_err(&format!("{escape} should be refused"));
         assert!(

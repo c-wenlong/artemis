@@ -31,7 +31,7 @@ tries to make what they did legible and reversible.
 | Images in output | Described, never fetched — see below | `Markdown.tsx` |
 | Webview | CSP: `default-src 'self'`, no object, no framing, connect limited to Tauri IPC | `tauri.conf.json` |
 | Subprocesses | Always an argv array; no shell string is ever built | `proc.rs`, `pty.rs`, `adapters.rs` |
-| Model-supplied paths | Absolute paths and `..` refused before any filesystem access | `paths.rs` |
+| Model-supplied paths | Absolute paths and `..` refused before any filesystem access, by **both** platforms' rules on every platform — see below | `paths.rs` |
 | Patches | Header paths rebuilt from a vetted relative path; `git apply --check` first | `git.rs` |
 | Quiver's files | Read-only, always | `quiver.rs` |
 | Network | The host makes no outbound requests. Artemis does not phone home | — |
@@ -46,6 +46,31 @@ the transcript painted — no click, no warning — and anything the model had j
 read could ride out in that query string. An image reference is shown with its
 alt text and URL, and nothing is requested. Reference-style syntax is covered
 too; it is the form that slips past a naive fix.
+
+### Why path checks ignore the host they run on
+
+`std::path` only knows the rules of the platform it was compiled for, and each
+platform is blind to an escape the other one sees.
+
+**`/etc/passwd` is not an absolute path on Windows.** It has no drive letter, so
+`is_absolute()` returns false and it passed the check. Worse, `join` on Windows
+does not append a rooted path — it *replaces* the root, so `C:\workspace` joined
+with `/etc/passwd` is `C:\etc\passwd`. An agent could name any rooted path on the
+workspace's drive and be read a file outside it.
+
+It was found by CI on the first Windows run, and only *failed* rather than
+leaking because that particular file does not exist on a runner. Pointed at a
+path that does exist, it would have been served.
+
+The reverse direction is just as real: `C:\Windows\…` is one ordinary filename
+on Unix, and `a\..\..\x` contains no `..` component there, because a backslash is
+not a separator.
+
+So the check applies both sets of rules everywhere: rooted paths in either
+notation, drive-qualified paths, UNC prefixes, and `..` after separators are
+normalised. A Unix filename may legitimately contain a backslash and is refused
+by this — a deliberate trade, since refusing an unusual name costs a reader one
+click and accepting a traversal costs the file.
 
 ## Known accepted findings
 
