@@ -72,6 +72,25 @@ export function Markdown({ children, known }: MarkdownProps) {
               </code>
             ),
           em: ({ children: content }) => <em>{prose(content)}</em>,
+          /*
+           * An image is described, never fetched.
+           *
+           * Rendering `<img src="https://…">` makes a request the moment the
+           * transcript paints, with no click and no warning. A model that has
+           * just read the repository can put anything it found into that URL,
+           * so displaying an answer would be enough to send it somewhere. The
+           * reference is shown instead, so nothing is hidden and nothing is
+           * loaded.
+           */
+          img: ({ alt, src }) => (
+            <span className="markdown-image" data-testid="markdown-image">
+              <span className="markdown-image-label">Image</span>
+              {alt ? <span className="markdown-image-alt">{alt}</span> : null}
+              {typeof src === "string" && src ? (
+                <span className="markdown-image-src mono">{src}</span>
+              ) : null}
+            </span>
+          ),
           h1: ({ children: content }) => <h1>{prose(content)}</h1>,
           h2: ({ children: content }) => <h2>{prose(content)}</h2>,
           h3: ({ children: content }) => <h3>{prose(content)}</h3>,

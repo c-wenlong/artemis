@@ -108,3 +108,36 @@
   border: none;
   border-top: 1px solid var(--border-subtle);
 }
+
+/*
+ * An image reference that was deliberately not loaded. Styled as a quiet
+ * inline note rather than a broken-image box: nothing failed, the renderer
+ * chose not to make the request.
+ */
+.markdown-image {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}
+
+.markdown-image-label {
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.markdown-image-src {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+}
