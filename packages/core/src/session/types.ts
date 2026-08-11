@@ -18,6 +18,12 @@ export interface AgentSessionSummary {
   lastEventAt: string;
   attentionReason?: string;
   terminalPreview: string;
+  /**
+   * The harness's own id for the conversation, when one is known. Imported
+   * history carries it; a session Artemis ran itself does not need it, because
+   * its own event log can rebuild the transcript.
+   */
+  resumeId?: string;
 }
 
 export interface AgentLaunchRequest {

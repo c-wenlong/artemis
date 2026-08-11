@@ -2,13 +2,18 @@
 //!
 //! The TypeScript host seeded skills, MCP servers, and providers with plausible
 //! fake rows ("GitHub / codex / ready") that were indistinguishable from real
-//! findings. Here, skills and providers are discovered for real and MCP servers
-//! return empty until M10 wires up Quiver's cross-tool reconciliation — an empty
-//! state is honest, invented data is not.
+//! findings. Here everything is discovered for real, and anything undiscoverable
+//! stays empty — an empty state is honest, invented data is not.
+//!
+//! MCP servers are the one thing Artemis cannot find natively: the registration
+//! lives in each harness's own config in its own format. Quiver already reads
+//! all of them, so that row comes from `swe mcp discover --json` when the user
+//! has turned the CLI on, and is empty otherwise.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::quiver;
 use crate::scanner::{home_dir, scan_harnesses, ScanOptions};
 use crate::settings;
 use crate::types::{
@@ -106,10 +111,19 @@ pub fn scan_providers() -> Vec<ProviderAsset> {
         .collect()
 }
 
-/// M10 replaces this with Quiver's `swe mcp discover --json`, which already
-/// reports which harnesses each server is registered in.
+/// MCP servers, which only Quiver can currently reconcile across harnesses.
+///
+/// Artemis has no native MCP scan: the registration lives in each harness's own
+/// config, in its own format, and `swe mcp discover --json` already reads all of
+/// them and reports which harnesses each server appears in. That needs a
+/// subprocess, so it is off unless the user turns it on, and a failure of any
+/// kind means an empty list rather than an error — this is enrichment nobody
+/// asked to depend on.
 pub fn scan_mcp_servers() -> Vec<McpServerAsset> {
-    Vec::new()
+    if !settings::read().quiver_cli_enabled.unwrap_or(false) {
+        return Vec::new();
+    }
+    quiver::mcp_servers_via("swe", 20)
 }
 
 pub fn harnesses(include_versions: bool, include_workspace_mentions: bool) -> Vec<HarnessAsset> {
@@ -119,7 +133,11 @@ pub fn harnesses(include_versions: bool, include_workspace_mentions: bool) -> Ve
         include_versions,
         include_workspace_mentions,
     });
-    settings::apply_to_harnesses(scanned, &current)
+    let mut harnesses = settings::apply_to_harnesses(scanned, &current);
+    // Layered after the scan and after settings, so neither the probe's ground
+    // truth nor an explicit user override can be displaced by a curated file.
+    quiver::enrich_harnesses(&quiver::config_root(), &mut harnesses);
+    harnesses
 }
 
 pub fn snapshot() -> AssetInventorySnapshot {

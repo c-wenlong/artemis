@@ -250,8 +250,26 @@ pub fn delete_workspace(workspace_id: &str, force: bool) -> Result<(), String> {
 }
 
 /// Sessions are not persisted yet — M7 adds the store, M1 the event log.
-pub fn list_sessions(_workspace_id: Option<&str>) -> Vec<AgentSessionSummary> {
-    Vec::new()
+/// Past sessions for a workspace, imported from Quiver's history.
+///
+/// Artemis records its own conversations in its event log; this is everything
+/// that happened in the same directory under *other* harnesses, which is the
+/// single thing Quiver is most worth reading for. Empty without Quiver, which
+/// is the normal case and not an error.
+pub fn list_sessions(workspace_id: Option<&str>) -> Vec<AgentSessionSummary> {
+    let root = crate::quiver::config_root();
+    let Some(workspace_id) = workspace_id else {
+        return crate::quiver::session_summaries(&root, "", None);
+    };
+
+    let Some(workspace) = list_workspaces(None)
+        .into_iter()
+        .find(|candidate| candidate.id == workspace_id)
+    else {
+        return Vec::new();
+    };
+
+    crate::quiver::session_summaries(&root, workspace_id, Some(&workspace.worktree_path))
 }
 
 pub fn review_snapshot(workspace_id: &str) -> ReviewSnapshot {

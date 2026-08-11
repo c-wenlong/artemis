@@ -28,6 +28,14 @@ export interface RuntimeSettings {
    * silently start hiding the user's tool output.
    */
   transcriptVerbosity?: TranscriptVerbosity;
+  /**
+   * Let Artemis shell out to Quiver's `swe` CLI for MCP reconciliation.
+   *
+   * Off unless chosen. Reading Quiver's JSON files costs nothing and is always
+   * on; running its Python is a different bargain, and one the user should make
+   * deliberately.
+   */
+  quiverCliEnabled?: boolean;
 }
 
 /** An app-icon variant offered in Settings → Appearance. */

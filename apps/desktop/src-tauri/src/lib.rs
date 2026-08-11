@@ -8,7 +8,8 @@
 /// Public so `tests/appicon.rs` can check the catalog against the shipped files.
 pub mod appicon;
 mod catalog;
-mod inventory;
+/// Public so `tests/quiver.rs` can enrich a real scan.
+pub mod inventory;
 
 /// Public so `tests/worktrees.rs` can exercise the worktree lifecycle against
 /// real repositories.
@@ -18,6 +19,8 @@ mod launcher;
 pub mod paths;
 pub mod peek;
 mod proc;
+/// Public so `tests/quiver.rs` can read fixture directories directly.
+pub mod quiver;
 mod scanner;
 mod settings;
 

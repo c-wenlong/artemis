@@ -127,6 +127,33 @@ describe("the developer tab", () => {
     ).toBeChecked();
   });
 
+  it("keeps the Quiver CLI off unless it is chosen", async () => {
+    const { dialog } = await openDeveloper();
+    const toggle = within(dialog).getByRole("checkbox", { name: /quiver/i });
+    expect(toggle).not.toBeChecked();
+  });
+
+  it("saves turning the Quiver CLI on", async () => {
+    const { dialog, host, user } = await openDeveloper();
+    await user.click(within(dialog).getByRole("checkbox", { name: /quiver/i }));
+    await user.click(within(dialog).getByRole("button", { name: /save/i }));
+
+    await waitFor(() => expect(host.savedSettings).toHaveLength(1));
+    expect(host.savedSettings[0]?.quiverCliEnabled).toBe(true);
+  });
+
+  /**
+   * Reading Quiver's files is free and unconditional; running its Python is
+   * what the toggle governs. Saying so stops the setting reading as "use
+   * Quiver at all".
+   */
+  it("says that only the subprocess is optional", async () => {
+    const { dialog } = await openDeveloper();
+    expect(within(dialog).getByTestId("quiver-note")).toHaveTextContent(
+      /file|read/i
+    );
+  });
+
   /** It governs what is kept in view, which is worth saying out loud. */
   it("explains the cost, not just the appearance", async () => {
     const { dialog } = await openDeveloper();

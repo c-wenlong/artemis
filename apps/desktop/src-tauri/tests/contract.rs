@@ -353,6 +353,7 @@ fn runtime_settings_carries_verbosity() {
         scan_root: None,
         app_icon_id: None,
         transcript_verbosity: Some(TranscriptVerbosity::Output),
+        quiver_cli_enabled: None,
     };
     assert_eq!(
         to_json(&settings),
@@ -382,6 +383,7 @@ fn sanitizing_keeps_the_verbosity_choice() {
         scan_root: None,
         app_icon_id: None,
         transcript_verbosity: Some(TranscriptVerbosity::Output),
+        quiver_cli_enabled: None,
     }
     .sanitized();
 
@@ -416,4 +418,45 @@ fn an_unknown_verbosity_costs_only_that_field() {
         Some("openai/gpt-5-mini")
     );
     assert_eq!(parsed.app_icon_id.as_deref(), Some("olympian-marble"));
+}
+
+/// The imported-history field. Absent for a session Artemis ran itself, which
+/// it can already resume from its own event log.
+#[test]
+fn agent_session_summary_carries_a_resume_id() {
+    let session = AgentSessionSummary {
+        id: "quiver:ses_1".into(),
+        workspace_id: "ws-artemis".into(),
+        harness: HarnessKind::Opencode,
+        title: "Codebase exploration".into(),
+        status: AgentSessionStatus::Complete,
+        started_at: "2026-08-11T09:00:00+00:00".into(),
+        last_event_at: "2026-08-11T09:00:00+00:00".into(),
+        attention_reason: None,
+        terminal_preview: String::new(),
+        resume_id: Some("ses_1".into()),
+    };
+    assert_eq!(to_json(&session)["resumeId"], json!("ses_1"));
+
+    let own = AgentSessionSummary {
+        resume_id: None,
+        ..session
+    };
+    assert!(to_json(&own).get("resumeId").is_none());
+}
+
+/// Reading Quiver's files is free and always on; running its Python is not.
+#[test]
+fn the_quiver_cli_is_opt_in() {
+    let stored: RuntimeSettings = serde_json::from_value(json!({})).expect("empty settings");
+    assert!(
+        !stored.quiver_cli_enabled.unwrap_or(false),
+        "absent must mean off"
+    );
+
+    let on = RuntimeSettings {
+        quiver_cli_enabled: Some(true),
+        ..Default::default()
+    };
+    assert_eq!(to_json(&on), json!({ "quiverCliEnabled": true }));
 }

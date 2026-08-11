@@ -112,6 +112,10 @@ export function SettingsDialog({
             onChange={(transcriptVerbosity) =>
               setDraft((current) => ({ ...current, transcriptVerbosity }))
             }
+            onQuiverCliChange={(quiverCliEnabled) =>
+              setDraft((current) => ({ ...current, quiverCliEnabled }))
+            }
+            quiverCliEnabled={draft.quiverCliEnabled ?? false}
             verbosity={draft.transcriptVerbosity ?? "full"}
           />
         ) : tab === "appearance" ? (
@@ -209,7 +213,8 @@ export function SettingsDialog({
             </span>
           </h3>
           <p className="settings-hint">
-            MCP servers are not indexed yet — Quiver integration lands in M10.
+            MCP servers are reconciled by the Quiver CLI, which is off by
+            default. Turn it on under Developer.
           </p>
         </section>
         </>

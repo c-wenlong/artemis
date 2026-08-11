@@ -1,0 +1,81 @@
+{
+  "claude": {
+    "command": "claude",
+    "description": "Claude Code by Anthropic \u2014 agentic coding assistant",
+    "version": "2.1.126",
+    "tags": [
+      "agentic",
+      "coding",
+      "byok"
+    ],
+    "aliases": [
+      "cc"
+    ]
+  },
+  "gemini": {
+    "command": "gemini",
+    "description": "Gemini CLI by Google \u2014 large context (1M token) assistant",
+    "version": "0.35.1",
+    "tags": [
+      "agentic",
+      "coding",
+      "byok"
+    ],
+    "aliases": [
+      "gg"
+    ]
+  },
+  "codex": {
+    "command": "codex",
+    "description": "OpenAI Codex CLI",
+    "version": "0.144.1",
+    "tags": [
+      "agentic",
+      "coding",
+      "byok"
+    ],
+    "aliases": [
+      "cx"
+    ]
+  },
+  "copilot": {
+    "command": "copilot",
+    "description": "GitHub Copilot CLI",
+    "version": "1.0.73",
+    "tags": [
+      "agentic",
+      "coding",
+      "subscription"
+    ],
+    "aliases": [
+      "cp"
+    ]
+  },
+  "opencode": {
+    "command": "opencode",
+    "description": "opencode \u2014 open source AI coding agent",
+    "version": "1.18.4",
+    "tags": [
+      "agentic",
+      "coding",
+      "open-source",
+      "byok"
+    ],
+    "aliases": [
+      "oc"
+    ]
+  },
+  "forge": {
+    "command": "forge",
+    "description": "Forge \u2014 AI coding assistant",
+    "version": "2.12.10",
+    "tags": [
+      "agentic",
+      "coding",
+      "byok"
+    ],
+    "aliases": [
+      "fc"
+    ]
+  }
+}

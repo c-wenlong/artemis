@@ -20,6 +20,8 @@ const CHOICES: Array<{
 
 interface DeveloperPanelProps {
   onChange(verbosity: TranscriptVerbosity): void;
+  onQuiverCliChange(enabled: boolean): void;
+  quiverCliEnabled: boolean;
   verbosity: TranscriptVerbosity;
 }
 
@@ -31,8 +33,14 @@ interface DeveloperPanelProps {
  * legitimate, and which one is right depends on whether you are debugging the
  * agent or reading its conclusion.
  */
-export function DeveloperPanel({ onChange, verbosity }: DeveloperPanelProps) {
+export function DeveloperPanel({
+  onChange,
+  onQuiverCliChange,
+  quiverCliEnabled,
+  verbosity
+}: DeveloperPanelProps) {
   return (
+    <>
     <section className="settings-section">
       <h3 className="settings-section-title">Transcript detail</h3>
 
@@ -60,5 +68,31 @@ export function DeveloperPanel({ onChange, verbosity }: DeveloperPanelProps) {
         readable without losing it — the turn header still opens any turn.
       </p>
     </section>
+
+    <section className="settings-section">
+      <h3 className="settings-section-title">Quiver</h3>
+
+      <label className="verbosity-choice">
+        <input
+          checked={quiverCliEnabled}
+          onChange={(event) => onQuiverCliChange(event.target.checked)}
+          type="checkbox"
+        />
+        <span className="verbosity-copy">
+          <span className="verbosity-label">Run the Quiver CLI</span>
+          <span className="verbosity-detail">
+            Reconciles MCP servers across every harness they are registered in.
+          </span>
+        </span>
+      </label>
+
+      <p className="settings-hint" data-testid="quiver-note">
+        Quiver&rsquo;s files are already read — the harness registry and your
+        session history come from them and cost nothing. This is only about
+        running its <code className="mono">swe</code> command, which is a
+        subprocess, so it stays off until you ask for it.
+      </p>
+    </section>
+    </>
   );
 }

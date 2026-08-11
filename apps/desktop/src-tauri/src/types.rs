@@ -196,6 +196,10 @@ pub struct AgentSessionSummary {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attention_reason: Option<String>,
     pub terminal_preview: String,
+    /// The harness's own id for the conversation, when one is known. This is
+    /// what lets a past session be picked up again rather than merely listed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resume_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -537,6 +541,13 @@ pub struct RuntimeSettings {
         deserialize_with = "lenient_verbosity"
     )]
     pub transcript_verbosity: Option<TranscriptVerbosity>,
+    /// Let Artemis shell out to Quiver's `swe` CLI for MCP reconciliation.
+    ///
+    /// Off unless chosen. Reading Quiver's JSON files costs nothing and is
+    /// always on; running its Python is a different bargain, and one the user
+    /// should make deliberately.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quiver_cli_enabled: Option<bool>,
 }
 
 /// Read the verbosity, treating anything unrecognised as unset.
@@ -570,8 +581,9 @@ impl RuntimeSettings {
             opencode_executable_path: clean(self.opencode_executable_path),
             scan_root: clean(self.scan_root),
             app_icon_id: clean(self.app_icon_id),
-            // An enum has nothing to trim.
+            // Neither an enum nor a flag has anything to trim.
             transcript_verbosity: self.transcript_verbosity,
+            quiver_cli_enabled: self.quiver_cli_enabled,
         }
     }
 }

@@ -1,0 +1,69 @@
+{
+  "cached_at": 1785818902.810852,
+  "sessions": [
+    {
+      "timestamp": 1771974850400.0,
+      "agent": "OpenCode",
+      "path": "/work/example-project",
+      "title": "Codebase exploration for project understanding",
+      "session_id": "ses_36e15853affenKV8GjzJMPpBJq",
+      "tool_name": "opencode"
+    },
+    {
+      "timestamp": 1776067422460.0,
+      "agent": "OpenCode",
+      "path": "/work/example-project",
+      "title": "Code review request",
+      "session_id": "ses_36e0e1fc1ffe96JYpCOBYhLumJ",
+      "tool_name": "opencode"
+    },
+    {
+      "timestamp": 1771975219720.0,
+      "agent": "OpenCode",
+      "path": "/work/example-project",
+      "title": "Explore codebase structure (@explore subagent)",
+      "session_id": "ses_36e0e01d2ffesEWY80didLA9hJ",
+      "tool_name": "opencode"
+    },
+    {
+      "timestamp": 1771998473857.0,
+      "agent": "OpenCode",
+      "path": "/work/example-service",
+      "title": "Directory listing review for service files",
+      "session_id": "ses_36ca92e5effegS90agSgdKN6ZM",
+      "tool_name": "opencode"
+    },
+    {
+      "timestamp": 1776762770514.0,
+      "agent": "OpenCode",
+      "path": "/work/notes",
+      "title": "General",
+      "session_id": "ses_27dd4903dffeWzSs6RIGHG07hV",
+      "tool_name": "opencode"
+    },
+    {
+      "timestamp": 1776094676289.0,
+      "agent": "OpenCode",
+      "path": "/work/example-api",
+      "title": "Batch job project",
+      "session_id": "ses_27b788d2dffeXfZZudBi1rSBCM",
+      "tool_name": "opencode"
+    },
+    {
+      "timestamp": 1776045089289.0,
+      "agent": "OpenCode",
+      "path": "/work/example-api",
+      "title": "Explore project code (@explore subagent)",
+      "session_id": "ses_27b786ba0ffe8BDfRDhOlFKN5J",
+      "tool_name": "opencode"
+    },
+    {
+      "timestamp": 1776075558285.0,
+      "agent": "OpenCode",
+      "path": "/work/example-docs",
+      "title": "Prepare release notes",
+      "session_id": "ses_27a20f5d8ffezHeCVRwVk7yjdB",
+      "tool_name": "opencode"
+    }
+  ]
+}

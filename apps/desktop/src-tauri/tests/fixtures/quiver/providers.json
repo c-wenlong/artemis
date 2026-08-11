@@ -1,0 +1,49 @@
+{
+  "openai": {
+    "name": "OpenAI",
+    "description": "OpenAI API (ChatGPT, GPT-4/5, DALL-E)",
+    "url": "https://platform.openai.com/api-keys",
+    "key_filename": "openai",
+    "env_vars": [
+      "OPENAI_API_KEY"
+    ],
+    "aliases": [
+      "oai"
+    ]
+  },
+  "anthropic": {
+    "name": "Anthropic",
+    "description": "Anthropic Claude API",
+    "url": "https://console.anthropic.com/settings/keys",
+    "key_filename": "anthropic",
+    "env_vars": [
+      "ANTHROPIC_API_KEY"
+    ],
+    "aliases": [
+      "claude-key"
+    ]
+  },
+  "gemini": {
+    "name": "Google Gemini",
+    "description": "Google Gemini / AI Studio",
+    "url": "https://aistudio.google.com/app/apikey",
+    "key_filename": "gemini",
+    "env_vars": [
+      "GEMINI_API_KEY",
+      "GOOGLE_API_KEY"
+    ],
+    "aliases": [
+      "google"
+    ]
+  },
+  "mistral": {
+    "name": "Mistral AI",
+    "description": "Mistral inference API",
+    "url": "https://console.mistral.ai/api-keys/",
+    "key_filename": "mistral",
+    "env_vars": [
+      "MISTRAL_API_KEY"
+    ],
+    "aliases": []
+  }
+}

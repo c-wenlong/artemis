@@ -584,20 +584,41 @@ adapters, if an adapter turns out to emit one.
 
 # Phase 4 — Breadth
 
-## M10. Quiver integration
+## M10. Quiver integration ✅
 
-Per [docs/QUIVER_INTEGRATION.md](docs/QUIVER_INTEGRATION.md) — optional, file-level,
-read-only.
+Per [docs/QUIVER_INTEGRATION.md](docs/QUIVER_INTEGRATION.md) — optional,
+file-level, read-only. Shapes pinned in [docs/QUIVER_SCHEMA.md](docs/QUIVER_SCHEMA.md).
 
-- `AssetSource` interface; `NativeAssetSource` + `QuiverFileSource`
-- Session history import — 731 sessions, 20+ harnesses, resume ids included
-- Registry enrichment with provenance on merged fields
-- `QuiverCliSource` (opt-in, off by default) for MCP cross-tool reconciliation
-- Schema fixtures pinned in tests
+- `src/quiver.rs` owns every schema assumption; native scan stays ground truth
+- Session history import — **verified at 731 sessions across 19 harnesses**,
+  every row carrying its resume id
+- Registry enrichment with provenance — `QuiverCatalog` only when Quiver really
+  contributed
+- Quiver CLI (opt-in, off by default) for MCP cross-tool reconciliation
+- Fixtures cut from the live files, plus ignored tests that run against the
+  real install
 
-**Exit:** Artemis works identically with Quiver absent; with it present, session
-history and MCP reconciliation appear. Corrupting `tools.json` degrades to native
-with a warning, never a crash.
+**Exit:** met, and checked against the real thing rather than fixtures.
+`real_quiver_still_has_the_shape_we_parse` reads `~/.config/swe/` and reports
+29 tools and 731 resumable sessions; `degrades_to_native_when_quiver_is_broken`
+corrupts every file and asserts all 12 scanned harnesses come back byte-identical,
+with provenance unchanged.
+
+**No `AssetSource` trait.** The assessment proposed one interface with three
+implementations. There is exactly one Quiver and one native scanner, and the
+choice between them is a boolean, not polymorphism — so what shipped is the
+*substance* of that design (one module owning every schema assumption, native
+establishing ground truth, Quiver layering on top with provenance) without the
+dyn-dispatch ceremony. Deliberate deviation, not an oversight.
+
+**Enrichment is additive only.** Quiver never sets health, never sets an
+executable path, and never overrides a version the scan probed — its registry
+is hand-curated and can name a binary that has since been uninstalled.
+
+**Not yet consumed:** `providers.json`, `rate_limits_cache.json`,
+`skill_links.json`. All three parse and all three are documented; Artemis's own
+scans already cover what the inventory needs, and importing them now would be
+duplicate data with no consumer.
 **Depends:** M7.
 
 ## M11. Harness adapters
