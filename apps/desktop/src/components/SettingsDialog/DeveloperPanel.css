@@ -1,0 +1,46 @@
+.verbosity-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.verbosity-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.verbosity-choice:hover {
+  border-color: var(--border-strong);
+}
+
+.verbosity-choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-muted);
+}
+
+.verbosity-choice input {
+  margin-top: 0.15rem;
+  accent-color: var(--accent);
+}
+
+.verbosity-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.verbosity-label {
+  font-size: var(--text-ui);
+  font-weight: 500;
+}
+
+.verbosity-detail {
+  color: var(--text-secondary);
+  font-size: var(--text-ui-sm);
+}

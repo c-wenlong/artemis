@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import type { ChatMessage } from "@artemis/core";
+import type { ChatMessage, TranscriptVerbosity } from "@artemis/core";
 import type { TurnRecord } from "../../chat/reduce";
 import { MessageList } from "./MessageList";
 import "./Conversation.css";
@@ -14,6 +14,8 @@ interface ConversationProps {
   onFork?(turnId: string): void;
   /** Reverse one file's edit. */
   onRevert?(file: { patch?: string; path: string }): Promise<void>;
+  /** How much of a finished turn to render. */
+  verbosity?: TranscriptVerbosity;
   children?: ReactNode;
 }
 
@@ -31,6 +33,7 @@ export function Conversation({
   isStreaming = false,
   onFork,
   onRevert,
+  verbosity,
   children
 }: ConversationProps) {
   const isEmpty = messages.length === 0 && (children === undefined || children === null);
@@ -52,6 +55,7 @@ export function Conversation({
             onFork={onFork}
             onRevert={onRevert}
             turns={turns}
+            verbosity={verbosity}
           />
         ) : null}
         {isEmpty ? (

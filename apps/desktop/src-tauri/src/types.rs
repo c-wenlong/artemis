@@ -495,6 +495,23 @@ pub struct SendChatMessageRequest {
 
 // --------------------------------------------------------------- settings
 
+/// How much of a turn the transcript renders.
+///
+/// `Full` shows every tool call; `Output` shows the answer and folds the
+/// mechanics behind the turn header. Which is right depends on whether you are
+/// debugging the agent or reading its conclusion, so it is a setting rather
+/// than a default — and it doubles as a lever over how much of a long tool run
+/// stays in view.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TranscriptVerbosity {
+    /// Everything. The default, because a settings file written before this
+    /// existed must not silently start hiding output.
+    #[default]
+    Full,
+    Output,
+}
+
 /// Persisted to `~/.artemis/settings.json`.
 ///
 /// `scan_root` is new in the Rust host: the TypeScript host derived the scan
@@ -514,6 +531,29 @@ pub struct RuntimeSettings {
     /// bundled icon is fixed at build time.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_icon_id: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "lenient_verbosity"
+    )]
+    pub transcript_verbosity: Option<TranscriptVerbosity>,
+}
+
+/// Read the verbosity, treating anything unrecognised as unset.
+///
+/// `settings::read` discards the whole file on a parse error, so a strict union
+/// here would let one hand-edited typo take the model and the icon down with
+/// it. Losing one field is the proportionate failure.
+fn lenient_verbosity<'de, D>(deserializer: D) -> Result<Option<TranscriptVerbosity>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = Option::<String>::deserialize(deserializer)?;
+    Ok(match raw.as_deref() {
+        Some("full") => Some(TranscriptVerbosity::Full),
+        Some("output") => Some(TranscriptVerbosity::Output),
+        _ => None,
+    })
 }
 
 impl RuntimeSettings {
@@ -530,6 +570,8 @@ impl RuntimeSettings {
             opencode_executable_path: clean(self.opencode_executable_path),
             scan_root: clean(self.scan_root),
             app_icon_id: clean(self.app_icon_id),
+            // An enum has nothing to trim.
+            transcript_verbosity: self.transcript_verbosity,
         }
     }
 }

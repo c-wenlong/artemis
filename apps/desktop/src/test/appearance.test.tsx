@@ -24,11 +24,17 @@ async function openAppearance(host = createFakeHost()) {
 }
 
 describe("settings tabs", () => {
+  // The exact set of tabs is asserted in verbosity.test.tsx, which owns the
+  // one most recently added. This cares only that General leads and is where
+  // the dialog opens.
   it("opens on General, with Appearance available", async () => {
     const { dialog } = await openSettings();
     const tabs = within(dialog).getAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["General", "Appearance"]);
+    expect(tabs[0]).toHaveTextContent("General");
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(
+      within(dialog).getByRole("tab", { name: /appearance/i })
+    ).toBeInTheDocument();
   });
 
   it("keeps the general settings out of the way on the appearance tab", async () => {

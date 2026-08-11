@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { ChatBlock, ChatMessage } from "@artemis/core";
+import { useEffect, useState } from "react";
+import type { ChatBlock, ChatMessage, TranscriptVerbosity } from "@artemis/core";
 import { buildTimeline } from "../../chat/activityGroups";
 import { deriveFileEdits, type FileEdit } from "../../chat/fileEdits";
 import type { TurnRecord } from "../../chat/reduce";
@@ -25,6 +25,8 @@ interface MessageListProps {
   onFork?(turnId: string): void;
   /** Reverse one file's edit. Rejects when the host refuses. */
   onRevert?(file: FileEdit): Promise<void>;
+  /** How much of a finished turn to render. Defaults to everything. */
+  verbosity?: TranscriptVerbosity;
 }
 
 /** Prose is the answer; everything else is how it was reached. */
@@ -67,18 +69,23 @@ function AssistantTurn({
   message,
   onFork,
   onRevert,
-  turn
+  turn,
+  verbosity
 }: {
   isLive: boolean;
   message: ChatMessage;
   onFork?(turnId: string): void;
   onRevert?(file: FileEdit): Promise<void>;
   turn?: TurnRecord;
+  verbosity: TranscriptVerbosity;
 }) {
-  // Expanded by default. Codex collapses, and so should we — but the default
-  // is exactly what M8c makes a setting, and shipping the mechanics hidden
-  // before the control that brings them back exists is the wrong order.
-  const [expanded, setExpanded] = useState(true);
+  // The setting decides where a turn starts; the header still opens any of
+  // them. Keyed on the setting rather than seeded once, so changing it in
+  // Settings reflows the transcript already on screen instead of applying to
+  // the next session only.
+  const [override, setOverride] = useState<boolean | null>(null);
+  useEffect(() => setOverride(null), [verbosity]);
+  const expanded = override ?? verbosity !== "output";
 
   const prose = message.blocks.filter(isProse);
   const hasActivity = prose.length !== message.blocks.length;
@@ -100,7 +107,7 @@ function AssistantTurn({
           completedAt={turn?.completedAt}
           expanded={expanded}
           hasActivity={hasActivity}
-          onToggle={() => setExpanded((open) => !open)}
+          onToggle={() => setOverride(!expanded)}
           startedAt={turn?.startedAt}
         />
       ) : null}
@@ -132,7 +139,8 @@ export function MessageList({
   turns,
   isStreaming = false,
   onFork,
-  onRevert
+  onRevert,
+  verbosity = "full"
 }: MessageListProps) {
   const lastTurnId = messages.at(-1)?.turnId;
 
@@ -173,6 +181,7 @@ export function MessageList({
             onFork={onFork}
             onRevert={onRevert}
             turn={turn}
+            verbosity={verbosity}
           />
         );
       })}

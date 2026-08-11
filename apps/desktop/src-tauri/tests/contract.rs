@@ -334,3 +334,86 @@ fn tool_call_completed_omits_what_it_does_not_have() {
         assert!(json.get(absent).is_none(), "{absent} should be omitted");
     }
 }
+
+/// A setting whose only job is to change how much of a transcript is rendered.
+/// It reaches the wire as a plain union, matching `TranscriptVerbosity` in
+/// `packages/core/src/settings/types.ts`.
+#[test]
+fn transcript_verbosity_matches_union() {
+    // export type TranscriptVerbosity = "full" | "output";
+    assert_eq!(to_json(&TranscriptVerbosity::Full), json!("full"));
+    assert_eq!(to_json(&TranscriptVerbosity::Output), json!("output"));
+}
+
+#[test]
+fn runtime_settings_carries_verbosity() {
+    let settings = RuntimeSettings {
+        opencode_default_model: None,
+        opencode_executable_path: None,
+        scan_root: None,
+        app_icon_id: None,
+        transcript_verbosity: Some(TranscriptVerbosity::Output),
+    };
+    assert_eq!(
+        to_json(&settings),
+        json!({ "transcriptVerbosity": "output" }),
+        "an unset field must be omitted, not sent as null"
+    );
+}
+
+/// Absent means full. A settings file written before this shipped must not
+/// silently start hiding the user's tool output.
+#[test]
+fn verbosity_defaults_to_showing_everything() {
+    let stored: RuntimeSettings = serde_json::from_value(json!({})).expect("empty settings");
+    assert!(stored.transcript_verbosity.is_none());
+    assert_eq!(
+        stored.transcript_verbosity.unwrap_or_default(),
+        TranscriptVerbosity::Full
+    );
+}
+
+/// Sanitizing trims strings; it must not drop the enum along the way.
+#[test]
+fn sanitizing_keeps_the_verbosity_choice() {
+    let settings = RuntimeSettings {
+        opencode_default_model: Some("  openai/gpt-5-mini  ".into()),
+        opencode_executable_path: Some("   ".into()),
+        scan_root: None,
+        app_icon_id: None,
+        transcript_verbosity: Some(TranscriptVerbosity::Output),
+    }
+    .sanitized();
+
+    assert_eq!(
+        settings.opencode_default_model.as_deref(),
+        Some("openai/gpt-5-mini")
+    );
+    assert!(settings.opencode_executable_path.is_none());
+    assert_eq!(
+        settings.transcript_verbosity,
+        Some(TranscriptVerbosity::Output)
+    );
+}
+
+/// An unrecognised value must not take the rest of the settings with it.
+///
+/// `settings::read` falls back to `default()` on any parse error, so a closed
+/// union here would mean one hand-edited typo silently discarding the model,
+/// the executable path and the icon as well. The field absorbs it instead.
+#[test]
+fn an_unknown_verbosity_costs_only_that_field() {
+    let parsed: RuntimeSettings = serde_json::from_value(json!({
+        "opencodeDefaultModel": "openai/gpt-5-mini",
+        "appIconId": "olympian-marble",
+        "transcriptVerbosity": "sideways"
+    }))
+    .expect("the rest of the file must survive one bad value");
+
+    assert!(parsed.transcript_verbosity.is_none());
+    assert_eq!(
+        parsed.opencode_default_model.as_deref(),
+        Some("openai/gpt-5-mini")
+    );
+    assert_eq!(parsed.app_icon_id.as_deref(), Some("olympian-marble"));
+}

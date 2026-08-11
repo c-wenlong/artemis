@@ -2,13 +2,15 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AssetInventorySnapshot, RuntimeSettings } from "@artemis/core";
 import type { ArtemisHostClient } from "@artemis/host-service/client";
 import { AppearancePanel } from "./AppearancePanel";
+import { DeveloperPanel } from "./DeveloperPanel";
 import "./SettingsDialog.css";
 
-type SettingsTab = "general" | "appearance";
+type SettingsTab = "general" | "appearance" | "developer";
 
 const TABS: Array<{ id: SettingsTab; label: string }> = [
   { id: "general", label: "General" },
-  { id: "appearance", label: "Appearance" }
+  { id: "appearance", label: "Appearance" },
+  { id: "developer", label: "Developer" }
 ];
 
 interface SettingsDialogProps {
@@ -105,7 +107,14 @@ export function SettingsDialog({
         {/* One scroll container for the whole form: per-section scrolling
             clipped fields that sat near a section boundary. */}
         <div className="settings-body">
-        {tab === "appearance" ? (
+        {tab === "developer" ? (
+          <DeveloperPanel
+            onChange={(transcriptVerbosity) =>
+              setDraft((current) => ({ ...current, transcriptVerbosity }))
+            }
+            verbosity={draft.transcriptVerbosity ?? "full"}
+          />
+        ) : tab === "appearance" ? (
           <AppearancePanel
             host={host}
             onApplied={(iconId) =>

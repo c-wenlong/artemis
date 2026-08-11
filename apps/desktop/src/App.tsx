@@ -217,6 +217,7 @@ export function App({ host }: AppProps = {}) {
               setReview(await hostService.getReviewSnapshot(selectedWorkspace.id));
             }}
             turns={chat.transcript.turns}
+            verbosity={data.settings.transcriptVerbosity ?? "full"}
           />
         }
         dock={

@@ -41,7 +41,8 @@ export type {
 export type {
   AppIcon,
   RuntimeSettings,
-  RuntimeSettingsRuntime
+  RuntimeSettingsRuntime,
+  TranscriptVerbosity
 } from "./settings/types";
 export type {
   ChangedFile,

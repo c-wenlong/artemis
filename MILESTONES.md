@@ -512,19 +512,35 @@ merge. A dialog that looked like it could approve but only closed would be worse
 than one that plainly shows.
 **Depends:** M5, M8.
 
-## M8c. Transcript verbosity
+## M8c. Transcript verbosity ✅
 
-Right now every tool call is rendered. Codex shows the output and hides the
-mechanics. Which is right depends on whether you are debugging the agent or
-reading its answer, so it should be a setting rather than a default.
+Codex shows the output and hides the mechanics. Which is right depends on
+whether you are debugging the agent or reading its answer, so it is a setting
+rather than a default.
 
-- Developer settings toggle: show everything / show output only
+- Settings → Developer: **Everything** / **Output only**
 - Applies to tool-call segments and activity groups
-- The choice is also a context-cost lever — it governs how much of a long tool
-  sequence is worth keeping in view
+- Also a context-cost lever, and the panel says so — a long tool run is the bulk
+  of what a transcript holds
 
-**Exit:** the same session reads as either a full trace or a clean answer,
-switched from settings.
+**Exit:** met. The same session reads as a full trace or a clean answer, and the
+change reflows the transcript already on screen rather than applying to the next
+session.
+
+**Defaults to Everything**, and an absent setting means Everything. A settings
+file written before this shipped must not silently start hiding output — which
+also settles the question M8 left open: the turn header ships expanded, and
+"collapsed" is now something you choose rather than something done to you.
+
+**A running turn is never folded.** The streaming footer is otherwise the only
+sign of life during a long tool sequence, and the header that would reopen it
+does not exist until the turn ends. It folds when the turn finishes, which is
+when the trace stops being news.
+
+**The field absorbs a bad value rather than failing.** `settings::read` falls
+back to defaults on any parse error, so a strict union here would let one
+hand-edited typo discard the model, the executable path and the icon too.
+Losing one field is the proportionate failure.
 **Depends:** M4, M8.
 
 ## M9. Citations
