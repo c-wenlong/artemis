@@ -14,6 +14,22 @@ export interface ReviewSnapshot {
   artifactPaths: string[];
 }
 
+/** A slice of a file, enough to check a claim made about it. */
+export interface FileWindow {
+  /**
+   * The cited line, when the file has one. Null when the citation named no
+   * line, or named one past the end — a stale citation must not highlight an
+   * unrelated line as though it were the claim.
+   */
+  focusLine: number | null;
+  lines: string[];
+  path: string;
+  /** 1-based line number of `lines[0]`. */
+  startLine: number;
+  /** Lines in the whole file, so the window can be placed within it. */
+  totalLines: number;
+}
+
 export interface ReviewRuntime {
   getReviewSnapshot(workspaceId: string): Promise<ReviewSnapshot>;
   /**
@@ -28,4 +44,14 @@ export interface ReviewRuntime {
     relativePath: string,
     patch: string
   ): Promise<void>;
+  /**
+   * Read the lines a citation points at. Rejects for a path that leaves the
+   * workspace, a file that is gone, and a binary — each of which the reader
+   * needs told rather than shown as an empty window.
+   */
+  peekFile(
+    workspacePath: string,
+    relativePath: string,
+    line?: number
+  ): Promise<FileWindow>;
 }

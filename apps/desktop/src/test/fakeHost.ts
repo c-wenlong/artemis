@@ -6,6 +6,7 @@ import type {
   AssetInventorySnapshot,
   ChatEventListener,
   ChatSession,
+  FileWindow,
   CreateChatSessionRequest,
   LaunchPreset,
   RuntimeEvent,
@@ -164,6 +165,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   appliedIcons: string[];
   forks: Array<{ sessionId: string; throughTurnId: string }>;
   reverted: Array<{ patch: string; relativePath: string; workspacePath: string }>;
+  peeked: Array<{ line?: number; relativePath: string; workspacePath: string }>;
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -188,6 +190,11 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   const forks: Array<{ sessionId: string; throughTurnId: string }> = [];
   const reverted: Array<{
     patch: string;
+    relativePath: string;
+    workspacePath: string;
+  }> = [];
+  const peeked: Array<{
+    line?: number;
     relativePath: string;
     workspacePath: string;
   }> = [];
@@ -224,6 +231,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     appliedIcons,
     forks,
     reverted,
+    peeked,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => projects,
@@ -395,6 +403,30 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
       patch: string
     ): Promise<void> => {
       reverted.push({ patch, relativePath, workspacePath });
+    },
+
+    /** A synthetic forty-line file, windowed the way the host does it. */
+    peekFile: async (
+      workspacePath: string,
+      relativePath: string,
+      line?: number
+    ): Promise<FileWindow> => {
+      peeked.push({ line, relativePath, workspacePath });
+      const totalLines = 40;
+      const cited = line !== undefined && line >= 1 && line <= totalLines ? line : null;
+      const anchor = cited ?? (line === undefined ? 1 : totalLines);
+      const startLine = Math.max(1, anchor - 3);
+      const endLine = Math.min(totalLines, anchor + 3);
+      return {
+        focusLine: cited,
+        lines: Array.from(
+          { length: endLine - startLine + 1 },
+          (_, index) => `line ${startLine + index}`
+        ),
+        path: relativePath,
+        startLine,
+        totalLines
+      };
     },
 
     forkChatSession: async (

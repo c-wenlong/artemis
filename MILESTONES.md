@@ -543,17 +543,39 @@ hand-edited typo discard the model, the executable path and the icon too.
 Losing one field is the proportionate failure.
 **Depends:** M4, M8.
 
-## M9. Citations
+## M9. Citations ✅
 
 Cursor's pattern, and what makes a hidden-mechanics transcript trustworthy.
 M8 draws the chips; this makes them mean something.
 
-- `file:line` chips resolve against the workspace
-- Click opens the file at the range; `terminal:N-M` resolves to dock output
-- Linkifier fallback for harnesses that don't emit ranges
+- `file:line` and `file (line N)` chips resolve against the workspace
+- Clicking opens a window on the file with the cited line marked
+- Linkifier fallback for harnesses that don't emit ranges (shipped in M8)
 
-**Exit:** claims in an answer carry clickable references that land in the right
-file at the right line.
+**Exit:** met. A claim in an answer opens the lines it is about.
+
+**A window, not the whole file, and not an external editor.** The question a
+citation raises is "does it actually say that there", and a few lines either
+side answers it. Opening in the user's editor would need an editor setting and
+a guess at the command; that can come later without changing the chip.
+
+**A chip is a control only when there is something to open.** No workspace
+selected, or a host with no disk, and it renders as text. Never a disabled
+button — that advertises an interaction and then refuses it.
+
+**A stale citation opens anyway.** A line the agent named that a later edit
+removed shows the end of the file with nothing highlighted, and says so.
+Highlighting whatever now sits at that number would be a fabricated claim.
+
+The path is vetted through the same `paths::vetted` the undo uses — it was
+duplicated across the two, and is now one implementation. Binary files are
+refused, enormous files are streamed so only the window is read, and a single
+enormous line is truncated.
+
+**Not done: `terminal:N-M`.** It was in the original scope, but nothing emits
+it — not opencode, not the recorded sessions. Building a resolver for a
+reference no harness produces is inventing a feature. It belongs with M11's
+adapters, if an adapter turns out to emit one.
 **Depends:** M8.
 
 > **v0.3 — auditable.** You can trust what the agent says without reading a log.

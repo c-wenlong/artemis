@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChatBlock, ChatMessage, TranscriptVerbosity } from "@artemis/core";
 import { buildTimeline } from "../../chat/activityGroups";
 import { deriveFileEdits, type FileEdit } from "../../chat/fileEdits";
@@ -89,12 +89,19 @@ function AssistantTurn({
 
   const prose = message.blocks.filter(isProse);
   const hasActivity = prose.length !== message.blocks.length;
-  const edits = deriveFileEdits(message.blocks);
+  const edits = useMemo(() => deriveFileEdits(message.blocks), [message.blocks]);
   const isFinished = turn?.status === "completed" || turn?.status === "failed";
 
   // A bare filename is only safe to chip once something else confirms it is a
   // file. Having been edited this turn is that confirmation.
-  const known = new Set(edits?.files.map((file) => file.path) ?? []);
+  //
+  // Memoised because it reaches `Markdown` as a prop: a fresh Set every render
+  // re-parses the prose and replaces the rendered nodes, which throws away the
+  // DOM a click was already travelling towards.
+  const known = useMemo(
+    () => new Set(edits?.files.map((file) => file.path) ?? []),
+    [edits]
+  );
 
   return (
     <article

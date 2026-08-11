@@ -8,6 +8,7 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
+  FileWindow,
   CreateChatSessionRequest,
   RuntimeEvent,
   ProjectRef,
@@ -200,6 +201,11 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
     /** Writing to the working tree is the Rust host's job alone. */
     revertFileChange(): Promise<void> {
       return Promise.reject(new Error("Undoing an edit requires the desktop app."));
+    },
+
+    /** Reading the user's files needs the host too; the browser has no disk. */
+    peekFile(): Promise<FileWindow> {
+      return Promise.reject(new Error("Opening a file requires the desktop app."));
     },
 
     getRuntimeSettings(): Promise<RuntimeSettings> {

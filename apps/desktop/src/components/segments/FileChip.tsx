@@ -1,4 +1,5 @@
 import { fileKind } from "../../chat/fileRefs";
+import { useOpenCitation } from "./CitationContext";
 import "./FileChip.css";
 
 /**
@@ -33,17 +34,19 @@ interface FileChipProps {
 /**
  * A file reference in prose.
  *
- * Not a link yet — resolving a click to the file at the line is M9. It is a
- * `span` rather than a disabled button so that it does not advertise an
- * interaction it cannot honour.
+ * A control when there is something to open, plain text when there is not —
+ * browser mode has no disk, and a workspace has to be selected for a relative
+ * path to mean anything. It is never a disabled button: that advertises an
+ * interaction and then refuses it.
  */
 export function FileChip({ line, path }: FileChipProps) {
+  const open = useOpenCitation();
   const kind = fileKind(path);
   // Directories are context, not identity; the tail is what gets read.
   const name = path.split("/").pop() || path;
 
-  return (
-    <span className="file-chip" data-kind={kind} data-testid="file-chip" title={path}>
+  const body = (
+    <>
       <svg
         aria-hidden
         className="file-chip-glyph"
@@ -59,6 +62,27 @@ export function FileChip({ line, path }: FileChipProps) {
       {line === undefined ? null : (
         <span className="file-chip-line">line {line}</span>
       )}
-    </span>
+    </>
+  );
+
+  if (!open) {
+    return (
+      <span className="file-chip" data-kind={kind} data-testid="file-chip" title={path}>
+        {body}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      className="file-chip file-chip--open"
+      data-kind={kind}
+      data-testid="file-chip"
+      onClick={() => open(path, line)}
+      title={line === undefined ? `Open ${path}` : `Open ${path} at line ${line}`}
+      type="button"
+    >
+      {body}
+    </button>
   );
 }

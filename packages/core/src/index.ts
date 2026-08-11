@@ -46,6 +46,7 @@ export type {
 } from "./settings/types";
 export type {
   ChangedFile,
+  FileWindow,
   ChangeKind,
   ReviewRuntime,
   ReviewSnapshot

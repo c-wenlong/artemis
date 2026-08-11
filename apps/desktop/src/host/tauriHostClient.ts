@@ -7,6 +7,7 @@ import type {
   AssetInventorySnapshot,
   ChatEventListener,
   ChatSession,
+  FileWindow,
   CreateChatSessionRequest,
   LaunchPreset,
   ProjectRef,
@@ -74,6 +75,14 @@ export function createTauriHostClient(): ArtemisHostClient {
       patch: string
     ): Promise<void> {
       return invoke("revert_file_change", { workspacePath, relativePath, patch });
+    },
+
+    peekFile(
+      workspacePath: string,
+      relativePath: string,
+      line?: number
+    ): Promise<FileWindow> {
+      return invoke("peek_file", { workspacePath, relativePath, line });
     },
 
     getRuntimeSettings(): Promise<RuntimeSettings> {

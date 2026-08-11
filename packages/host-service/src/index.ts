@@ -8,6 +8,7 @@ import type {
   AssetInventorySnapshot,
   ChatRuntime,
   ChatSession,
+  FileWindow,
   CreateChatSessionRequest,
   RuntimeEvent,
   ProjectRef,
@@ -205,6 +206,10 @@ export function createLocalHostService(
 
     async revertFileChange(): Promise<void> {
       throw new Error("Undoing an edit requires the desktop app.");
+    },
+
+    async peekFile(): Promise<FileWindow> {
+      throw new Error("Opening a file requires the desktop app.");
     },
 
     async getRuntimeSettings(): Promise<RuntimeSettings> {

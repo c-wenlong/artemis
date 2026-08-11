@@ -14,6 +14,9 @@ mod inventory;
 /// real repositories.
 pub mod git;
 mod launcher;
+/// Public so `tests/peek.rs` can resolve citations against a real directory.
+pub mod paths;
+pub mod peek;
 mod proc;
 mod scanner;
 mod settings;
@@ -289,6 +292,26 @@ async fn revert_file_change(
     .map_err(|error| error.to_string())?
 }
 
+/// Read the lines a citation points at, so a claim can be checked in place.
+#[tauri::command]
+async fn peek_file(
+    workspace_path: String,
+    relative_path: String,
+    line: Option<u32>,
+    radius: Option<u32>,
+) -> Result<peek::FileWindow, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        peek::read_window(
+            std::path::Path::new(&workspace_path),
+            &relative_path,
+            line,
+            radius.unwrap_or(6),
+        )
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[tauri::command]
 async fn open_terminal(
     store: State<'_, Arc<PtyStore>>,
@@ -400,6 +423,7 @@ pub fn run() {
             replay_chat_session,
             fork_chat_session,
             revert_file_change,
+            peek_file,
             open_terminal,
             list_terminals,
             subscribe_terminal,

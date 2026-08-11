@@ -31,3 +31,27 @@
 .message[data-role="user"] .file-chip {
   background: var(--citation-surface);
 }
+
+/*
+ * The clickable form. Underlined rather than coloured differently: the chip is
+ * already tinted, and a second colour to mean "and this one is a link" would be
+ * one distinction too many in a line of prose.
+ */
+.file-chip--open {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--transition-fast);
+}
+
+.file-chip--open:hover {
+  text-decoration-color: currentColor;
+}
+
+.message[data-role="user"] .file-chip--open {
+  background: var(--citation-surface);
+}

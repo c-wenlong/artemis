@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
+  FileWindow,
   AssetInventorySnapshot,
   ProjectRef,
   ReviewSnapshot,
@@ -14,6 +15,8 @@ import { useTerminals } from "./chat/useTerminals";
 import { AppShell } from "./components/AppShell/AppShell";
 import { Composer } from "./components/Composer/Composer";
 import { Conversation } from "./components/Conversation/Conversation";
+import { PeekDialog } from "./components/Conversation/PeekDialog";
+import { CitationProvider } from "./components/segments/CitationContext";
 import { Rail } from "./components/Rail/Rail";
 import {
   DeleteWorktreeDialog,
@@ -46,6 +49,8 @@ export function App({ host }: AppProps = {}) {
 
   const [data, setData] = useState<AppData>(initialData);
   const [review, setReview] = useState<ReviewSnapshot | null>(null);
+  const [peek, setPeek] = useState<{ line?: number; window: FileWindow } | null>(null);
+  const [peekError, setPeekError] = useState<string | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [newWorktreeProjectId, setNewWorktreeProjectId] = useState<string | null>(null);
@@ -98,6 +103,26 @@ export function App({ host }: AppProps = {}) {
 
   const selectedWorkspace =
     data.workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ?? null;
+
+  /**
+   * Open the file a citation names. Only wired when a workspace is selected —
+   * a relative path means nothing without one, so the chips stay plain text
+   * until there is somewhere to resolve them against.
+   */
+  const openCitation = useCallback(
+    (path: string, line?: number) => {
+      const workspace = selectedWorkspace;
+      if (!workspace) return;
+      setPeekError(null);
+      void hostService
+        .peekFile(workspace.worktreePath, path, line)
+        .then((window) => setPeek({ line, window }))
+        .catch((cause: unknown) =>
+          setPeekError(cause instanceof Error ? cause.message : String(cause))
+        );
+    },
+    [hostService, selectedWorkspace]
+  );
 
   // Harness and model come from the workspace's remembered preset.
   const preset = useLaunchPreset({
@@ -198,6 +223,7 @@ export function App({ host }: AppProps = {}) {
           />
         }
         conversation={
+          <CitationProvider value={selectedWorkspace ? openCitation : null}>
           <Conversation
             harnessLabel={selectedHarness?.label ?? null}
             isStreaming={chat.isRunning}
@@ -219,6 +245,22 @@ export function App({ host }: AppProps = {}) {
             turns={chat.transcript.turns}
             verbosity={data.settings.transcriptVerbosity ?? "full"}
           />
+          {peek ? (
+            <PeekDialog
+              onClose={() => setPeek(null)}
+              requestedLine={peek.line}
+              window={peek.window}
+            />
+          ) : null}
+          {peekError ? (
+            <p className="app-alert" role="alert">
+              {peekError}
+              <button onClick={() => setPeekError(null)} type="button">
+                Dismiss
+              </button>
+            </p>
+          ) : null}
+          </CitationProvider>
         }
         dock={
           terminals.isVisible ? (

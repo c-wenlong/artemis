@@ -350,7 +350,7 @@ pub fn revert_patch(workspace: &Path, relative: &str, patch: &str) -> Result<(),
     if patch.trim().is_empty() {
         return Err("There is no patch to reverse.".to_string());
     }
-    let relative = vetted_relative_path(relative)?;
+    let relative = crate::paths::vetted(relative)?;
     let rewritten = rewrite_patch_headers(patch, &relative)?;
 
     // opencode writes a newly created file as an ordinary patch against an
@@ -397,27 +397,6 @@ fn creates_the_file(patch: &str) -> bool {
         }
     }
     hunks > 0
-}
-
-/// A workspace-relative path that cannot escape the workspace.
-fn vetted_relative_path(relative: &str) -> Result<String, String> {
-    let trimmed = relative.trim();
-    if trimmed.is_empty() {
-        return Err("No file path was given.".to_string());
-    }
-    let candidate = Path::new(trimmed);
-    if candidate.is_absolute() {
-        return Err(format!("Refusing an absolute path: {trimmed}"));
-    }
-    if candidate
-        .components()
-        .any(|part| matches!(part, std::path::Component::ParentDir))
-    {
-        return Err(format!(
-            "Refusing a path that leaves the workspace: {trimmed}"
-        ));
-    }
-    Ok(trimmed.to_string())
 }
 
 /// Replace whatever the patch calls the file with `a/<relative>` and
