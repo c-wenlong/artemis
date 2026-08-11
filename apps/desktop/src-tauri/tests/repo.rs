@@ -45,7 +45,11 @@ fn tracked_files() -> Vec<PathBuf> {
 
 fn text_of(path: &Path) -> Option<String> {
     let bytes = std::fs::read(path).ok()?;
-    // Binary files (icons) have nothing to leak in text form.
+    // Binary files are not read as text. That is a real blind spot, not a
+    // statement that binaries are safe — a compiled `.pyc` carried the whole
+    // set of personal data past every check here. What keeps the spot narrow is
+    // that the only binaries tracked are icons and screenshots, and
+    // `no_compiled_bytecode_is_tracked` keeps it that way.
     if bytes.contains(&0) {
         return None;
     }
@@ -331,6 +335,41 @@ fn captured_fixtures_carry_no_real_identifiers() {
     assert!(
         offenders.is_empty(),
         "these look like personal identifiers: {offenders:?}"
+    );
+}
+
+/// Compiled bytecode is never tracked.
+///
+/// A `.pyc` was committed alongside `scripts/scrub_tree.py`, and it embedded
+/// every string constant of the module it was built from — which, for that
+/// module, is the full list of personal data the script exists to remove. It
+/// went unnoticed because it is binary: every check in this file reads text and
+/// `text_of` returns `None` for anything with a NUL byte, so the one file in
+/// the repository that concentrated all of it was the one nothing looked at.
+///
+/// The rule this encodes: a build artefact is not source, and a binary is not
+/// evidence of nothing. Excluding a file class from an audit has to be a
+/// decision, not a side effect of how the audit happens to read.
+#[test]
+fn no_compiled_bytecode_is_tracked() {
+    let offenders: Vec<String> = tracked_files()
+        .iter()
+        .filter(|path| {
+            let name = path.to_string_lossy();
+            name.ends_with(".pyc") || name.contains("__pycache__/")
+        })
+        .map(|path| {
+            path.strip_prefix(repo_root())
+                .unwrap_or(path)
+                .display()
+                .to_string()
+        })
+        .collect();
+
+    assert!(
+        offenders.is_empty(),
+        "compiled bytecode is tracked, and it carries the source's string \
+         constants where no text audit will see them: {offenders:?}"
     );
 }
 

@@ -69,13 +69,38 @@ Nothing in history is a credential — every blob in every commit was scanned fo
 private keys and provider tokens, and there were none. What remains is personal
 data, and a git history is permanent once published.
 
-`scripts/scrub-history.sh` removes it. The rewrite has been verified read-only
-against all 569 reachable blobs: after scrubbing, none carries an account name,
-identifier, project name or home directory. The script backs up the old history
-to a branch first, refuses to continue if the current tree changes, re-runs the
-scan afterwards, and does not push unless asked.
+`scripts/scrub-history.sh` removes it. The rewrite is verified read-only against
+all 573 reachable blobs: 14 findings before, none after. The script backs up the
+branch first, refuses to continue if the current tree changes, reports any
+commit `--prune-empty` dropped, re-runs the scan afterwards, and does not push
+unless asked.
 
-**Run it before making this repository public.**
+The strings it removes are **not in this repository**. They live in
+`scripts/scrub-tokens.txt`, which is gitignored;
+[scrub-tokens.example](scripts/scrub-tokens.example) documents the format. A
+scrubber that has to be read to be trusted cannot also be the last published
+copy of what it removes.
+
+Three things the first version of this got wrong, all found by testing it:
+
+- **The backup branch was rewritten too.** `filter-branch -- --all` rewrites
+  every ref, including the backup made moments earlier, so the printed recovery
+  command would have restored the *scrubbed* history. Only the current branch is
+  rewritten now.
+- **A committed `.pyc` carried everything.** Compiled Python embeds the string
+  constants of the module it was built from — at the time, the whole token list.
+  Being binary, it was skipped by the scrubber *and* by the verification pass:
+  the scrub would have reported a clean history and left the data in a blob. The
+  verification now reads binary blobs, the filter deletes bytecode outright, and
+  `no_compiled_bytecode_is_tracked` stops it coming back.
+- **The repository audit was failing.** Two checks in `tests/repo.rs` had gone
+  red when the token list was committed, and were not noticed.
+
+**Run it before making this repository public** — and note that a force-push
+does not remove the old commits from GitHub. They stay fetchable by SHA until
+GitHub garbage-collects. Ask GitHub support to GC the repository, or push the
+rewritten history to a freshly created one. The script cleans your history; only
+that step cleans the remote's.
 
 ## What is not protected against
 

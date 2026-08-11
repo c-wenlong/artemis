@@ -25,14 +25,56 @@ import sys
 
 FIXTURE = "apps/desktop/src-tauri/tests/fixtures/quiver/session_cache.json"
 
-# Distinctive strings, safe to replace wherever they appear.
-GLOBAL: list[tuple[bytes, bytes]] = [
-    (b"example", b"example"),
-    (b"example-project", b"example-project"),
-    (b"example-service", b"example-service"),
-    (b"example-docs", b"example-docs"),
-    (b"example-api", b"example-api"),
-]
+# The strings to remove live outside the repository.
+#
+# They used to be a literal list right here, which meant this file — tracked,
+# and destined to be published — spelled out the account name, both student
+# identifiers and all three project names. A scrubber that has to be read to be
+# trusted cannot also be the last copy of what it removes.
+#
+# `scripts/scrub-tokens.txt` is gitignored. `scripts/scrub-tokens.example`
+# documents the format and ships with placeholders.
+DEFAULT_TOKENS = "scripts/scrub-tokens.txt"
+
+_tokens: "list[tuple[bytes, bytes]] | None" = None
+
+
+def load_tokens(path: str) -> "list[tuple[bytes, bytes]]":
+    """Read `old<TAB>new` pairs. Blank lines and `#` comments are ignored."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            lines = handle.readlines()
+    except OSError:
+        raise SystemExit(
+            f"error: no token file at {path}\n"
+            f"       copy scripts/scrub-tokens.example to it and fill it in.\n"
+            f"       it is gitignored on purpose — it holds the data being removed."
+        )
+
+    pairs = []
+    for number, line in enumerate(lines, 1):
+        line = line.rstrip("\n")
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if "\t" not in line:
+            raise SystemExit(f"{path}:{number}: expected 'old<TAB>new'")
+        old, new = line.split("\t", 1)
+        if not old:
+            raise SystemExit(f"{path}:{number}: empty search string")
+        pairs.append((old.encode(), new.encode()))
+
+    if not pairs:
+        raise SystemExit(f"{path}: no tokens, so nothing would be removed")
+    # Longest first, so a token that contains another is replaced whole.
+    pairs.sort(key=lambda pair: len(pair[0]), reverse=True)
+    return pairs
+
+
+def tokens() -> "list[tuple[bytes, bytes]]":
+    global _tokens
+    if _tokens is None:
+        _tokens = load_tokens(os.environ.get("SCRUB_TOKENS", DEFAULT_TOKENS))
+    return _tokens
 
 # Student identifiers, in any case. Kept as a pattern rather than a literal so
 # a second one that was never noticed is caught too.
@@ -58,10 +100,21 @@ NEUTRAL_SESSIONS = [
 # replacements above are still safe everywhere: none of them is hex.
 CHECKSUM_HEAVY = ("Cargo.lock", "pnpm-lock.yaml", "package-lock.json")
 
+# Compiled Python is deleted, not rewritten.
+#
+# A `.pyc` committed by accident embeds every string constant of the module it
+# was built from — and when the token list still lived in this file, that was
+# the account name, both identifiers and all three project names. It is also
+# binary, so the text-only
+# path below skips it and the verification pass skipped it too: the scrub would
+# have reported a clean history while leaving the data sitting in a blob.
+def should_delete(path: str) -> bool:
+    return path.endswith(".pyc") or "__pycache__/" in path
+
 
 def scrub_bytes(data: bytes, path: str = "") -> bytes:
     """Global token and identifier replacement. Text only."""
-    for needle, replacement in GLOBAL:
+    for needle, replacement in tokens():
         data = data.replace(needle, replacement)
     if path.endswith(CHECKSUM_HEAVY):
         return data
@@ -97,6 +150,10 @@ def main() -> int:
     changed = 0
     for path in tracked_files():
         if not os.path.isfile(path):
+            continue
+        if should_delete(path):
+            os.remove(path)
+            changed += 1
             continue
         try:
             with open(path, "rb") as handle:

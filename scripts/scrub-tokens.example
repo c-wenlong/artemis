@@ -1,0 +1,24 @@
+# Strings to remove from every commit. One pair per line: old<TAB>new
+#
+# Copy this to `scripts/scrub-tokens.txt` and fill in real values. That file is
+# gitignored, because it necessarily contains exactly the data being removed —
+# committing it would undo the point of the exercise.
+#
+# Blank lines and `#` comments are ignored. Longer strings are applied first, so
+# a token containing another is replaced whole.
+#
+# Choose replacements that keep each file's shape plausible: a path segment
+# stays a path segment, a title stays a title, a name stays a name. History
+# should read as if the personal detail was never there, not as if a redaction
+# tool ran over it.
+#
+# Only distinctive strings belong here — ones safe to replace *anywhere* in any
+# file. Generic patterns (home directories, identifier shapes) are already
+# handled in code and need no entry. A common English word here would corrupt
+# unrelated text in every commit.
+
+alice	example
+Superwidget	example-project
+ab1234-project-partner	example-service
+Some Course Title	example-docs
+COURSE1234	example-api

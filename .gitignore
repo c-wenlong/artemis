@@ -17,6 +17,17 @@ apps/desktop/src-tauri/icon.png
 apps/desktop/src-tauri/icons/android/
 apps/desktop/src-tauri/icons/ios/
 
+# The scrubber's token list: the personal strings being removed from history.
+# Committing it would publish exactly what it exists to delete.
+scripts/scrub-tokens.txt
+
+# Python bytecode
+#
+# Never commit this. A .pyc embeds every string constant of the module it was
+# built from, and it is binary, so text-based audits look straight past it.
+__pycache__/
+*.pyc
+
 # Environment
 .env
 .env.*
