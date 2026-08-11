@@ -292,3 +292,74 @@ fn the_architecture_document_covers_both_halves_of_the_app() {
         );
     }
 }
+
+/// Captured fixtures carry more than the paths they were captured under.
+///
+/// The Quiver session-cache fixture is a trimmed copy of a real cache. Scrubbing
+/// its absolute paths left the *basenames* and the session *titles* intact —
+/// real project names, course codes, and in one path a string shaped exactly
+/// like a student identifier. None of that is a credential,
+/// and none of it was caught by the home-directory or username checks, because
+/// it is neither.
+///
+/// The rule this encodes: a fixture captured from real use is scrubbed of its
+/// content, not just its paths.
+#[test]
+fn captured_fixtures_carry_no_real_identifiers() {
+    // An identifier of the form used by several universities: a letter, seven
+    // digits, a check letter. Distinctive enough not to fire on ordinary text.
+    let matric = regex_lite(r"\bA\d{7}[A-Z]\b");
+
+    let mut offenders = Vec::new();
+    for path in tracked_files() {
+        if path.ends_with("repo.rs") {
+            continue;
+        }
+        let Some(text) = text_of(&path) else { continue };
+        for line in text.lines() {
+            if matric(line) {
+                offenders.push(
+                    path.strip_prefix(repo_root())
+                        .unwrap_or(&path)
+                        .display()
+                        .to_string(),
+                );
+                break;
+            }
+        }
+    }
+    assert!(
+        offenders.is_empty(),
+        "these look like personal identifiers: {offenders:?}"
+    );
+}
+
+/// Hand-rolled rather than pulling in a regex crate for one pattern:
+/// letter, seven digits, letter, on word boundaries.
+///
+/// **Case-insensitive.** The first version required uppercase and passed
+/// against a fixture where the identifier was lowercased, the way a directory
+/// name writes it. Deliberately not quoting the example here: repeating it
+/// would be the very thing this test refuses.
+fn regex_lite(_pattern: &str) -> impl Fn(&str) -> bool {
+    |line: &str| {
+        let chars: Vec<char> = line.chars().collect();
+        if chars.len() < 9 {
+            return false;
+        }
+        for start in 0..=chars.len() - 9 {
+            if start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
+                continue;
+            }
+            let window = &chars[start..start + 9];
+            let shaped = window[0].eq_ignore_ascii_case(&'a')
+                && window[1..8].iter().all(char::is_ascii_digit)
+                && window[8].is_ascii_alphabetic();
+            // `map_or` rather than `is_none_or`: the crate's MSRV is 1.77.
+            if shaped && chars.get(start + 9).map_or(true, |c| !c.is_alphanumeric()) {
+                return true;
+            }
+        }
+        false
+    }
+}

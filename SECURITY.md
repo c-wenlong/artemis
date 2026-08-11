@@ -59,6 +59,14 @@ Artemis's own code; they resolve when Tauri moves to GTK4.
 `vitest → vite → postcss/esbuild/nanoid` chain. None ships in the app. The
 "critical" one concerns the Vitest UI server, which this project does not run.
 
+## History
+
+Commits before the 2026-08-11 audit contain the author's home directory in four
+files, and the pre-scrub Quiver fixture. Nothing in history is a credential —
+every blob across every commit was scanned for private keys and provider tokens,
+and there were none. Removing the rest needs a history rewrite, which has not
+been done.
+
 ## What is not protected against
 
 - **A malicious harness binary.** If the agent on your `PATH` is hostile,
