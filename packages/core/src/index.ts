@@ -33,6 +33,7 @@ export type {
   ChatSession,
   ChatSessionStatus,
   CreateChatSessionRequest,
+  FileChange,
   RuntimeEvent,
   RuntimeEventType,
   SendChatMessageRequest

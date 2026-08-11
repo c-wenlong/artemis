@@ -471,19 +471,45 @@ branch — both sides appending to one server-side conversation. So a fork reads
 back correctly and its next turn starts a model with no memory of it. Closing
 that needs opencode to support seeding a session from a transcript.
 
-## M8b. File diffs, undo and review
+## M8b. File diffs, undo and review ✅
 
 The rest of the old M8. Split out because M8 renders the *summary* of an edit
 and this renders and reverses the edit itself.
 
-- `file_change` / `file_change_group` block kinds and their renderers
-- Inline diffs in the transcript
-- **Undo** on the edit summary card — revert the agent's edit from the transcript
-- **Review** on the edit summary card — open the change set for approval
-- Diffstat in the composer bar; changed-file list per workspace
+- Per-file patches carried through from `metadata.files[].patch`
+- Inline diffs in the transcript, opened from a file's row
+- **Undo** — reverse-applies that one file's patch
+- **Review** — the whole change set in one dialog, read-only
+- Diffstat in the composer bar (already shipped in M2)
 
-**Exit:** an agent edit appears as a diff in the conversation and can be reverted
-from there.
+**Exit:** met, and verified against a real model's patch rather than a fixture —
+`opencode_live.rs::undo_reverses_a_real_edit` runs a live turn, takes the patch
+opencode emitted, reverses it, and asserts the file is byte-for-byte back.
+
+**Undo is a reverse patch, not `git checkout -- file`.** The workspace usually
+holds the user's own uncommitted work, and restoring from the index would
+discard it. Reversing touches only the lines the agent wrote, so an unrelated
+edit elsewhere in the same file survives.
+
+**It refuses rather than forces.** `git apply --check` runs first, so a patch
+that no longer fits leaves the file untouched and the reason is shown. An edit
+*inside* the hunk's context is a genuine conflict and is refused; that is the
+right way round, because silently reverting across changed context is how an
+undo eats work it did not write.
+
+**The paths inside a patch are not trusted.** They come from a model's tool
+call, opencode writes them absolute, and `git apply` will follow `../..` out of
+the workspace. The headers are rebuilt from the vetted relative path, and a
+test drives `../`, `/etc/passwd` and a patch whose header names a different
+file than the caller did.
+
+Reverting a *created* file deletes it. opencode writes a creation as an ordinary
+patch against an empty original, so reversing it would otherwise leave an empty
+file behind.
+
+**Not done here:** approving or landing a change. Review shows; it does not
+merge. A dialog that looked like it could approve but only closed would be worse
+than one that plainly shows.
 **Depends:** M5, M8.
 
 ## M8c. Transcript verbosity

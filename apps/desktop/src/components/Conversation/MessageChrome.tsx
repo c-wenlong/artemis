@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from "react";
-import type { EditSummary } from "../../chat/fileEdits";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { EditSummary, FileEdit } from "../../chat/fileEdits";
+import { DiffView } from "./DiffView";
 import "./MessageChrome.css";
 
 /** Lines beyond which a message is folded. Roughly a screen of prompt. */
@@ -220,14 +221,51 @@ function count(value: number | null, sign: "+" | "-"): string {
   return value === null ? "" : `${sign}${value}`;
 }
 
+function Counts({ file }: { file: FileEdit }) {
+  return (
+    <span className="edit-summary-counts mono">
+      <span className="edit-added">{count(file.added, "+")}</span>{" "}
+      <span className="edit-removed">{count(file.removed, "-")}</span>
+    </span>
+  );
+}
+
+interface EditSummaryCardProps {
+  onRevert?(file: FileEdit): Promise<void>;
+  summary: EditSummary;
+}
+
 /**
- * What the turn changed on disk.
+ * What the turn changed on disk, and the two things you can do about it.
  *
- * Undo and Review are M8b. They are absent rather than disabled — a control
- * that cannot act is a worse promise than no control.
+ * Undo reverse-applies that one file's patch, so an unrelated edit of the
+ * user's in the same file survives — which restoring from git would not. The
+ * host refuses when the file has moved on since, and that refusal is shown
+ * rather than swallowed: it is the property that makes the button safe.
  */
-export function EditSummaryCard({ summary }: { summary: EditSummary }) {
+export function EditSummaryCard({ onRevert, summary }: EditSummaryCardProps) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [reverted, setReverted] = useState<ReadonlySet<string>>(new Set());
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+
   const files = summary.files.length;
+  const withDiffs = summary.files.filter((file) => file.patch);
+
+  async function revert(file: FileEdit) {
+    if (!onRevert || busy) return;
+    setBusy(file.path);
+    setError(null);
+    try {
+      await onRevert(file);
+      setReverted((current) => new Set(current).add(file.path));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <section className="edit-summary" data-testid="edit-summary">
@@ -235,22 +273,140 @@ export function EditSummaryCard({ summary }: { summary: EditSummary }) {
         <span className="edit-summary-title">
           Edited {files} {files === 1 ? "file" : "files"}
         </span>
-        <span className="edit-summary-total mono" data-testid="edit-total">
-          <span className="edit-added">+{summary.added}</span>{" "}
-          <span className="edit-removed">-{summary.removed}</span>
+        <span className="edit-summary-actions">
+          <span className="edit-summary-total mono" data-testid="edit-total">
+            <span className="edit-added">+{summary.added}</span>{" "}
+            <span className="edit-removed">-{summary.removed}</span>
+          </span>
+          {withDiffs.length > 0 ? (
+            <button
+              className="edit-summary-review"
+              onClick={() => setReviewing(true)}
+              type="button"
+            >
+              Review
+            </button>
+          ) : null}
         </span>
       </header>
+
+      {error ? (
+        <p className="edit-summary-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
       <ul className="edit-summary-list">
-        {summary.files.map((file) => (
-          <li className="edit-summary-row" data-testid="edit-row" key={file.path}>
-            <span className="edit-summary-path">{file.path}</span>
-            <span className="edit-summary-counts mono">
-              <span className="edit-added">{count(file.added, "+")}</span>{" "}
-              <span className="edit-removed">{count(file.removed, "-")}</span>
-            </span>
-          </li>
-        ))}
+        {summary.files.map((file) => {
+          const isOpen = open === file.path;
+          const isReverted = reverted.has(file.path);
+          return (
+            <li
+              className="edit-summary-row"
+              data-reverted={String(isReverted)}
+              data-testid="edit-row"
+              key={file.path}
+            >
+              <div className="edit-summary-line">
+                {/* Only a file with a diff gets a control; the rest are text,
+                    rather than a button that opens nothing. */}
+                {file.patch ? (
+                  <button
+                    aria-expanded={isOpen}
+                    className="edit-summary-path edit-summary-path--button"
+                    onClick={() => setOpen(isOpen ? null : file.path)}
+                    type="button"
+                  >
+                    {file.path}
+                  </button>
+                ) : (
+                  <span className="edit-summary-path">{file.path}</span>
+                )}
+
+                <span className="edit-summary-line-end">
+                  <Counts file={file} />
+                  {isReverted ? (
+                    <span className="edit-summary-undone">Undone</span>
+                  ) : file.patch && onRevert ? (
+                    <button
+                      className="edit-summary-undo"
+                      disabled={busy !== null}
+                      onClick={() => void revert(file)}
+                      type="button"
+                    >
+                      {busy === file.path ? "Undoing…" : "Undo"}
+                    </button>
+                  ) : null}
+                </span>
+              </div>
+              {isOpen && file.patch ? <DiffView patch={file.patch} /> : null}
+            </li>
+          );
+        })}
       </ul>
+
+      {reviewing ? (
+        <ChangesDialog files={withDiffs} onClose={() => setReviewing(false)} />
+      ) : null}
     </section>
+  );
+}
+
+/**
+ * The whole change set in one place.
+ *
+ * Read-only. Approving or landing a change belongs with the review flow proper,
+ * and a dialog that looked like it could approve but only closed would be worse
+ * than one that plainly shows.
+ */
+function ChangesDialog({
+  files,
+  onClose
+}: {
+  files: readonly FileEdit[];
+  onClose(): void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
+
+  return (
+    <dialog
+      aria-label="Changes"
+      className="changes-dialog"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      ref={ref}
+    >
+      <header className="changes-head">
+        <h2 className="changes-title">
+          {files.length} changed {files.length === 1 ? "file" : "files"}
+        </h2>
+        <button
+          aria-label="Close changes"
+          className="settings-close"
+          onClick={onClose}
+          type="button"
+        >
+          ✕
+        </button>
+      </header>
+      <div className="changes-body">
+        {files.map((file) => (
+          <section className="changes-file" key={file.path}>
+            <h3 className="changes-file-name mono">
+              {file.path}
+              <Counts file={file} />
+            </h3>
+            {file.patch ? <DiffView patch={file.patch} /> : null}
+          </section>
+        ))}
+      </div>
+    </dialog>
   );
 }

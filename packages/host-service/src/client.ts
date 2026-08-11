@@ -197,6 +197,11 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
       return Promise.reject(new Error("Forking a session requires the desktop app."));
     },
 
+    /** Writing to the working tree is the Rust host's job alone. */
+    revertFileChange(): Promise<void> {
+      return Promise.reject(new Error("Undoing an edit requires the desktop app."));
+    },
+
     getRuntimeSettings(): Promise<RuntimeSettings> {
       return getJson(`${basePath}/settings`);
     },

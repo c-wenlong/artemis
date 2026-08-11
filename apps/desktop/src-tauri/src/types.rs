@@ -270,6 +270,10 @@ pub struct FileChange {
     pub path: String,
     pub additions: u32,
     pub deletions: u32,
+    /// The unified diff for this file, when the harness sent one. It is what
+    /// the transcript renders and what an undo reverse-applies.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub patch: Option<String>,
 }
 
 /// Mirrors the `RuntimeEvent` union in `packages/core/src/chat/types.ts`.

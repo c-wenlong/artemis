@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ChatBlock, ChatMessage } from "@artemis/core";
 import { buildTimeline } from "../../chat/activityGroups";
-import { deriveFileEdits } from "../../chat/fileEdits";
+import { deriveFileEdits, type FileEdit } from "../../chat/fileEdits";
 import type { TurnRecord } from "../../chat/reduce";
 import { ActivityGroupSegment } from "../segments/ActivityGroupSegment";
 import { BlockSegment } from "../segments/BlockSegments";
@@ -23,6 +23,8 @@ interface MessageListProps {
   isStreaming?: boolean;
   /** Start a new session carrying everything up to this turn. */
   onFork?(turnId: string): void;
+  /** Reverse one file's edit. Rejects when the host refuses. */
+  onRevert?(file: FileEdit): Promise<void>;
 }
 
 /** Prose is the answer; everything else is how it was reached. */
@@ -64,11 +66,13 @@ function AssistantTurn({
   isLive,
   message,
   onFork,
+  onRevert,
   turn
 }: {
   isLive: boolean;
   message: ChatMessage;
   onFork?(turnId: string): void;
+  onRevert?(file: FileEdit): Promise<void>;
   turn?: TurnRecord;
 }) {
   // Expanded by default. Codex collapses, and so should we — but the default
@@ -109,7 +113,7 @@ function AssistantTurn({
         ))
       )}
 
-      {edits ? <EditSummaryCard summary={edits} /> : null}
+      {edits ? <EditSummaryCard onRevert={onRevert} summary={edits} /> : null}
 
       {isLive ? <StreamingFooter turnId={message.turnId} /> : null}
       {!isLive && isFinished ? (
@@ -127,7 +131,8 @@ export function MessageList({
   messages,
   turns,
   isStreaming = false,
-  onFork
+  onFork,
+  onRevert
 }: MessageListProps) {
   const lastTurnId = messages.at(-1)?.turnId;
 
@@ -166,6 +171,7 @@ export function MessageList({
             key={message.id}
             message={message}
             onFork={onFork}
+            onRevert={onRevert}
             turn={turn}
           />
         );

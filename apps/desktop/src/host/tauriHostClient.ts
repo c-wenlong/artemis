@@ -68,6 +68,14 @@ export function createTauriHostClient(): ArtemisHostClient {
       return invoke("get_review_snapshot", { workspaceId });
     },
 
+    revertFileChange(
+      workspacePath: string,
+      relativePath: string,
+      patch: string
+    ): Promise<void> {
+      return invoke("revert_file_change", { workspacePath, relativePath, patch });
+    },
+
     getRuntimeSettings(): Promise<RuntimeSettings> {
       return invoke("get_runtime_settings");
     },

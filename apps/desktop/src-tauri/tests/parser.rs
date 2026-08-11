@@ -354,6 +354,14 @@ mod live_apply_patch {
         assert_eq!(notes.path, "notes.md");
         assert_eq!(notes.additions, 3);
         assert_eq!(notes.deletions, 0);
+
+        // The diff itself, which the transcript renders and Undo reverses.
+        let patch = seed
+            .patch
+            .as_deref()
+            .expect("seed.txt should carry a patch");
+        assert!(patch.contains("@@"), "not a unified diff: {patch}");
+        assert!(patch.contains("+delta"), "the added line should be in it");
     }
 
     #[test]

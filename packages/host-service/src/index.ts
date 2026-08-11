@@ -203,6 +203,10 @@ export function createLocalHostService(
       throw new Error("Forking a session requires the desktop app.");
     },
 
+    async revertFileChange(): Promise<void> {
+      throw new Error("Undoing an edit requires the desktop app.");
+    },
+
     async getRuntimeSettings(): Promise<RuntimeSettings> {
       await wait(latencyMs);
       return {};

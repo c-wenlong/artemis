@@ -230,3 +230,101 @@ fn reports_the_files_a_real_turn_edited() {
         "and the file should really have been edited"
     );
 }
+
+/// Undo, against a patch a real model actually produced.
+///
+/// The fixture tests prove the reverse-apply logic; this proves the patch
+/// opencode emits is one `git apply --reverse` will accept. Those are different
+/// claims, and the second is the one that breaks when opencode changes format.
+///
+/// ```text
+/// OPENCODE_BIN=$(command -v opencode) OPENCODE_MODEL=openai/gpt-5-mini \
+///   cargo test --test opencode_live undo -- --ignored --nocapture
+/// ```
+#[test]
+#[ignore]
+fn undo_reverses_a_real_edit() {
+    let Some(binary) = opencode_binary() else {
+        eprintln!("opencode not found; set OPENCODE_BIN");
+        return;
+    };
+
+    let dir = std::env::temp_dir().join("artemis-opencode-live-undo");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let original = "alpha\nbeta\ngamma\n";
+    std::fs::write(dir.join("seed.txt"), original).unwrap();
+    for args in [
+        vec!["init", "-q"],
+        vec!["config", "user.email", "t@example.com"],
+        vec!["config", "user.name", "Test"],
+        vec!["add", "-A"],
+        vec!["commit", "-qm", "seed"],
+    ] {
+        std::process::Command::new("git")
+            .args(&args)
+            .current_dir(&dir)
+            .output()
+            .expect("git");
+    }
+
+    let prompt = "Add a line reading 'delta' to the end of seed.txt. Use your edit tools.";
+    let mut args = vec![
+        "run".to_string(),
+        "--format".into(),
+        "json".into(),
+        "--dir".into(),
+        dir.to_string_lossy().into_owned(),
+    ];
+    if let Ok(model) = std::env::var("OPENCODE_MODEL") {
+        args.push("--model".into());
+        args.push(model);
+    }
+    args.push(prompt.to_string());
+
+    let sink = Arc::new(Collector::default());
+    let log = EventLog::in_dir(dir.clone(), "live-undo");
+    let outcome = run_turn(
+        TurnRequest {
+            session_id: "live-undo".into(),
+            turn_id: "live-undo-turn".into(),
+            command: binary,
+            args,
+            cwd: &dir,
+            prompt: prompt.into(),
+            harness_id: "opencode".into(),
+            workspace_id: "ws-live".into(),
+        },
+        new_turn_handle(),
+        sink.clone(),
+        &log,
+    );
+    assert!(!outcome.failed);
+    assert_ne!(
+        std::fs::read_to_string(dir.join("seed.txt")).unwrap(),
+        original,
+        "the model was supposed to edit the file"
+    );
+
+    let batches = sink.batches.lock().unwrap();
+    let change = batches
+        .iter()
+        .flatten()
+        .filter_map(|event| match event {
+            RuntimeEvent::ToolCallCompleted { file_changes, .. } => file_changes.clone(),
+            _ => None,
+        })
+        .flatten()
+        .find(|change| change.path == "seed.txt")
+        .expect("seed.txt should have been reported as changed");
+
+    let patch = change.patch.as_deref().expect("with a patch attached");
+    println!("reversing:\n{patch}");
+    artemis_host::git::revert_patch(&dir, &change.path, patch).expect("undo should apply");
+
+    assert_eq!(
+        std::fs::read_to_string(dir.join("seed.txt")).unwrap(),
+        original,
+        "undo should have put the file back exactly"
+    );
+}

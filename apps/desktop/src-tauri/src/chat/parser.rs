@@ -336,6 +336,10 @@ fn read_file_changes(part: &Value, root: Option<&Path>) -> Option<Vec<FileChange
                 path,
                 additions: file.get("additions").and_then(Value::as_u64).unwrap_or(0) as u32,
                 deletions: file.get("deletions").and_then(Value::as_u64).unwrap_or(0) as u32,
+                patch: file
+                    .get("patch")
+                    .and_then(Value::as_str)
+                    .map(str::to_string),
             })
         })
         .collect();

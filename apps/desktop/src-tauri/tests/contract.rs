@@ -253,11 +253,27 @@ fn file_change_matches_core() {
         path: "seed.txt".into(),
         additions: 1,
         deletions: 0,
+        patch: Some("@@ -1,3 +1,4 @@\n gamma\n+delta\n".into()),
     };
     assert_eq!(
         to_json(&change),
-        json!({ "path": "seed.txt", "additions": 1, "deletions": 0 })
+        json!({
+            "path": "seed.txt",
+            "additions": 1,
+            "deletions": 0,
+            "patch": "@@ -1,3 +1,4 @@\n gamma\n+delta\n"
+        })
     );
+
+    // A harness that reports counts but no diff omits the field rather than
+    // sending null; the TypeScript side declares it with `?`.
+    let countless = FileChange {
+        path: "seed.txt".into(),
+        additions: 1,
+        deletions: 0,
+        patch: None,
+    };
+    assert!(to_json(&countless).get("patch").is_none());
 }
 
 /// The completion carries `input` and `fileChanges` because
@@ -278,6 +294,7 @@ fn tool_call_completed_matches_core() {
             path: "seed.txt".into(),
             additions: 1,
             deletions: 0,
+            patch: None,
         }]),
     };
     assert_eq!(

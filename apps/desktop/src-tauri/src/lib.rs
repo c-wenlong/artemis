@@ -268,6 +268,27 @@ async fn fork_chat_session(
     .map_err(|error| error.to_string())?
 }
 
+/// Undo one file's worth of an agent's edit by reverse-applying its patch.
+///
+/// Refuses rather than forces: if the file has moved on since, the patch no
+/// longer describes it, and applying it anyway would corrupt what came after.
+#[tauri::command]
+async fn revert_file_change(
+    workspace_path: String,
+    relative_path: String,
+    patch: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        git::revert_patch(
+            std::path::Path::new(&workspace_path),
+            &relative_path,
+            &patch,
+        )
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[tauri::command]
 async fn open_terminal(
     store: State<'_, Arc<PtyStore>>,
@@ -378,6 +399,7 @@ pub fn run() {
             cancel_chat_turn,
             replay_chat_session,
             fork_chat_session,
+            revert_file_change,
             open_terminal,
             list_terminals,
             subscribe_terminal,

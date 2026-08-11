@@ -163,6 +163,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   savedPresets: Array<{ workspaceId: string; harnessId: string; model: string | null }>;
   appliedIcons: string[];
   forks: Array<{ sessionId: string; throughTurnId: string }>;
+  reverted: Array<{ patch: string; relativePath: string; workspacePath: string }>;
 } {
   let settings: RuntimeSettings = options.settings ?? {
     opencodeDefaultModel: "anthropic/claude-opus-5"
@@ -185,6 +186,11 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
   }> = [];
   const appliedIcons: string[] = [];
   const forks: Array<{ sessionId: string; throughTurnId: string }> = [];
+  const reverted: Array<{
+    patch: string;
+    relativePath: string;
+    workspacePath: string;
+  }> = [];
 
   // Mirrors the Rust catalog in appicon.rs.
   const iconCatalog: AppIcon[] = [
@@ -217,6 +223,7 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
     savedPresets,
     appliedIcons,
     forks,
+    reverted,
 
     getSnapshot: async (): Promise<AssetInventorySnapshot> => fakeInventory,
     listProjects: async (): Promise<ProjectRef[]> => projects,
@@ -380,6 +387,14 @@ export function createFakeHost(options: FakeHostOptions = {}): ArtemisHostClient
 
     cancelChatTurn: async (sessionId: string): Promise<void> => {
       cancelled.add(sessionId);
+    },
+
+    revertFileChange: async (
+      workspacePath: string,
+      relativePath: string,
+      patch: string
+    ): Promise<void> => {
+      reverted.push({ patch, relativePath, workspacePath });
     },
 
     forkChatSession: async (

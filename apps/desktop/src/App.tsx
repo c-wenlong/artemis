@@ -203,6 +203,19 @@ export function App({ host }: AppProps = {}) {
             isStreaming={chat.isRunning}
             messages={chat.transcript.messages}
             onFork={(turnId) => void chat.fork(turnId)}
+            onRevert={async (file) => {
+              // The host needs the worktree to run `git apply` in. Without a
+              // selected workspace there is nowhere to apply it.
+              if (!selectedWorkspace || !file.patch) {
+                throw new Error("There is no workspace to undo this in.");
+              }
+              await hostService.revertFileChange(
+                selectedWorkspace.worktreePath,
+                file.path,
+                file.patch
+              );
+              setReview(await hostService.getReviewSnapshot(selectedWorkspace.id));
+            }}
             turns={chat.transcript.turns}
           />
         }

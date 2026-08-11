@@ -58,6 +58,13 @@ export interface ToolCallStartedEvent extends RuntimeEventBase {
 export interface FileChange {
   additions: number;
   deletions: number;
+  /**
+   * The unified diff for this file, when the harness sent one. It is what the
+   * transcript renders and what an undo reverse-applies. Absent means the
+   * change is known but not showable — the row renders without a diff rather
+   * than with an empty one.
+   */
+  patch?: string;
   path: string;
 }
 

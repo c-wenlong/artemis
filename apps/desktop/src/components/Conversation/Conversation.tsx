@@ -12,6 +12,8 @@ interface ConversationProps {
   isStreaming?: boolean;
   /** Start a new session carrying everything up to a turn. */
   onFork?(turnId: string): void;
+  /** Reverse one file's edit. */
+  onRevert?(file: { patch?: string; path: string }): Promise<void>;
   children?: ReactNode;
 }
 
@@ -28,6 +30,7 @@ export function Conversation({
   turns = {},
   isStreaming = false,
   onFork,
+  onRevert,
   children
 }: ConversationProps) {
   const isEmpty = messages.length === 0 && (children === undefined || children === null);
@@ -47,6 +50,7 @@ export function Conversation({
             isStreaming={isStreaming}
             messages={messages}
             onFork={onFork}
+            onRevert={onRevert}
             turns={turns}
           />
         ) : null}

@@ -174,3 +174,144 @@
   white-space: nowrap;
   font-size: var(--text-ui-sm);
 }
+
+/* ---- Edit summary: rows, undo, review ---- */
+
+.edit-summary-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.edit-summary-review {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-ui-sm);
+}
+
+.edit-summary-review:hover {
+  background: var(--accent-muted);
+}
+
+.edit-summary-row {
+  display: block;
+  padding: 0;
+}
+
+.edit-summary-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+}
+
+.edit-summary-line-end {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex: none;
+}
+
+.edit-summary-path--button {
+  padding: 0;
+  color: var(--text-primary);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+
+.edit-summary-path--button:hover {
+  text-decoration-color: var(--text-primary);
+}
+
+.edit-summary-undo {
+  padding: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-sm);
+}
+
+.edit-summary-undo:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.edit-summary-undo:disabled {
+  opacity: 0.5;
+}
+
+/* A reverted row stays listed — the turn did make that edit — but reads as
+   spent rather than pending. */
+.edit-summary-row[data-reverted="true"] .edit-summary-path,
+.edit-summary-row[data-reverted="true"] .edit-summary-counts {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-tertiary);
+}
+
+.edit-summary-undone {
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+}
+
+.edit-summary-error {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--state-error) 8%, transparent);
+  color: var(--state-error);
+  font-size: var(--text-ui-sm);
+}
+
+/* ---- The whole change set ---- */
+
+.changes-dialog {
+  width: min(56rem, calc(100vw - var(--space-6)));
+  max-height: min(46rem, calc(100vh - var(--space-7)));
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-overlay);
+}
+
+.changes-dialog::backdrop {
+  background: var(--scrim);
+}
+
+.changes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.changes-title {
+  margin: 0;
+  font-size: var(--text-heading);
+  font-weight: 600;
+}
+
+.changes-body {
+  max-height: calc(46rem - 4rem);
+  overflow-y: auto;
+}
+
+.changes-file + .changes-file {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.changes-file-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
+}

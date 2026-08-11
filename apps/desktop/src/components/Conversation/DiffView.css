@@ -1,0 +1,68 @@
+.diff-view {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  overflow-x: auto;
+}
+
+.diff-hunk-header {
+  padding: var(--space-1) var(--space-3);
+  color: var(--text-tertiary);
+  font-size: var(--text-ui-xs);
+  background: var(--surface-base);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.diff-hunk + .diff-hunk .diff-hunk-header {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.diff-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  font-size: var(--text-ui-sm);
+  line-height: 1.6;
+  white-space: pre;
+}
+
+/*
+ * Tinted backgrounds, not just tinted text: a long added line reads as one
+ * block that way. The colours are the diff tokens at low opacity so they hold
+ * up in both themes.
+ */
+.diff-line[data-kind="added"] {
+  background: color-mix(in srgb, var(--diff-added) 12%, transparent);
+}
+
+.diff-line[data-kind="removed"] {
+  background: color-mix(in srgb, var(--diff-removed) 12%, transparent);
+}
+
+.diff-gutter {
+  flex: none;
+  min-width: 2.5ch;
+  color: var(--text-tertiary);
+  text-align: right;
+  font-size: var(--text-ui-xs);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.diff-marker {
+  flex: none;
+  width: 1ch;
+  user-select: none;
+}
+
+.diff-line[data-kind="added"] .diff-marker {
+  color: var(--diff-added);
+}
+
+.diff-line[data-kind="removed"] .diff-marker {
+  color: var(--diff-removed);
+}
+
+.diff-text {
+  min-width: 0;
+}

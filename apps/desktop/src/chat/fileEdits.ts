@@ -17,6 +17,9 @@ import type { ChatBlock } from "@artemis/core";
 export interface FileEdit {
   /** Lines added, or null when the tool input did not say. */
   added: number | null;
+  /** The unified diff, when the harness sent one. Absent means no diff to
+   *  show and nothing to reverse — the row renders as plain text. */
+  patch?: string;
   path: string;
   removed: number | null;
 }
@@ -61,6 +64,7 @@ export function deriveFileEdits(blocks: readonly ChatBlock[]): EditSummary | nul
         } else {
           byPath.set(change.path, {
             added: change.additions,
+            patch: change.patch,
             path: change.path,
             removed: change.deletions
           });

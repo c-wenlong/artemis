@@ -332,3 +332,158 @@ pub fn remove_worktree(repo: &Path, worktree: &Path, force: bool) -> Result<(), 
 pub fn prune_worktrees(repo: &Path) {
     let _ = git(&["worktree", "prune"], repo);
 }
+
+/// Reverse-apply a patch, undoing one file's worth of an agent's edit.
+///
+/// Two decisions worth stating.
+///
+/// It is a reverse patch rather than `git checkout -- file` because the
+/// workspace usually holds the user's own uncommitted work as well. Restoring
+/// from the index would discard that; reversing the patch touches only the
+/// lines the agent wrote, and leaves an unrelated edit in the same file alone.
+///
+/// The paths inside the patch are rebuilt rather than trusted. They arrive from
+/// a model's tool call, opencode writes them as absolute, and `git apply` will
+/// happily follow `../..` out of the workspace. So `relative` is validated and
+/// the headers are regenerated from it — whatever the patch claims is ignored.
+pub fn revert_patch(workspace: &Path, relative: &str, patch: &str) -> Result<(), String> {
+    if patch.trim().is_empty() {
+        return Err("There is no patch to reverse.".to_string());
+    }
+    let relative = vetted_relative_path(relative)?;
+    let rewritten = rewrite_patch_headers(patch, &relative)?;
+
+    // opencode writes a newly created file as an ordinary patch against an
+    // empty original (`@@ -0,0 +1,n @@`) rather than a git "new file mode"
+    // one. Reversing that removes every line and leaves an empty file sitting
+    // there, which is not what undoing a creation means.
+    if creates_the_file(&rewritten) {
+        let target = workspace.join(&relative);
+        return match std::fs::remove_file(&target) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                Err("That file is already gone.".to_string())
+            }
+            Err(error) => Err(format!("Could not remove {relative}: {error}")),
+        };
+    }
+
+    // `--check` first so a patch that no longer fits leaves the file untouched
+    // rather than half-applied.
+    let args = ["apply", "--reverse", "-p1", "--unidiff-zero", "-"];
+    git_stdin(&args, workspace, &rewritten, true).map_err(|error| {
+        format!("This edit no longer matches the file, so it was not undone. {error}")
+    })?;
+    git_stdin(&args, workspace, &rewritten, false)
+}
+
+/// True when every hunk starts from an empty original, i.e. the patch is the
+/// creation of the whole file.
+fn creates_the_file(patch: &str) -> bool {
+    let mut hunks = 0;
+    for line in patch.lines().filter(|line| line.starts_with("@@")) {
+        hunks += 1;
+        // "@@ -0,0 +1,3 @@" — the original side is the part after '-'.
+        let Some(original) = line.split_whitespace().nth(1) else {
+            return false;
+        };
+        let count = original
+            .trim_start_matches('-')
+            .split(',')
+            .nth(1)
+            .unwrap_or("1");
+        if count != "0" {
+            return false;
+        }
+    }
+    hunks > 0
+}
+
+/// A workspace-relative path that cannot escape the workspace.
+fn vetted_relative_path(relative: &str) -> Result<String, String> {
+    let trimmed = relative.trim();
+    if trimmed.is_empty() {
+        return Err("No file path was given.".to_string());
+    }
+    let candidate = Path::new(trimmed);
+    if candidate.is_absolute() {
+        return Err(format!("Refusing an absolute path: {trimmed}"));
+    }
+    if candidate
+        .components()
+        .any(|part| matches!(part, std::path::Component::ParentDir))
+    {
+        return Err(format!(
+            "Refusing a path that leaves the workspace: {trimmed}"
+        ));
+    }
+    Ok(trimmed.to_string())
+}
+
+/// Replace whatever the patch calls the file with `a/<relative>` and
+/// `b/<relative>`, and drop the `Index:` line opencode prefixes it with.
+fn rewrite_patch_headers(patch: &str, relative: &str) -> Result<String, String> {
+    let body: Vec<&str> = patch
+        .lines()
+        .skip_while(|line| {
+            line.starts_with("Index:")
+                || line.starts_with("===")
+                || line.starts_with("--- ")
+                || line.starts_with("+++ ")
+        })
+        .collect();
+
+    if !body.iter().any(|line| line.starts_with("@@")) {
+        return Err("The patch has no hunks to reverse.".to_string());
+    }
+
+    let mut rewritten = format!("--- a/{relative}\n+++ b/{relative}\n");
+    rewritten.push_str(&body.join("\n"));
+    if !rewritten.ends_with('\n') {
+        rewritten.push('\n');
+    }
+    Ok(rewritten)
+}
+
+/// Run git with the patch on stdin. `check_only` adds `--check`, which reports
+/// whether it would apply without touching anything.
+fn git_stdin(args: &[&str], cwd: &Path, stdin: &str, check_only: bool) -> Result<(), String> {
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+
+    let mut full: Vec<&str> = args.to_vec();
+    if check_only {
+        full.insert(1, "--check");
+    }
+
+    let mut child = Command::new("git")
+        .args(&full)
+        .current_dir(cwd)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("Could not run git: {error}"))?;
+
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| "git refused stdin.".to_string())?
+        .write_all(stdin.as_bytes())
+        .map_err(|error| format!("Could not send the patch to git: {error}"))?;
+
+    let output = child
+        .wait_with_output()
+        .map_err(|error| format!("git did not finish: {error}"))?;
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    Err(stderr
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .unwrap_or("git apply failed")
+        .to_string())
+}
