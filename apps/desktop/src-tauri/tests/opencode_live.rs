@@ -260,6 +260,9 @@ fn undo_reverses_a_real_edit() {
         vec!["init", "-q"],
         vec!["config", "user.email", "t@example.com"],
         vec!["config", "user.name", "Test"],
+        // Same reason as tests/revert.rs: these compare file contents, and a
+        // Windows checkout would rewrite the line endings underneath them.
+        vec!["config", "core.autocrlf", "false"],
         vec!["add", "-A"],
         vec!["commit", "-qm", "seed"],
     ] {

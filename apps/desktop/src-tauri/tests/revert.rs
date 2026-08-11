@@ -21,6 +21,15 @@ fn repo(name: &str) -> PathBuf {
         vec!["init", "-q"],
         vec!["config", "user.email", "t@example.com"],
         vec!["config", "user.name", "Test"],
+        // These fixtures write their files directly and then reverse-apply a
+        // patch to them. On Windows `core.autocrlf` is on by default, so
+        // `git apply` would write CRLF back over content that was created as LF
+        // and the comparison would fail for a reason that has nothing to do with
+        // reverting. Pinned so the tests measure the revert.
+        //
+        // It does not answer the real question, which is what happens to a user
+        // whose working tree genuinely is CRLF. See MILESTONES.
+        vec!["config", "core.autocrlf", "false"],
     ] {
         Command::new("git")
             .args(&args)

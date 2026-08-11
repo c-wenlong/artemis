@@ -833,10 +833,18 @@ all real and none in the feature being built at the time:
   default there, so a correct checkout of `alpha\n` reads back `alpha\r\n`. The
   test now asserts what it means — that every worktree holds identical content.
 
-**Open, and not yet investigated: what CRLF does to a comparison.** If a Windows
-checkout is CRLF and an agent writes LF, a diff could report every touched line
-as changed, which would make the diff view and Undo noisy rather than wrong.
-Nothing here tests that, and no Windows machine has run the app.
+**Open, and not yet investigated: what CRLF does to a comparison or an Undo.**
+If a Windows checkout is CRLF and an agent writes LF, a diff could report every
+touched line as changed, and `git apply --reverse --check` could refuse a patch
+that is genuinely reversible. Noisy rather than wrong, probably — but nobody has
+looked.
+
+It surfaced twice as failing tests, in the comparison fixture and again in the
+revert fixture, and **both times the fix was to pin `core.autocrlf` off in the
+fixture's own repository**. That is right for a test, which should measure
+isolation or reverting rather than the runner's line-ending policy — and it is
+worth being clear that it answers nothing about a real user whose working tree
+genuinely is CRLF. The pins make the tests honest, not the feature safe.
 
 Earlier, CI also caught a `fmt` violation and an `unused_mut` that only exists
 off Windows, both under `clippy -D warnings`.
