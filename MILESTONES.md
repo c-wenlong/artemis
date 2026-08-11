@@ -797,8 +797,11 @@ all real and none in the feature being built at the time:
   under test was correct. Now a compiled `src/bin/fake_harness.rs`, which cargo
   builds for whatever target runs.
 - **The privacy audit failed everywhere.** It derives the username from `$HOME`
-  so it protects whoever runs it, but a runner's home is `/home/runner`, and
-  `runner` appears legitimately in the workflow file and lockfile paths.
+  so it protects whoever runs it, but a CI runner's home directory is named
+  after the service account, and that name appears legitimately in the workflow
+  file and in lockfile paths. Service accounts are now skipped. (Writing the
+  literal path into this file made the audit fail a second time, on the
+  home-directory check — which is the rule working.)
 - **A worktree test asserted bytes on Windows.** `core.autocrlf` is on by
   default there, so a correct checkout of `alpha\n` reads back `alpha\r\n`. The
   test now asserts what it means — that every worktree holds identical content.
