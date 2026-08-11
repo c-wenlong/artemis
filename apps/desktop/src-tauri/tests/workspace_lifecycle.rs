@@ -68,8 +68,14 @@ fn a_worktree_round_trips_from_creation_to_deletion() {
         Path::new(&created.worktree_path).is_dir(),
         "the checkout exists on disk"
     );
+    // Compared after canonicalising, because two spellings of one location are
+    // still one location. On Windows `std::env::temp_dir()` hands back the 8.3
+    // short form — `RUNNER~1` — while git reports the long one, so the prefix
+    // check failed on paths that were in fact the same directory.
     assert!(
-        Path::new(&created.worktree_path).starts_with(&worktrees),
+        std::fs::canonicalize(&created.worktree_path)
+            .expect("the new worktree exists")
+            .starts_with(std::fs::canonicalize(&worktrees).expect("the worktree root exists")),
         "worktrees live outside the repository, not inside it"
     );
 

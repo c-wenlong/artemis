@@ -98,8 +98,13 @@ fn a_branch_name_with_slashes_becomes_a_safe_directory() {
         .to_string_lossy()
         .into_owned();
     assert!(!name.contains('/'), "got {name}");
+    // Canonicalised first: on Windows the temp directory comes back as an 8.3
+    // short name while git reports the long one, and two spellings of one
+    // location are still one location.
     assert!(
-        created.path.starts_with(&repo.worktrees),
+        std::fs::canonicalize(&created.path)
+            .expect("the worktree exists")
+            .starts_with(std::fs::canonicalize(&repo.worktrees).expect("the root exists")),
         "stays inside the root"
     );
     // The branch itself keeps its real name.
