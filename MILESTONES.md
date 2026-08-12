@@ -814,10 +814,40 @@ directory, which would let a repository choose which binary Artemis runs.
 `x86_64-pc-windows-msvc` — checked by lifting it into a standalone crate,
 because a full cross-build cannot be done from macOS (`libsqlite3-sys` compiles
 C and needs the MSVC toolchain). CI is what actually builds all three.
-**Linux and macOS now pass.** Making the repository public gave it free Actions
+**All three platforms pass.** Making the repository public gave it free Actions
 minutes, which is what unblocked CI after five runs that had died on billing
-without executing a step. The first run that actually ran caught three things,
-all real and none in the feature being built at the time:
+without executing a step. Getting from there to green took eleven rounds, and
+every one of them found something.
+
+Three were real product bugs, none of which any amount of local testing would
+have shown:
+
+- **Path traversal.** `/etc/passwd` is not absolute on Windows — no drive letter
+  — so it passed vetting, and `join` there *replaces* a rooted path rather than
+  appending it. An agent could name a file outside the workspace and have it
+  read. See SECURITY.md.
+- **Worktrees created inside the repository.** A project id is used as a
+  directory name, and it was built by replacing `/`, spaces and `.`, which
+  leaves a Windows path drive-qualified — so `join` discarded the worktrees root.
+  The comparison feature deletes losing worktrees, which would have meant
+  deleting from inside the user's own checkout.
+- **The terminal dock could not open a shell**, because the webview chose
+  `/bin/zsh`.
+
+The other eight were tests encoding a POSIX or single-machine assumption. One of
+those deserves its own mention: `scrollback_is_bounded…` had never tested
+anything on any platform. It wrote 43 KB against a 256 KiB bound so nothing was
+ever dropped, and asserted on `line-1\n`, which a PTY never emits because it ends
+lines with CRLF on Unix too. Two mistakes cancelling out. Normalising the line
+endings for Windows is what made it capable of failing.
+
+**Green does not mean Windows works.** Five terminal tests are `#[cfg(unix)]`
+because output there is unexplained, and nobody has run the app on Windows at
+all. What CI proves is that the code compiles and the portable half of the suite
+passes on three platforms — which is worth having, and is not the same claim.
+
+The first run that actually ran caught three things, all real and none in the
+feature being built at the time:
 
 - **Three streaming tests were POSIX-only.** The fake harness was `/bin/sh -c`
   with a `printf` script, and that shell does not exist on Windows. The code
@@ -857,8 +887,9 @@ off Windows, both under `clippy -D warnings`.
 - ✅ Issue and PR templates; this file is the public roadmap
 - ✅ A privacy audit that runs over every tracked file
 - ✅ Screenshot — a real turn, captured from the running desktop app
-- ⛔ Repo public — the user's call, deliberately deferred
-- ⛔ CI required — needs a run on GitHub first; CI has still never executed
+- ✅ Repo public — https://github.com/c-wenlong/artemis
+- ✅ CI green on Ubuntu, macOS and Windows
+- ⛔ CI *required* — the branch protection rule is not set
 
 **Four real leaks found and fixed** before any of this could be published. The
 audit in `tests/repo.rs` reads every file git tracks:
@@ -876,9 +907,19 @@ than searching for path shapes. It also means the check protects whoever runs
 it, not just the person who wrote it — and it does not need the name written
 into a file that is about to be published.
 
-**Exit: not met.** The documentation half is done — a stranger can build, run
-and land a change. The repository is still private by choice, and CI has never
-run, so "green and required" is unverified.
+**History was rewritten before going public.** All 36 commits carried the
+author's home directory, real project names and two student identifiers. Nothing
+in them was ever a credential — every blob in every commit was scanned — but a
+git history is permanent once published. A force-push would not have been
+enough, because GitHub keeps unreachable commits fetchable by SHA until it
+garbage-collects, so the remote was rebuilt from the rewritten history and the
+original deleted. Verified afterwards by asking GitHub for three pre-rewrite
+SHAs: all 404.
+
+**Exit: met, with one thing outstanding.** A stranger can build, run and land a
+change; the repository is public; CI is green on all three platforms. What is
+missing is the branch protection rule that makes it *required* — a setting on
+the repository rather than anything in it.
 
 **The screenshot is a real turn**, not a mock: opencode was asked to add retry
 logic to a throwaway repository, and `tests/record_demo_log.rs` recorded what it
