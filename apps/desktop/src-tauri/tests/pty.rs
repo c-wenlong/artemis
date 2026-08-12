@@ -9,27 +9,43 @@
 //! subscriber — so the tests that matter are the ones where a subscriber goes
 //! away and comes back.
 
-use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use artemis_host::pty::{PtyStore, TerminalSink, TerminalSpec};
+use artemis_host::pty::{PtyStore, TerminalSpec};
 
-#[derive(Default)]
-struct Collector {
-    chunks: Mutex<Vec<String>>,
-}
+// Only the output-reading tests use a sink, and those are `#[cfg(unix)]` while
+// terminal output on Windows is unexplained. Gated with them so the Windows
+// build does not carry a struct nothing constructs — `clippy -D warnings`
+// rejects that, correctly.
+#[cfg(unix)]
+mod collect {
+    use std::sync::Mutex;
 
-impl Collector {
-    fn text(&self) -> String {
-        self.chunks.lock().unwrap().concat()
+    use artemis_host::pty::TerminalSink;
+
+    #[derive(Default)]
+    pub struct Collector {
+        chunks: Mutex<Vec<String>>,
+    }
+
+    impl Collector {
+        pub fn text(&self) -> String {
+            self.chunks.lock().unwrap().concat()
+        }
+    }
+
+    impl TerminalSink for Collector {
+        fn emit(&self, _terminal_id: &str, chunk: &str) {
+            self.chunks.lock().unwrap().push(chunk.to_string());
+        }
     }
 }
 
-impl TerminalSink for Collector {
-    fn emit(&self, _terminal_id: &str, chunk: &str) {
-        self.chunks.lock().unwrap().push(chunk.to_string());
-    }
-}
+#[cfg(unix)]
+use std::sync::Arc;
+
+#[cfg(unix)]
+use collect::Collector;
 
 fn spec() -> TerminalSpec {
     TerminalSpec {
