@@ -1,5 +1,11 @@
 # Artemis Project Outline
 
+> **Historical.** Written 2026-08-05, before any of the work in
+> [MILESTONES.md](MILESTONES.md) was done. Kept because it records the reasoning
+> behind the module split and the product areas, both of which survived. The
+> "next" sections below are all complete or superseded; MILESTONES.md is the
+> current roadmap.
+
 ## Vision
 
 Artemis is a desktop GUI for orchestrating AI coding agents and managing the local assets they depend on. It should combine Quiver's harness/tool/provider/skill management with a richer workspace interface for launching agents, monitoring sessions, reviewing outputs, and keeping local developer state understandable.

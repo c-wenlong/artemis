@@ -1,5 +1,11 @@
 # Artemis Implementation Plan
 
+> **Historical.** Written 2026-08-05, before any of the work in
+> [MILESTONES.md](MILESTONES.md) was done. Kept because it records the reasoning
+> behind the module split and the product areas, both of which survived. The
+> "next" sections below are all complete or superseded; MILESTONES.md is the
+> current roadmap.
+
 ## Direction
 
 Artemis starts as a fresh local-first orchestrator, not a fork of Superset or Pane. It borrows the product lessons from both while keeping its own stable core interfaces.

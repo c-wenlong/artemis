@@ -92,19 +92,24 @@ in at build time, and the panel says so rather than letting you wonder.*
 
 ## Status
 
-Everything above works. Two things do not, and both are written down rather than
-implied:
+Everything above works on macOS. Three things do not, and all three are written
+down rather than implied:
 
 - **No signed builds.** A downloaded `.app` is quarantined by macOS and will not
   open, because signing needs an Apple Developer ID. Build it yourself, or see
   [docs/RELEASING.md](docs/RELEASING.md).
-- **Linux and Windows are compiled and tested, never run.** CI builds all three
-  platforms; nobody has yet launched it on two of them.
+- **The terminal dock does not work on Windows.** Output from the shell never
+  reaches the app. The cause is unknown and needs someone with the platform; five
+  tests are `#[cfg(unix)]` until then. Everything else on Windows passes CI.
+- **Nobody has launched the app on Linux or Windows.** CI compiles and tests all
+  three platforms, which is a smaller claim than running it.
 
 ## Documentation
 
 - [MILESTONES.md](MILESTONES.md) — the real roadmap. What is done, what is
   deliberately not being built, and what is blocked on something external.
+- [HANDOFF.md](HANDOFF.md): the state of play in one page. What landed most
+  recently, what is next, and what is blocked on a machine nobody has.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the Rust host and the
   webview fit together.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to run the checks, and what a change
