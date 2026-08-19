@@ -44,7 +44,7 @@ const worktree: WorkspaceSummary = {
 
 describe("rail accessibility", () => {
   /**
-   * The row used to announce as "artemis: ready artemis 4" — the dot's label,
+   * The row used to announce as "artemis: ready artemis 4": the dot's label,
    * the name, and the change count concatenated. The dot keeps its own label;
    * the row is just the name.
    */

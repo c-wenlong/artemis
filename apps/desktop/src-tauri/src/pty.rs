@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 
 /// The platform's own shell, for a terminal opened without naming a program.
 ///
-/// The webview used to choose this, and chose `/bin/zsh` — a path that does not
+/// The webview used to choose this, and chose `/bin/zsh`: a path that does not
 /// exist on Windows, so the terminal dock could not open a plain shell there at
 /// all. The host is where the answer belongs: it is the half that knows what
 /// operating system this is.
@@ -147,7 +147,7 @@ impl PtyStore {
         let running = Arc::new(AtomicBool::new(true));
 
         // One reader thread per terminal, running whether or not anyone is
-        // subscribed — output has to keep accumulating across a reload.
+        // subscribed: output has to keep accumulating across a reload.
         {
             let id = id.clone();
             let scrollback = scrollback.clone();
@@ -244,7 +244,7 @@ impl PtyStore {
     /// Attach a listener and return everything already buffered.
     ///
     /// The replay comes back from this call rather than through the sink so the
-    /// caller can write it to the terminal emulator in one go — feeding a
+    /// caller can write it to the terminal emulator in one go: feeding a
     /// hundred kilobytes through the live path one chunk at a time makes a
     /// reconnect visibly crawl.
     pub fn subscribe(&self, terminal_id: &str, sink: Arc<dyn TerminalSink>) -> String {
@@ -263,7 +263,7 @@ impl PtyStore {
     }
 
     /// Detach the listener. The process keeps running and its output keeps
-    /// accumulating — this is what a window reload looks like from here.
+    /// accumulating: this is what a window reload looks like from here.
     pub fn unsubscribe(&self, terminal_id: &str) {
         let terminals = self.terminals.lock().expect("terminals lock");
         if let Some(terminal) = terminals.get(terminal_id) {

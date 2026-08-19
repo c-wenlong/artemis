@@ -294,7 +294,7 @@ export function ComparisonPanel({
       {confirming === "discard" ? (
         <ConfirmDialog
           confirmLabel="Discard them"
-          detail={`This permanently discards the work from every harness in this comparison — ${entries.map((entry) => label(entry.harnessId)).join(", ")}. This cannot be undone.`}
+          detail={`This permanently discards the work from every harness in this comparison: ${entries.map((entry) => label(entry.harnessId)).join(", ")}. This cannot be undone.`}
           onCancel={() => setConfirming(null)}
           onConfirm={() => {
             setConfirming(null);

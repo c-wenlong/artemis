@@ -2,7 +2,7 @@
 //!
 //! Quiver (`orchestrators/quiver`, the `swe` CLI) keeps its state as plain JSON
 //! under `~/.config/swe/`. That makes it an enrichment source Artemis can read
-//! directly — no Python, no subprocess, no version coupling — and this module
+//! directly (no Python, no subprocess, no version coupling) and this module
 //! is the only place that knows those shapes. See `docs/QUIVER_SCHEMA.md`.
 //!
 //! The rules this module exists to keep, from `docs/QUIVER_INTEGRATION.md`:
@@ -131,7 +131,7 @@ pub fn sessions(root: &Path) -> Vec<QuiverSession> {
         .collect();
 
     // Newest first. Rows without a timestamp sort last rather than being
-    // dropped — they are still resumable.
+    // dropped: they are still resumable.
     parsed.sort_by(|a, b| {
         b.timestamp
             .unwrap_or(f64::MIN)
@@ -160,7 +160,7 @@ pub fn sessions_at(root: &Path, workspace_path: &str) -> Vec<QuiverSession> {
 ///
 /// Additive only. The scan decides whether a harness exists, where it is, and
 /// what version actually answered `--version`; Quiver supplies the things a
-/// scan cannot know — aliases, a human description, a curated version for a
+/// scan cannot know: aliases, a human description, a curated version for a
 /// harness that reports none. A row Quiver has nothing to say about keeps its
 /// original provenance, so `QuiverCatalog` means Quiver really did contribute.
 pub fn enrich_harnesses(root: &Path, harnesses: &mut [HarnessAsset]) {
@@ -170,7 +170,7 @@ pub fn enrich_harnesses(root: &Path, harnesses: &mut [HarnessAsset]) {
     }
 
     for harness in harnesses.iter_mut() {
-        // Match on id, then on the command the scan found — Quiver keys by its
+        // Match on id, then on the command the scan found: Quiver keys by its
         // own tool name, which is usually but not always the binary name.
         let Some(entry) = registry.get(&harness.id).or_else(|| {
             registry
@@ -205,7 +205,7 @@ pub fn enrich_harnesses(root: &Path, harnesses: &mut [HarnessAsset]) {
 
 /// Whether there is anything here worth reading.
 ///
-/// True if any single file exists — a half-installed Quiver still has a history
+/// True if any single file exists: a half-installed Quiver still has a history
 /// or a registry, and refusing both because the third is missing would be
 /// throwing away data that is right there.
 pub fn is_present(root: &Path) -> bool {
@@ -313,7 +313,7 @@ pub fn parse_mcp_discovery(stdout: &str) -> Vec<McpServerAsset> {
                 owner_tool: row.tools.join(", "),
                 health: if row.tools.is_empty() {
                     // Configured somewhere Quiver could see, but registered in
-                    // nothing — worth showing, not worth calling ready.
+                    // nothing: worth showing, not worth calling ready.
                     AssetHealth::Unknown
                 } else {
                     AssetHealth::Ready
@@ -329,7 +329,7 @@ pub fn parse_mcp_discovery(stdout: &str) -> Vec<McpServerAsset> {
 ///
 /// Never surfaces an error: this is an enrichment nobody asked to depend on, so
 /// a missing CLI, a non-zero exit, a timeout and unparseable output all mean
-/// the same thing — Artemis shows what it found natively.
+/// the same thing: Artemis shows what it found natively.
 pub fn mcp_servers_via(command: &str, timeout_secs: u64) -> Vec<McpServerAsset> {
     let captured = crate::proc::run(
         command,

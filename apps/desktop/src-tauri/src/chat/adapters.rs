@@ -11,7 +11,7 @@
 //!
 //! **A harness without an adapter is not broken, it is a terminal.** Artemis
 //! supports far more harnesses than it can parse, and the honest answer for the
-//! rest is the dock from M6 — a real terminal running the real tool — rather
+//! rest is the dock from M6 (a real terminal running the real tool) rather
 //! than a half-rendered transcript. `supports_streaming` is what lets the UI
 //! decide which it is.
 
@@ -27,7 +27,7 @@ use crate::types::{HarnessKind, RuntimeEvent};
 /// protocols send cumulative text, so knowing what was already emitted is the
 /// difference between a delta and a duplicate.
 pub trait HarnessAdapter: Send {
-    /// Events this line produced. Empty for anything unrecognised — a warning,
+    /// Events this line produced. Empty for anything unrecognised: a warning,
     /// a progress line, a frame truncated by a killed process. Never an error:
     /// junk on stdout must not end a turn.
     fn parse_line(&mut self, line: &str) -> Vec<RuntimeEvent>;

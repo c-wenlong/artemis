@@ -15,7 +15,7 @@ function isTauri(): boolean {
  *
  * Tauri is the product; the HTTP client exists so `pnpm dev:web` can still run
  * the UI against the TypeScript reference host in a plain browser. That path is
- * a development convenience, not a shipping surface — see M0 in MILESTONES.md.
+ * a development convenience, not a shipping surface: see M0 in MILESTONES.md.
  */
 export function createHostClient(): ArtemisHostClient {
   return isTauri() ? createTauriHostClient() : createHttpHostClient();

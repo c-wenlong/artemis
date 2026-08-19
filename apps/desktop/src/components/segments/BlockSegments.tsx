@@ -4,7 +4,7 @@ import { SegmentCard } from "./SegmentCard";
 import "./BlockSegments.css";
 
 /**
- * One renderer per block kind. Nothing falls through to raw text — a block the
+ * One renderer per block kind. Nothing falls through to raw text: a block the
  * app cannot name is a bug worth seeing, not something to paper over.
  */
 
@@ -56,7 +56,7 @@ function toolSummary(block: Extract<ChatBlock, { type: "tool_call" }>): string |
       if (first) return first.split("\n")[0]!.slice(0, 80);
     }
   } catch {
-    // Not JSON — fall through to the raw first line.
+    // Not JSON: fall through to the raw first line.
   }
   return raw.split("\n")[0]!.slice(0, 80);
 }

@@ -34,7 +34,7 @@ interface FileChipProps {
 /**
  * A file reference in prose.
  *
- * A control when there is something to open, plain text when there is not —
+ * A control when there is something to open, plain text when there is not:
  * browser mode has no disk, and a workspace has to be selected for a relative
  * path to mean anything. It is never a disabled button: that advertises an
  * interaction and then refuses it.

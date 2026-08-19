@@ -143,7 +143,7 @@ function executableAt(path: string): boolean {
 
 // The TypeScript host is a browser-mode reference implementation only. Under
 // Tauri the Rust host owns every one of these endpoints, so the middleware must
-// not be mounted — otherwise `pnpm dev` would silently serve a second,
+// not be mounted: otherwise `pnpm dev` would silently serve a second,
 // divergent host alongside the real one. `pnpm dev:web` opts back in.
 const enableTsHost = process.env.ARTEMIS_TS_HOST === "1";
 
@@ -175,7 +175,7 @@ const tsHostPlugin: Plugin = {
         });
 
         // Replays a real event log written by the Rust host. Browser mode
-        // cannot stream a turn, but it can render one that already happened —
+        // cannot stream a turn, but it can render one that already happened,
         // which is how the transcript gets looked at without driving the
         // desktop window. Reads recorded data only; it never invents any.
         server.middlewares.use("/api/artemis/chat/replay", (request, response) => {

@@ -10,13 +10,13 @@ Read at `5373a2e`. The parts that matter to Artemis:
 
 | Capability | Where | Value to Artemis |
 |---|---|---|
-| **Harness registry** — 29 tools with command, version, tags, aliases | `~/.config/swe/tools.json` | High. Curated and user-edited; strictly better than a PATH scan. |
-| **Session history — 731 parsed sessions across 20+ harnesses** | `~/.config/swe/session_cache.json` | **Highest.** See below. |
+| **Harness registry**: 29 tools with command, version, tags, aliases | `~/.config/swe/tools.json` | High. Curated and user-edited; strictly better than a PATH scan. |
+| **Session history: 731 parsed sessions across 20+ harnesses** | `~/.config/swe/session_cache.json` | **Highest.** See below. |
 | **Session parsers** | `sessions/parsers.py` | opencode, claude, codex, copilot, cursor, amp, droid, pi, kimi, tau, crush, cline, continue, forge, mimo, grok, hermes, freebuff. Three storage engines (json, jsonl, sqlite). |
-| **MCP discovery + cross-tool reconciliation** | `swe mcp discover --json` | High. Reports which harnesses each server is registered in — exactly Artemis's "configuration sync" product area. |
+| **MCP discovery + cross-tool reconciliation** | `swe mcp discover --json` | High. Reports which harnesses each server is registered in: exactly Artemis's "configuration sync" product area. |
 | **Skills discovery** | `swe skills discover --json`, `skill_links.json` | Medium. Catalogs, scopes, and the harness symlink layout. |
 | **Providers + API key metadata** | `~/.config/swe/providers.json` | Medium. Credential-free provider metadata. |
-| **Rate limits** | `rate_limits_cache.json` | Medium. Quota remaining per harness — a genuinely nice cockpit widget. |
+| **Rate limits** | `rate_limits_cache.json` | Medium. Quota remaining per harness: a genuinely nice cockpit widget. |
 | Reports, follow-ups, setup wizard, shell completion | `reports/`, `setup/` | None. CLI-shaped, out of scope. |
 
 ### The session cache is the prize
@@ -34,7 +34,7 @@ Read at `5373a2e`. The parts that matter to Artemis:
 
 That `session_id` is precisely what `ChatSession.opencodeSessionId` needs to
 resume a conversation. Quiver has already solved reading 20+ proprietary session
-formats — the single most tedious, least differentiating problem Artemis would
+formats: the single most tedious, least differentiating problem Artemis would
 otherwise face. Reimplementing it is weeks of work against undocumented,
 drifting formats.
 
@@ -50,15 +50,15 @@ couples to nothing.
 That splits into two very different integration surfaces:
 
 - **Static state** (`tools.json`, `session_cache.json`, `providers.json`,
-  `skill_links.json`, `rate_limits_cache.json`) — plain files. Read them
+  `skill_links.json`, `rate_limits_cache.json`): plain files. Read them
   directly. No Python, no subprocess, no version coupling.
 - **Live computation** (`swe mcp discover --json`, `swe skills discover --json`,
-  `swe harness discover --json`) — requires running Quiver. Only these need a
+  `swe harness discover --json`): requires running Quiver. Only these need a
   subprocess.
 
 Note `swe harness discover --json` returns `[]` here, because it reports only
 *unregistered* harnesses. Discovery commands answer "what's new", not "what
-exists" — the latter is the registry file. Easy to get wrong.
+exists": the latter is the registry file. Easy to get wrong.
 
 ## Recommended integration
 
@@ -69,7 +69,7 @@ work fully with Quiver absent. When present, Artemis gets better data.
 
 ```
 packages/core/src/catalog/AssetSource
-  ├─ NativeAssetSource    always present — Artemis's own scanners
+  ├─ NativeAssetSource    always present:  Artemis's own scanners
   ├─ QuiverFileSource     reads ~/.config/swe/*.json  (no subprocess)
   └─ QuiverCliSource      shells `swe … --json`       (opt-in, off by default)
 ```
@@ -77,7 +77,7 @@ packages/core/src/catalog/AssetSource
 Merge policy, in precedence order: native scan establishes ground truth (is the
 binary actually on disk and executable), Quiver layers on top (aliases, tags,
 descriptions, curated versions, rate limits, session history). Every merged
-field carries provenance — Artemis's `HarnessAsset.source` field already exists
+field carries provenance: Artemis's `HarnessAsset.source` field already exists
 for exactly this, currently carrying `"settings"`.
 
 ### The decoupling rules
@@ -99,7 +99,7 @@ for exactly this, currently carrying `"settings"`.
    read into Artemis's own store at import time. Artemis must not re-read
    Quiver's files on every render.
 7. **The contract is the JSON files, not the Python.** Never import Quiver as a
-   library, never depend on its internals — only the documented on-disk shapes,
+   library, never depend on its internals: only the documented on-disk shapes,
    pinned in `docs/QUIVER_SCHEMA.md` with a fixture per file for tests.
 
 ### What Artemis should own outright
@@ -107,7 +107,7 @@ for exactly this, currently carrying `"settings"`.
 Anything in the live agent loop: harness readiness, process launch, PTY,
 streaming events, workspace/git state. These need sub-second latency and precise
 error semantics; a stale JSON cache or a Python subprocess has no place in them.
-Quiver's role is **catalog and history** — the cold path.
+Quiver's role is **catalog and history**: the cold path.
 
 ## Verdict
 

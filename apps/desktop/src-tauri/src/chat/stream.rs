@@ -228,7 +228,7 @@ pub fn run_turn(
     };
 
     // Codex takes the prompt on stdin, and does not begin work until it sees
-    // EOF — so the handle is dropped immediately after writing.
+    // EOF, so the handle is dropped immediately after writing.
     if adapters::prompt_via_stdin(request.kind) {
         if let Some(mut stdin) = child.stdin.take() {
             use std::io::Write;
@@ -259,8 +259,8 @@ pub fn run_turn(
         *guard = Some(child);
     }
 
-    // A harness with no adapter never reaches here — the UI routes it to the
-    // terminal dock — but falling back to opencode's parser is a safer failure
+    // A harness with no adapter never reaches here: the UI routes it to the
+    // terminal dock, but falling back to opencode's parser is a safer failure
     // than unwrapping on a None in the middle of a running turn.
     let mut parser: Box<dyn HarnessAdapter> = adapters::for_kind(
         request.kind,
@@ -349,7 +349,7 @@ pub fn run_turn(
     }
 }
 
-/// Strip ANSI escapes and keep the first few meaningful lines — harness stderr
+/// Strip ANSI escapes and keep the first few meaningful lines: harness stderr
 /// is often a banner followed by the actual complaint.
 fn clean_error(text: &str) -> Option<String> {
     let mut cleaned = String::new();
@@ -467,11 +467,11 @@ mod tests {
     /// A stand-in for opencode: emits the same JSON line shapes.
     ///
     /// A compiled helper rather than `/bin/sh -c`, which does not exist on
-    /// Windows — all three streaming tests failed there on a code path that was
+    /// Windows. All three streaming tests failed there on a code path that was
     /// correct. Cargo builds this for whatever target the tests run on.
     fn fake_harness(args: &[&str]) -> (String, Vec<String>) {
         // Resolved at runtime rather than through `CARGO_BIN_EXE_fake_harness`,
-        // which cargo only defines for integration tests — these are lib unit
+        // which cargo only defines for integration tests: these are lib unit
         // tests. The test binary lives in `target/<profile>/deps/`, and the
         // helper cargo built alongside it is one directory up. `EXE_SUFFIX` is
         // what makes that `.exe` on Windows.

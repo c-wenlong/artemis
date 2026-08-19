@@ -1,7 +1,7 @@
 //! A stand-in for a coding agent, for the streaming tests.
 //!
 //! These tests used `/bin/sh -c` with a `printf` script, which is not a shell
-//! that exists on Windows — so all three of them failed there, on a code path
+//! that exists on Windows, so all three of them failed there, on a code path
 //! that was fine. CI caught it the first time it was ever allowed to run.
 //!
 //! A compiled helper is the portable version: cargo builds it for whatever

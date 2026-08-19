@@ -57,7 +57,7 @@ use types::{
 };
 
 /// Bridges the run loop to the webview. Events arrive as batches because the
-/// stream coalesces before emitting — one IPC message per flush, not per token.
+/// stream coalesces before emitting: one IPC message per flush, not per token.
 struct ChannelSink(Channel<Vec<RuntimeEvent>>);
 
 impl EventSink for ChannelSink {
@@ -167,8 +167,8 @@ async fn list_app_icons() -> Result<Vec<appicon::AppIcon>, String> {
 
 /// Apply a variant to the running app and remember it.
 ///
-/// This changes the dock icon of the running process. The bundled icon — what
-/// Finder shows, and what the dock shows before launch — is baked at build time
+/// This changes the dock icon of the running process. The bundled icon: what
+/// Finder shows, and what the dock shows before launch: is baked at build time
 /// and is not something the app can rewrite.
 #[tauri::command]
 async fn set_app_icon(app: tauri::AppHandle, icon_id: String) -> Result<(), String> {
@@ -335,7 +335,7 @@ async fn start_comparison(
 }
 
 /// Keep one entry and discard the rest. Destroys the losers' uncommitted work,
-/// which is the point — and why an unrecognised winner is refused outright.
+/// which is the point, and why an unrecognised winner is refused outright.
 #[tauri::command]
 async fn resolve_comparison(
     run: comparison::Comparison,
@@ -430,7 +430,7 @@ async fn close_terminal(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // A database that cannot be opened is not a reason to refuse to start —
+    // A database that cannot be opened is not a reason to refuse to start:
     // fall back to memory so the app runs, losing only what would have been
     // remembered across restarts.
     let db = Arc::new(

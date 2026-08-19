@@ -15,7 +15,7 @@ function cssFiles(directory: string): string[] {
 
 /**
  * Colour literals anywhere except the token sheet. `currentColor`, `inherit`,
- * `transparent`, and `none` are fine — they resolve to something a token set.
+ * `transparent`, and `none` are fine: they resolve to something a token set.
  */
 const COLOR_LITERAL =
   /#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(|\bhsla?\s*\(|\boklch\s*\(/;
@@ -92,7 +92,7 @@ describe("design tokens", () => {
       contents.split("\n").forEach((line, index) => {
         const withoutComments = line.replace(/\/\*.*?\*\//g, "");
         if (COLOR_LITERAL.test(withoutComments)) {
-          offenders.push(`${relative(srcDir, file)}:${index + 1} — ${line.trim()}`);
+          offenders.push(`${relative(srcDir, file)}:${index + 1}: ${line.trim()}`);
         }
       });
     }

@@ -104,7 +104,7 @@
  * The panel is indented under the chip rather than floated over the transcript.
  * A drawer would cover the conversation the reader opened it from, and the
  * question a sub-agent panel answers is almost always "what did that do, in
- * context" — which needs the context still visible.
+ * context", which needs the context still visible.
  */
 .sub-agent-panel {
   border-left: 2px solid var(--border-subtle);

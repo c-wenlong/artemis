@@ -3,7 +3,7 @@
 //! The TypeScript host seeded skills, MCP servers, and providers with plausible
 //! fake rows ("GitHub / codex / ready") that were indistinguishable from real
 //! findings. Here everything is discovered for real, and anything undiscoverable
-//! stays empty — an empty state is honest, invented data is not.
+//! stays empty: an empty state is honest, invented data is not.
 //!
 //! MCP servers are the one thing Artemis cannot find natively: the registration
 //! lives in each harness's own config in its own format. Quiver already reads
@@ -85,7 +85,7 @@ pub fn scan_skills() -> Vec<SkillAsset> {
 }
 
 /// Providers Artemis knows how to look for, and the env var that authenticates
-/// each. Presence of the variable is all that is checked — the key itself is
+/// each. Presence of the variable is all that is checked: the key itself is
 /// never read, logged, or sent anywhere.
 const KNOWN_PROVIDERS: &[(&str, &str, &str)] = &[
     ("openai", "OpenAI", "OPENAI_API_KEY"),
@@ -117,7 +117,7 @@ pub fn scan_providers() -> Vec<ProviderAsset> {
 /// config, in its own format, and `swe mcp discover --json` already reads all of
 /// them and reports which harnesses each server appears in. That needs a
 /// subprocess, so it is off unless the user turns it on, and a failure of any
-/// kind means an empty list rather than an error — this is enrichment nobody
+/// kind means an empty list rather than an error: this is enrichment nobody
 /// asked to depend on.
 pub fn scan_mcp_servers() -> Vec<McpServerAsset> {
     if !settings::read().quiver_cli_enabled.unwrap_or(false) {
@@ -154,7 +154,7 @@ pub fn snapshot() -> AssetInventorySnapshot {
 mod tests {
     use super::*;
 
-    /// Times a real scan against the machine it runs on. Ignored by default —
+    /// Times a real scan against the machine it runs on. Ignored by default,
     /// it touches the filesystem and spawns `--version` probes, so the number
     /// is environment-specific and meaningless in CI.
     ///
@@ -168,7 +168,7 @@ mod tests {
         let elapsed = started.elapsed();
 
         println!(
-            "snapshot in {:?} — {} harnesses ({} ready), {} skills, {} providers",
+            "snapshot in {:?}: {} harnesses ({} ready), {} skills, {} providers",
             elapsed,
             snapshot.harnesses.len(),
             snapshot

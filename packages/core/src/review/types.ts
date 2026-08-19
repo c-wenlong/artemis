@@ -18,7 +18,7 @@ export interface ReviewSnapshot {
 export interface FileWindow {
   /**
    * The cited line, when the file has one. Null when the citation named no
-   * line, or named one past the end — a stale citation must not highlight an
+   * line, or named one past the end: a stale citation must not highlight an
    * unrelated line as though it were the claim.
    */
   focusLine: number | null;
@@ -46,7 +46,7 @@ export interface ReviewRuntime {
   ): Promise<void>;
   /**
    * Read the lines a citation points at. Rejects for a path that leaves the
-   * workspace, a file that is gone, and a binary — each of which the reader
+   * workspace, a file that is gone, and a binary: each of which the reader
    * needs told rather than shown as an empty window.
    */
   peekFile(

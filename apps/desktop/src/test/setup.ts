@@ -38,7 +38,7 @@ if (!HTMLDialogElement.prototype.showModal) {
 /**
  * jsdom has no ResizeObserver, and the terminal view uses one to keep the pty
  * sized to its container. Without this, mounting a terminal in a test throws
- * asynchronously — which vitest reports as an unhandled error beside a green
+ * asynchronously, which vitest reports as an unhandled error beside a green
  * run, rather than as a failure.
  */
 if (!("ResizeObserver" in globalThis)) {

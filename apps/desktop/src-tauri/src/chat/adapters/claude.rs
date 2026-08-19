@@ -14,7 +14,7 @@
 //! Blocks observed: `text`, `thinking`, `tool_use`, `tool_result`.
 //!
 //! The `user` frames are not the user. Claude Code reports a tool's output as a
-//! user-role message, because that is how the Messages API models it — reading
+//! user-role message, because that is how the Messages API models it: reading
 //! them as prompts would put the model's own tool output in the transcript as
 //! something the human said.
 
@@ -142,7 +142,7 @@ impl HarnessAdapter for ClaudeAdapter {
 
         match frame_type {
             // `init` carries the session id, already taken above. Hook frames
-            // are Claude Code's own machinery — a PreToolUse hook firing is not
+            // are Claude Code's own machinery: a PreToolUse hook firing is not
             // part of the conversation.
             "system" => Vec::new(),
 
@@ -166,7 +166,7 @@ impl HarnessAdapter for ClaudeAdapter {
             }
 
             // Both roles carry content blocks. `user` here means tool output,
-            // not a prompt — see the module note.
+            // not a prompt: see the module note.
             "assistant" | "user" => {
                 let Some(content) = frame
                     .get("message")

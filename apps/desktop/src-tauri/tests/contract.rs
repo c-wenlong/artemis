@@ -284,7 +284,7 @@ fn file_change_matches_core() {
 ///
 /// `agent` is omitted rather than sent as null when absent, which is what makes
 /// "the main thread did this" the reading for every harness that does not
-/// delegate — and for every event recorded before this field existed.
+/// delegate, and for every event recorded before this field existed.
 #[test]
 fn agent_ref_matches_core() {
     // export interface AgentRef {
@@ -334,7 +334,7 @@ fn agent_ref_matches_core() {
 
 /// The completion carries `input` and `fileChanges` because
 /// `opencode run --format json` reports each tool exactly once, already
-/// finished — there is no start event to have carried them.
+/// finished: there is no start event to have carried them.
 #[test]
 fn tool_call_completed_matches_core() {
     let event = RuntimeEvent::ToolCallCompleted {

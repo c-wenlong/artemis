@@ -30,7 +30,7 @@ const STATUS_LABEL = {
   errored: "failed"
 } as const;
 
-/** First identifying value from a call's input — the path, the command. */
+/** First identifying value from a call's input: the path, the command. */
 function callSummary(input: string | undefined): string | null {
   const raw = input?.trim();
   if (!raw) return null;
@@ -52,7 +52,7 @@ function callSummary(input: string | undefined): string | null {
  * A run of consecutive tool calls, folded into one line.
  *
  * The group is the card; each call inside is a borderless row. That is the
- * whole point of having two primitives — nesting cards inside cards would make
+ * whole point of having two primitives: nesting cards inside cards would make
  * a run of thirty calls look like thirty separate events of equal weight.
  *
  * A group holding a failure opens itself. Collapsing an error out of sight is
@@ -64,7 +64,7 @@ export function ActivityGroupSegment({ group }: { group: ActivityGroup }) {
 
   // Open on the transition into failure, not just at mount. Mid-run is exactly
   // when a call fails, and `defaultOpen` would have left the group folded shut
-  // around the error. Still only a default — the reader can close it again.
+  // around the error. Still only a default: the reader can close it again.
   useEffect(() => {
     if (group.hasFailure && !wasFailing.current) setOpen(true);
     wasFailing.current = group.hasFailure;

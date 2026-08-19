@@ -4,7 +4,7 @@
 //! three agents the same question, read the three diffs beside each other, keep
 //! the one that is right. Nothing else in the tool does this across vendors.
 //!
-//! Mechanically it is orchestration of things that already exist — a git
+//! Mechanically it is orchestration of things that already exist: a git
 //! worktree per harness from M5, a chat session per worktree from M7, an adapter
 //! per harness from M11. This module owns only what none of them can know: that
 //! these runs belong together, that they must not share a directory, and which
@@ -50,7 +50,7 @@ pub struct ComparisonEntry {
     pub branch: String,
     /// Stable id for this entry's workspace, and what names the winner.
     pub workspace_id: String,
-    /// `None` when the worktree could not be created — see `error`.
+    /// `None` when the worktree could not be created: see `error`.
     pub path: Option<PathBuf>,
     /// Why this harness has nowhere to run. The others carry on regardless.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -175,7 +175,7 @@ pub fn start_in(repo: &Path, worktree_root: &Path, plan: &ComparisonPlan) -> Com
 /// Keep one entry's worktree and discard the others.
 ///
 /// `force` is not a parameter, and that is deliberate. A losing entry always has
-/// uncommitted changes — that is what an agent produces — so requiring a flag
+/// uncommitted changes (that is what an agent produces) so requiring a flag
 /// would mean the operation never works without it, which teaches the caller to
 /// pass it blindly. Instead the guard is the winner: an id this comparison does
 /// not contain is refused, and nothing outside the comparison is ever touched.
@@ -207,7 +207,7 @@ pub fn resolve_in(repo: &Path, comparison: &Comparison, winner: &str) -> Result<
     } else {
         // The winner is already safe by this point; report what would not go.
         Err(format!(
-            "Some runs could not be discarded — {}",
+            "Some runs could not be discarded: {}",
             failures.join("; ")
         ))
     }
@@ -228,7 +228,7 @@ pub fn abandon_in(repo: &Path, comparison: &Comparison) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "Some runs could not be discarded — {}",
+            "Some runs could not be discarded: {}",
             failures.join("; ")
         ))
     }

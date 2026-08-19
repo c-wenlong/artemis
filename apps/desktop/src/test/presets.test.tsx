@@ -18,7 +18,7 @@ function rail() {
 /**
  * A launch preset is the harness and model a workspace was last used with.
  * Without it, every reopen resets to the default and the choice has to be made
- * again — which for someone working across several repos is a small tax paid
+ * again, which for someone working across several repos is a small tax paid
  * constantly.
  */
 describe("launch presets", () => {
@@ -41,7 +41,7 @@ describe("launch presets", () => {
     const { host, user } = await renderApp();
     const model = screen.getByRole("textbox", { name: /model/i });
     // Wait for the field to settle before editing it. Clearing an empty input
-    // fires no change event, so it would not count as an edit — and the preset
+    // fires no change event, so it would not count as an edit, and the preset
     // load would then fill it back in underneath the typing.
     await waitFor(() => expect(model).toHaveValue("anthropic/claude-opus-5"));
 

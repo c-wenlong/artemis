@@ -135,7 +135,7 @@ interface DeleteWorktreeDialogProps {
  *
  * The host refuses a dirty worktree; this relays that refusal and offers
  * discarding as a *separate* button the user has to reach for. It never retries
- * with force on its own — that would turn a safety check into a speed bump.
+ * with force on its own, that would turn a safety check into a speed bump.
  */
 export function DeleteWorktreeDialog({
   open,

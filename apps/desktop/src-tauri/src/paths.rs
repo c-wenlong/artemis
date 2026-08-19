@@ -23,7 +23,7 @@ pub fn resolve_in_workspace(workspace: &Path, relative: &str) -> Result<PathBuf,
 /// rules of the machine it is compiled for, and each one is blind to an escape
 /// the other sees:
 ///
-/// - `/etc/passwd` is **not absolute on Windows** — it has no drive letter — so
+/// - `/etc/passwd` is **not absolute on Windows** (it has no drive letter) so
 ///   `is_absolute()` passed it. And `join` there does not append a rooted path,
 ///   it *replaces* the root: `C:\workspace` + `/etc/passwd` is `C:\etc\passwd`.
 ///   That is outside the workspace, on a path an agent chose. CI found it.
@@ -32,7 +32,7 @@ pub fn resolve_in_workspace(workspace: &Path, relative: &str) -> Result<PathBuf,
 ///
 /// Separators are normalised before the component walk so `..` is caught in
 /// either notation. A Unix filename may legitimately contain a backslash and
-/// will be refused by this; that trade is deliberate — refusing an unusual name
+/// will be refused by this; that trade is deliberate: refusing an unusual name
 /// costs a reader one click, and accepting a traversal costs the file.
 pub fn vetted(relative: &str) -> Result<String, String> {
     let trimmed = relative.trim();

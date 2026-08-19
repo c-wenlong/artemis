@@ -12,7 +12,7 @@ import "./SubAgentSegment.css";
  *
  * The chip is the whole presence in the main thread. Everything the agent
  * actually did lives in the panel, because a delegated run is not the reader's
- * work — it is someone else's, summarised, available on request. Inlining it
+ * work: it is someone else's, summarised, available on request. Inlining it
  * would recreate the problem the milestone exists to fix.
  */
 
@@ -22,7 +22,7 @@ const STATUS_LABEL = {
   errored: "failed"
 } as const;
 
-/** First identifying value from a call's input — the path, the command. */
+/** First identifying value from a call's input: the path, the command. */
 function callSummary(input: string | undefined): string | null {
   const raw = input?.trim();
   if (!raw) return null;
@@ -44,7 +44,7 @@ export function SubAgentSegment({ group }: { group: SubAgentGroup }) {
   const [open, setOpen] = useState(group.hasFailure);
   const wasFailing = useRef(group.hasFailure);
 
-  // Open on the transition into failure, not only at mount — mid-run is exactly
+  // Open on the transition into failure, not only at mount: mid-run is exactly
   // when a call fails, and a group seeded shut would stay shut around the error.
   // Still only a default: the reader can close it again.
   useEffect(() => {

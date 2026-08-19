@@ -5,7 +5,7 @@
 //! **Nothing personal ships.** This was built on one person's machine, against
 //! their real projects, with fixtures captured from real runs. Absolute paths,
 //! home directories, project names and session ids all found their way in.
-//! Publishing is irreversible — a git history is forever — so this runs over
+//! Publishing is irreversible (a git history is forever) so this runs over
 //! every tracked file rather than over a list someone remembered to update.
 //!
 //! **A stranger can get started.** The exit criterion for M14 is that someone
@@ -46,7 +46,7 @@ fn tracked_files() -> Vec<PathBuf> {
 fn text_of(path: &Path) -> Option<String> {
     let bytes = std::fs::read(path).ok()?;
     // Binary files are not read as text. That is a real blind spot, not a
-    // statement that binaries are safe — a compiled `.pyc` carried the whole
+    // statement that binaries are safe: a compiled `.pyc` carried the whole
     // set of personal data past every check here. What keeps the spot narrow is
     // that the only binaries tracked are icons and screenshots, and
     // `no_compiled_bytecode_is_tracked` keeps it that way.
@@ -78,7 +78,7 @@ const PLACEHOLDER_HOMES: &[&str] = &[
 
 /// True when `marker` is followed by something that could be an account name.
 ///
-/// Prose mentions the prefix too — this file's own commentary and the roadmap
+/// Prose mentions the prefix too: this file's own commentary and the roadmap
 /// entry describing this check both contain a bare `/Users/`. Requiring a name
 /// after the separator keeps those out without weakening the check: every real
 /// leak found so far had one.
@@ -166,7 +166,7 @@ fn nothing_that_looks_like_a_credential_is_committed() {
 /// Account names that identify a machine rather than a person.
 ///
 /// A CI runner's home directory is `/home/runner`, so the derived username is
-/// `runner` — which appears legitimately in `.github/workflows/ci.yml` and in
+/// `runner`, which appears legitimately in `.github/workflows/ci.yml` and in
 /// lockfile paths, and made this test fail on all three platforms the first
 /// time CI was ever able to run. These names are not personal data by
 /// definition, so matching them says nothing.
@@ -326,7 +326,7 @@ fn the_architecture_document_covers_both_halves_of_the_app() {
 /// Captured fixtures carry more than the paths they were captured under.
 ///
 /// The Quiver session-cache fixture is a trimmed copy of a real cache. Scrubbing
-/// its absolute paths left the *basenames* and the session *titles* intact —
+/// its absolute paths left the *basenames* and the session *titles* intact:
 /// real project names, course codes, and in one path a string shaped exactly
 /// like a student identifier. None of that is a credential,
 /// and none of it was caught by the home-directory or username checks, because
@@ -367,7 +367,7 @@ fn captured_fixtures_carry_no_real_identifiers() {
 /// Compiled bytecode is never tracked.
 ///
 /// A `.pyc` was committed alongside `scripts/scrub_tree.py`, and it embedded
-/// every string constant of the module it was built from — which, for that
+/// every string constant of the module it was built from, which, for that
 /// module, is the full list of personal data the script exists to remove. It
 /// went unnoticed because it is binary: every check in this file reads text and
 /// `text_of` returns `None` for anything with a NUL byte, so the one file in

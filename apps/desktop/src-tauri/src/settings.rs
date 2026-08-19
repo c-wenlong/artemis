@@ -12,7 +12,7 @@ pub fn settings_path() -> PathBuf {
         .unwrap_or_else(|| home_dir().join(".artemis/settings.json"))
 }
 
-/// A malformed settings file reads as defaults rather than an error — settings
+/// A malformed settings file reads as defaults rather than an error: settings
 /// are an enhancement, and refusing to start over one is the wrong trade.
 pub fn read() -> RuntimeSettings {
     let path = settings_path();
@@ -39,7 +39,7 @@ pub fn write(settings: RuntimeSettings) -> Result<RuntimeSettings, String> {
 /// Where to scan for projects and workspace config mentions.
 ///
 /// Precedence: env override, then the configured setting, then the user's home
-/// directory. Home is a deliberately conservative default — the walk is bounded,
+/// directory. Home is a deliberately conservative default: the walk is bounded,
 /// so a large root degrades into partial results rather than a hang.
 pub fn scan_root(settings: &RuntimeSettings) -> PathBuf {
     if let Some(from_env) = std::env::var_os("ARTEMIS_SCAN_ROOT") {

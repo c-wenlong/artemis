@@ -6,7 +6,7 @@ import "./DiffView.css";
  *
  * Line numbers are shown on both sides because the question a reader asks of a
  * diff is "where", and a hunk without them only answers "what". The marker
- * column carries the +/- as text as well as colour — the diff must be readable
+ * column carries the +/- as text as well as colour: the diff must be readable
  * without relying on hue alone.
  */
 export function DiffView({ patch }: { patch: string }) {

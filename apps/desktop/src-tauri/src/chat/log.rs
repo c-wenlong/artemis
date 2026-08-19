@@ -1,7 +1,7 @@
 //! Per-session event log.
 //!
 //! One JSONL file per chat session under `~/.artemis/sessions/`. Append-only,
-//! so a turn can be replayed when the app reopens — the M1 exit criterion.
+//! so a turn can be replayed when the app reopens: the M1 exit criterion.
 //!
 //! JSONL rather than a single JSON document on purpose: a crash mid-turn
 //! truncates the last line instead of corrupting the file, and reading skips
@@ -52,7 +52,7 @@ impl EventLog {
         Self::in_dir(sessions_dir(), session_id)
     }
 
-    /// Explicit directory. Tests use this rather than an environment variable —
+    /// Explicit directory. Tests use this rather than an environment variable:
     /// env vars are process-global, and `cargo test` runs in parallel.
     pub fn in_dir(dir: PathBuf, session_id: &str) -> Self {
         EventLog {
@@ -93,8 +93,8 @@ impl EventLog {
         let _ = file.write_all(buffer.as_bytes());
     }
 
-    /// Every event previously recorded. Unparseable lines — a truncated tail
-    /// from a crash, or a format from an older build — are skipped.
+    /// Every event previously recorded. Unparseable lines are skipped: a
+    /// truncated tail from a crash, or a format from an older build.
     pub fn read(&self) -> Vec<RuntimeEvent> {
         let Ok(file) = File::open(&self.path) else {
             return Vec::new();

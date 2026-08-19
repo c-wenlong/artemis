@@ -13,7 +13,7 @@ async function renderApp(host = createFakeHost()) {
 }
 
 describe("shell", () => {
-  it("drops the five-section nav — the conversation is the app", async () => {
+  it("drops the five-section nav: the conversation is the app", async () => {
     await renderApp();
     const navs = screen.queryAllByRole("navigation", { name: /sections/i });
     expect(navs).toHaveLength(0);
@@ -60,7 +60,7 @@ describe("composer", () => {
     expect(context).toHaveTextContent("artemis");
     expect(context).toHaveTextContent("m2-design-system");
     // The review is a separate request from the initial load, so the diffstat
-    // fills in a tick later — it reads +0 −0 until then, never blank.
+    // fills in a tick later: it reads +0 −0 until then, never blank.
     await waitFor(() => expect(context).toHaveTextContent("+160"));
     expect(context).toHaveTextContent("−96");
   });

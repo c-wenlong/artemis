@@ -160,7 +160,7 @@ export function createTauriHostClient(): ArtemisHostClient {
     },
 
     /**
-     * Events arrive over a Tauri channel in batches — the host coalesces
+     * Events arrive over a Tauri channel in batches: the host coalesces
      * consecutive deltas before sending, so this is one message per flush
      * rather than per token. The promise resolves when the turn ends.
      */

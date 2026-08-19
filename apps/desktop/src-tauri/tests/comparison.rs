@@ -7,7 +7,7 @@
 //! Two properties matter more than the rest, and most of this file is about
 //! them. **Isolation:** no two harnesses may share a worktree, or they overwrite
 //! each other's answer and the comparison is meaningless. **Resolution:** the
-//! winner survives and only the losers are discarded — this is the one
+//! winner survives and only the losers are discarded: this is the one
 //! operation in Artemis that deliberately destroys an agent's work, so it has to
 //! refuse anything it does not understand rather than guess.
 
@@ -47,8 +47,8 @@ fn fixture(name: &str) -> Fixture {
     run("git", &["config", "user.email", "t@example.com"], &repo);
     run("git", &["config", "user.name", "Test"], &repo);
     // Windows turns `core.autocrlf` on by default, so a checkout rewrites the
-    // committed `alpha\n` to `alpha\r\n` while the seed file written here — which
-    // never goes through a checkout — stays LF. Pinning it off makes every
+    // committed `alpha\n` to `alpha\r\n` while the seed file written here, which
+    // never goes through a checkout: stays LF. Pinning it off makes every
     // worktree byte-identical to the commit on every platform, so these tests
     // measure isolation rather than the runner's line-ending policy.
     //
@@ -175,7 +175,7 @@ fn every_harness_gets_a_worktree_of_its_own() {
 /// the committed `alpha\n` and the worktrees would legitimately differ from the
 /// seed file, which never goes through a checkout at all. An earlier attempt to
 /// fix this by comparing worktrees against that seed file failed for exactly
-/// that reason — it compared checked-out files to one that was not.
+/// that reason: it compared checked-out files to one that was not.
 #[test]
 fn every_worktree_starts_from_the_same_place() {
     let f = fixture("same_base");
@@ -261,7 +261,7 @@ fn keeping_one_discards_the_rest() {
 }
 
 /// Discarding a loser means discarding uncommitted work on purpose. That is the
-/// intent here — but it must never reach a worktree outside the comparison.
+/// intent here, but it must never reach a worktree outside the comparison.
 #[test]
 fn resolution_only_ever_touches_this_comparison() {
     let f = fixture("scoped");
@@ -384,7 +384,7 @@ fn each_entry_reports_what_its_harness_changed() {
 /// The whole wedge, against real agents.
 ///
 /// Everything above uses real git but no models. This runs two harnesses for
-/// real, in their own worktrees, on the same prompt — then checks the diffs are
+/// real, in their own worktrees, on the same prompt, then checks the diffs are
 /// genuinely independent and keeps one.
 ///
 /// Ignored: it costs two model calls and about a minute.
@@ -426,7 +426,7 @@ fn live_comparison_of_two_real_harnesses() {
         };
 
         // A model id belongs to one harness. Handing opencode's to codex made
-        // its model refresh time out — which is a real lesson for the product,
+        // its model refresh time out, which is a real lesson for the product,
         // not just for this test: a comparison has to choose a model per
         // harness, never one for the run.
         let model = match kind {

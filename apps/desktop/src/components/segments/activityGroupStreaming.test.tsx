@@ -51,7 +51,7 @@ describe("a group as it streams", () => {
   /**
    * The group's identity is its first call, so appending does not remount it.
    * If it did, a group the user opened would snap shut every time another call
-   * landed — which, mid-run, is constantly.
+   * landed, which, mid-run, is constantly.
    */
   it("stays open while more calls append to it", async () => {
     const user = userEvent.setup();
@@ -72,7 +72,7 @@ describe("a group as it streams", () => {
 
   /**
    * `defaultOpen` only applies at mount, so a failure that lands after the group
-   * is already on screen — the normal case while streaming — would otherwise
+   * is already on screen (the normal case while streaming) would otherwise
    * stay folded away.
    */
   it("opens itself when a call fails mid-run", () => {

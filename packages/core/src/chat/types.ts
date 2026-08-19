@@ -48,7 +48,7 @@ export interface ReasoningDeltaEvent extends RuntimeEventBase {
  * Optional throughout, and it will stay optional: a harness that does not
  * delegate has nothing to report, and one that delegates without naming the
  * worker gives us an `id` and no useful `name`. Absent means "the main thread
- * did this", which is the only safe reading — attributing a call to an agent
+ * did this", which is the only safe reading: attributing a call to an agent
  * that did not make it is worse than not attributing it at all.
  *
  * `id` is what identity means here, not `name`. Two agents of the same kind
@@ -80,7 +80,7 @@ export interface FileChange {
   /**
    * The unified diff for this file, when the harness sent one. It is what the
    * transcript renders and what an undo reverse-applies. Absent means the
-   * change is known but not showable — the row renders without a diff rather
+   * change is known but not showable: the row renders without a diff rather
    * than with an empty one.
    */
   patch?: string;
@@ -95,7 +95,7 @@ export interface ToolCallCompletedEvent extends RuntimeEventBase {
   /**
    * What the call was given. Present here as well as on the start event because
    * `opencode run --format json` reports each tool exactly once, already
-   * finished — there is no start frame to have carried it.
+   * finished: there is no start frame to have carried it.
    */
   input?: string;
   name?: string;
@@ -228,7 +228,7 @@ export interface ChatRuntime {
    * value.
    *
    * Batched rather than one-event-at-a-time because the host coalesces
-   * consecutive deltas before sending — a fast model emits a line per token,
+   * consecutive deltas before sending: a fast model emits a line per token,
    * and forwarding each individually costs an IPC message and a render each.
    */
   streamChatMessage(

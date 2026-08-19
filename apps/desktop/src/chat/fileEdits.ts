@@ -3,7 +3,7 @@ import type { ChatBlock } from "@artemis/core";
 /**
  * What the agent edited, derived from the tool calls it made.
  *
- * There is no `file_change` event yet — the host reports tool calls, and an
+ * There is no `file_change` event yet: the host reports tool calls, and an
  * edit is a tool call with a path in its input. Deriving it here keeps the host
  * unchanged until we have seen enough real harness output to design the event
  * properly; when that lands this module is what gets deleted.
@@ -18,7 +18,7 @@ export interface FileEdit {
   /** Lines added, or null when the tool input did not say. */
   added: number | null;
   /** The unified diff, when the harness sent one. Absent means no diff to
-   *  show and nothing to reverse — the row renders as plain text. */
+   *  show and nothing to reverse: the row renders as plain text. */
   patch?: string;
   path: string;
   removed: number | null;
@@ -73,7 +73,7 @@ export function deriveFileEdits(blocks: readonly ChatBlock[]): EditSummary | nul
       continue;
     }
 
-    // Fallback for harnesses that do not report changed files — Claude's
+    // Fallback for harnesses that do not report changed files: Claude's
     // `edit` takes oldString/newString and says nothing about the result.
     if (!isEditTool(block.name) || !block.input) continue;
 

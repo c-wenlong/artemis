@@ -2,7 +2,7 @@
 //!
 //! Seeded from Quiver's default + extended harness catalog, trimmed to the
 //! coding-agent harnesses Artemis should care about first. See
-//! `docs/QUIVER_INTEGRATION.md` — the long-term plan is to layer Quiver's
+//! `docs/QUIVER_INTEGRATION.md`: the long-term plan is to layer Quiver's
 //! registry over this table rather than replace it.
 
 use crate::types::HarnessKind;

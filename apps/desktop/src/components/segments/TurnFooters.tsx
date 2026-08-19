@@ -22,7 +22,7 @@ export function StreamingFooter({ turnId }: { turnId: string }) {
   useEffect(() => {
     // Measured from when this footer appeared, not from the event's timestamp.
     // That timestamp is the host's clock, and a turn only ever gets a live
-    // footer at the moment it starts streaming — so the two agree in the case
+    // footer at the moment it starts streaming, so the two agree in the case
     // that matters, and counting locally cannot produce "44m" out of a clock
     // difference or a stale record.
     const mountedAt = Date.now();

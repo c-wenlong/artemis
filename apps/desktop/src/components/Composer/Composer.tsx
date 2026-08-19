@@ -36,7 +36,7 @@ function diffTotals(review: ReviewSnapshot | null) {
 }
 
 /**
- * The composer doubles as the run's status bar — Superset's arrangement. Repo,
+ * The composer doubles as the run's status bar: Superset's arrangement. Repo,
  * branch and live diffstat sit directly above the input, harness and model
  * directly below, so nothing about the current run requires leaving the
  * conversation to see.

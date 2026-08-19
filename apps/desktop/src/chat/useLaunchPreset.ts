@@ -62,7 +62,7 @@ export function useLaunchPreset({
 
     // Resolve the default immediately, before asking the host for a stored
     // preset. Waiting for that round-trip left the UI briefly claiming "No
-    // harness is ready" — not slow, but wrong: one is ready, the choice between
+    // harness is ready", not slow, but wrong: one is ready, the choice between
     // them simply is not settled yet.
     setHarnessIdState(
       (current) => current ?? preferredHarness(latest.current.readyHarnesses)

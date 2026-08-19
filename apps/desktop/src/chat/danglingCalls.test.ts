@@ -35,7 +35,7 @@ function toolBlocks(state: ReturnType<typeof reduceEvents>) {
 /**
  * Real opencode output, captured from a live run: it emitted
  * `tool_call.started` for three `read` calls and never sent a completion for
- * any of them. Left alone the transcript claims those calls are still running —
+ * any of them. Left alone the transcript claims those calls are still running:
  * on a turn that visibly finished, with a heartbeat ticking past the recorded
  * duration.
  */

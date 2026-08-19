@@ -4,7 +4,7 @@ import { createContext, useContext } from "react";
  * How a file chip opens the file it names.
  *
  * A context rather than a prop because a chip is created deep inside rendered
- * markdown — `Markdown` maps over the children of every prose element — and
+ * markdown (`Markdown` maps over the children of every prose element) and
  * threading a callback through that would mean every renderer in the chain
  * carrying an argument it does not use.
  *

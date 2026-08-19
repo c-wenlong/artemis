@@ -2,8 +2,8 @@
  * One prompt run against several harnesses at once.
  *
  * The wedge: three agents, three isolated worktrees, three diffs, keep one.
- * Isolation is the experiment — two harnesses sharing a checkout overwrite each
- * other and the comparison means nothing — so every entry has its own worktree
+ * Isolation is the experiment: two harnesses sharing a checkout overwrite each
+ * other and the comparison means nothing, so every entry has its own worktree
  * branched from the same commit.
  */
 export interface ComparisonEntry {

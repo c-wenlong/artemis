@@ -9,7 +9,7 @@
 ## How it was verified
 
 <!--
-Not "tests pass" — which tests, and what would have failed before.
+Not "tests pass": name which tests, and what would have failed before.
 If it touches a harness, say whether it was run against the real binary:
 the adapters exist because captured output disagreed with documentation.
 -->

@@ -8,7 +8,7 @@
 //! a content part, and classifies them. A stricter parser breaks on the next
 //! opencode release; this one degrades to emitting less.
 //!
-//! Text arrives **cumulative** — each line resends the whole part — so deltas
+//! Text arrives **cumulative** (each line resends the whole part) so deltas
 //! are computed by diffing against the last value seen for that block.
 
 use std::collections::{HashMap, HashSet};
@@ -320,7 +320,7 @@ fn tool_state(part: &Value) -> Option<&Value> {
 /// Shorten a reported path against the workspace root.
 ///
 /// Tries the absolute path first: it is the one opencode is reliable about.
-/// Anything still absolute after this is left alone rather than mangled — a
+/// Anything still absolute after this is left alone rather than mangled: a
 /// long path is worse to read than a short one, but a wrong one is worse still.
 fn relativize(root: Option<&Path>, file: &Value) -> Option<String> {
     let absolute = file.get("filePath").and_then(Value::as_str);
@@ -371,15 +371,15 @@ fn read_file_changes(part: &Value, root: Option<&Path>) -> Option<Vec<FileChange
 /// opencode delegates through a single tool named `task`: the child agent runs
 /// in a *separate session* whose `parent_id` points back here, and none of its
 /// own tool calls appear in this stream. So this one call is the whole of what
-/// the transcript can attribute, and `state.metadata.sessionId` — the child
-/// session — is the identity to carry. Read off opencode's own session store,
+/// the transcript can attribute, and `state.metadata.sessionId`: the child
+/// session: is the identity to carry. Read off opencode's own session store,
 /// where it resolved to a real child session in all 164 recorded `task` calls.
 ///
 /// The call id is the fallback rather than the first choice: two `explore`
 /// workers running at once share a name, and the session is what tells them
 /// apart in the store. Without `subagent_type` there is no name to put on a
 /// chip, so the call stays unattributed and renders as the ordinary tool call
-/// it is — inventing a name would be worse than showing none.
+/// it is: inventing a name would be worse than showing none.
 fn read_agent(name: &str, part: &Value) -> Option<AgentRef> {
     if name != "task" {
         return None;
@@ -443,7 +443,7 @@ fn read_tool_status(part_type: &str, raw_type: &str, part: &Value) -> ToolStatus
 fn extract_parts(raw: &Value, raw_type: &str, root: Option<&Path>) -> Vec<Part> {
     // opencode names the real payload: `{ type, part: { ... } }`. Take it
     // directly rather than flattening the frame, because a tool part contains
-    // nested objects — `state`, `state.metadata` — that are shaped enough like
+    // nested objects (`state`, `state.metadata`) that are shaped enough like
     // parts to be collected as extra ones. That produced a second, unnamed
     // tool call for every real one, and doubled the completions.
     let mut candidates: Vec<Value> = Vec::new();

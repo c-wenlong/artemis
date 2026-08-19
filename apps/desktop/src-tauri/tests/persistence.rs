@@ -1,7 +1,7 @@
 //! Persisted state: chat sessions and launch presets.
 //!
 //! Two things justify a database here rather than more JSON files. The first is
-//! `opencode_session_id` — without it a restart cannot resume a conversation
+//! `opencode_session_id`, without it a restart cannot resume a conversation
 //! with its context, so the agent starts over having forgotten everything. The
 //! second is crash recovery: a session left marked `running` by a hard quit has
 //! to be corrected on the next launch, or the UI shows a spinner for work that

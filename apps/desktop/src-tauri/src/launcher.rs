@@ -1,7 +1,7 @@
 //! Non-interactive agent launching.
 //!
 //! Ported from `packages/host-service/src/node/agentLauncher.ts`. This is the
-//! one-shot path — prompt in, transcript out. Streaming (M1) and PTY-backed
+//! one-shot path: prompt in, transcript out. Streaming (M1) and PTY-backed
 //! interactive sessions (M6) are separate surfaces; this stays the fallback for
 //! harnesses that can answer in a single shot.
 

@@ -8,7 +8,7 @@ import { createFakeHost, fakeInventory } from "./fakeHost";
  * The second half of M11's exit criterion. Three harnesses render as segments;
  * the fourth still works, in the dock.
  *
- * A harness Artemis cannot parse is not broken — it is a terminal. What must
+ * A harness Artemis cannot parse is not broken: it is a terminal. What must
  * not happen is launching it as a transcript, which streams a page of
  * unrendered JSON into the conversation.
  */

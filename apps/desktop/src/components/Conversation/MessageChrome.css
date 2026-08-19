@@ -242,7 +242,7 @@
   opacity: 0.5;
 }
 
-/* A reverted row stays listed — the turn did make that edit — but reads as
+/* A reverted row stays listed (the turn did make that edit) but reads as
    spent rather than pending. */
 .edit-summary-row[data-reverted="true"] .edit-summary-path,
 .edit-summary-row[data-reverted="true"] .edit-summary-counts {

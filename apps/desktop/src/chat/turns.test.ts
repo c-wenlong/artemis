@@ -34,7 +34,7 @@ const errored = (turnId: string, seconds: number): RuntimeEvent => ({
 
 /**
  * Turn timing exists so the transcript can show "Worked for 27s" on a finished
- * turn and a live elapsed heartbeat on a running one — both Traycer patterns.
+ * turn and a live elapsed heartbeat on a running one: both Traycer patterns.
  */
 describe("turn timing", () => {
   it("records when a turn started", () => {

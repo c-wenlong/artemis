@@ -3,7 +3,7 @@
 ## Getting set up
 
 You need Node 22+, pnpm, and a Rust toolchain. On Linux you also need Tauri's
-system dependencies — see [the Tauri prerequisites][tauri-prereqs]; the exact
+system dependencies: see [the Tauri prerequisites][tauri-prereqs]; the exact
 apt list Artemis uses is in `.github/workflows/ci.yml`.
 
 ```bash
@@ -13,7 +13,7 @@ pnpm dev:web      # the UI alone in a browser, no Rust host
 ```
 
 `pnpm dev:web` is quicker for UI work but cannot stream a turn, open a terminal,
-read a file or change the app icon — all of that lives in the Rust host. It says
+read a file or change the app icon: all of that lives in the Rust host. It says
 so where it matters rather than failing quietly.
 
 To do anything interesting you need at least one harness installed:
@@ -61,7 +61,7 @@ against the documentation, the documentation was wrong.
 
 **Tests first, and watch them fail.** A test that has never been red has not
 been shown to test anything. Several bugs here were found because a test passed
-when it should not have — including one that asserted a path was relative while
+when it should not have, including one that asserted a path was relative while
 the value was `private/var/folders/…/seed.txt`.
 
 **Verify against the real thing where one exists.** Fixtures prove the parser
@@ -73,7 +73,7 @@ limitation left out is a bug someone else finds. `MILESTONES.md` records
 deliberate omissions alongside completed work, and so should a pull request.
 
 **Comments explain why, not what.** The code says what it does. A comment earns
-its place by explaining a decision that is not obvious from reading — a
+its place by explaining a decision that is not obvious from reading: a
 constraint from a harness, a failure mode being avoided, an approach that was
 tried and did not work.
 
@@ -95,4 +95,4 @@ tried and did not work.
 
 `MILESTONES.md` is the real roadmap, including what is blocked and why.
 `docs/ARCHITECTURE.md` explains how the halves fit together. Both are kept
-honest — if you find them wrong, that is a bug worth reporting on its own.
+honest: if you find them wrong, that is a bug worth reporting on its own.

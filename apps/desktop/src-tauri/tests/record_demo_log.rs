@@ -9,7 +9,7 @@
 //! pnpm --dir apps/desktop run dev:web
 //! ```
 //!
-//! It writes only what opencode actually emitted — no fabricated events.
+//! It writes only what opencode actually emitted: no fabricated events.
 
 use std::sync::Arc;
 

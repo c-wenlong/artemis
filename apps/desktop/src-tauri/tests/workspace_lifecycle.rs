@@ -7,7 +7,7 @@
 //!
 //! One test, deliberately. Scan root and worktree root come from environment
 //! variables, which are process-global, and `cargo test` runs tests in
-//! parallel — so this lives in its own binary with a single entry point rather
+//! parallel, so this lives in its own binary with a single entry point rather
 //! than racing itself.
 
 use std::path::{Path, PathBuf};
@@ -70,7 +70,7 @@ fn a_worktree_round_trips_from_creation_to_deletion() {
     );
     // Compared after canonicalising, because two spellings of one location are
     // still one location. On Windows `std::env::temp_dir()` hands back the 8.3
-    // short form — `RUNNER~1` — while git reports the long one, so the prefix
+    // short form (`RUNNER~1`) while git reports the long one, so the prefix
     // check failed on paths that were in fact the same directory.
     let created_real =
         std::fs::canonicalize(&created.worktree_path).expect("the new worktree exists");

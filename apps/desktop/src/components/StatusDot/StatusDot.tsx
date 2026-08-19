@@ -17,7 +17,7 @@ interface StatusDotProps {
 }
 
 /**
- * Workspace state as a dot rather than a text badge — Superset's pattern. Idle,
+ * Workspace state as a dot rather than a text badge: Superset's pattern. Idle,
  * running, and needs-attention become legible in peripheral vision, and a rail
  * of twenty workspaces stays scannable. The label carries the same information
  * for anyone who is not reading colour.

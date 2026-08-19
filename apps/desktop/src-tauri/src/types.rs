@@ -76,7 +76,7 @@ pub struct HarnessAsset {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_used_at: Option<String>,
     /// Whether Artemis can render this harness as a transcript. False means it
-    /// works, but in the terminal dock — which is a routing decision the UI has
+    /// works, but in the terminal dock, which is a routing decision the UI has
     /// to make before launching anything.
     pub supports_streaming: bool,
 }
@@ -290,7 +290,7 @@ pub struct FileChange {
 /// a harness that does not delegate has nothing to report, and every event
 /// recorded before this field existed must keep replaying as main-thread work.
 ///
-/// `id` is identity, not `name` — a fan-out of three `explore` workers is three
+/// `id` is identity, not `name`: a fan-out of three `explore` workers is three
 /// agents, and reading them as one would report the fan-out as a single run.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -370,7 +370,7 @@ pub enum RuntimeEvent {
         name: Option<String>,
         /// What the call was given. Present here as well as on the start event
         /// because `opencode run --format json` reports each tool exactly once,
-        /// already finished — there is no start frame to have carried it.
+        /// already finished: there is no start frame to have carried it.
         #[serde(skip_serializing_if = "Option::is_none")]
         input: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -462,7 +462,7 @@ impl RuntimeEvent {
         *slot = value.to_string();
     }
 
-    /// True for the events that end a turn — the signal a consumer waits on.
+    /// True for the events that end a turn: the signal a consumer waits on.
     pub fn is_terminal(&self) -> bool {
         matches!(
             self,
@@ -532,7 +532,7 @@ pub struct SendChatMessageRequest {
 /// `Full` shows every tool call; `Output` shows the answer and folds the
 /// mechanics behind the turn header. Which is right depends on whether you are
 /// debugging the agent or reading its conclusion, so it is a setting rather
-/// than a default — and it doubles as a lever over how much of a long tool run
+/// than a default, and it doubles as a lever over how much of a long tool run
 /// stays in view.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

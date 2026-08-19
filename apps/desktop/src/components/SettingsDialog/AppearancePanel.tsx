@@ -105,8 +105,8 @@ export function AppearancePanel({
           mode the line above already says why the grid is missing. */}
       {icons.length > 0 ? (
         <p className="settings-hint" data-testid="appearance-note">
-          Changes the icon of the running app — the dock, Cmd-Tab and the window
-          menu — and is restored on the next launch. The icon Finder shows is
+          Changes the icon of the running app: the dock, Cmd-Tab and the window
+          menu, and is restored on the next launch. The icon Finder shows is
           built into the app and is not affected.
         </p>
       ) : null}

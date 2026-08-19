@@ -1,7 +1,7 @@
 //! The app-icon catalog.
 //!
 //! Swapping the icon at runtime changes the *dock* icon of the running app. The
-//! bundled icon — what Finder shows, and what appears before the app starts —
+//! bundled icon: what Finder shows, and what appears before the app starts:
 //! is baked at build time and cannot be changed from inside. The catalog and
 //! the persistence are what is testable here; the AppKit call is not, so it is
 //! kept to a few lines behind this.
@@ -24,8 +24,8 @@ fn the_default_is_olympian_and_comes_first() {
     );
 }
 
-/// The source images were not uniquely captioned — two arrived as "Galactic
-/// Vanguard (Nebula)" on different artwork — so a duplicate label is a real
+/// The source images were not uniquely captioned: two arrived as "Galactic
+/// Vanguard (Nebula)" on different artwork, so a duplicate label is a real
 /// way for this catalog to go wrong rather than a theoretical one.
 #[test]
 fn labels_are_unique() {
@@ -106,8 +106,8 @@ fn opaque_box(path: &std::path::Path) -> (u32, u32, u32, u32, u32) {
 }
 
 /// macOS does not draw app icons edge to edge. On a 1024 canvas the rounded
-/// square occupies 824x824 at +100+100 — measured off Spotify and Telegram,
-/// both exact — and artwork that fills its canvas renders about a quarter
+/// square occupies 824x824 at +100+100: measured off Spotify and Telegram,
+/// both exact, and artwork that fills its canvas renders about a quarter
 /// larger than every neighbour in the dock. That shipped once already.
 #[test]
 fn variants_sit_on_apples_icon_grid() {

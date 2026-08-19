@@ -90,7 +90,7 @@ export const fakeInventory: AssetInventorySnapshot = {
     },
     {
       // Installed and perfectly usable, but Artemis has no adapter for its
-      // output — the realistic dock case, and the common one.
+      // output: the realistic dock case, and the common one.
       id: "amp",
       kind: "amp",
       label: "Amp",
@@ -167,7 +167,7 @@ export interface FakeHostOptions {
   /** Message the host rejects worktree creation with. */
   worktreeError?: string;
   /**
-   * Keep the turn open until it is cancelled — models a long-running turn, so
+   * Keep the turn open until it is cancelled: models a long-running turn, so
    * a test can click Stop without racing the stream to completion.
    */
   holdUntilCancelled?: boolean;

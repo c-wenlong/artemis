@@ -14,7 +14,7 @@
 //!   stream-json` run and content blocks in the shapes read out of Claude
 //!   Code's own session logs. The content is invented; every key and type in it
 //!   was observed. Claude's OAuth had expired on the machine this was written
-//!   on, so a live end-to-end run of the tool path is still owed — see
+//!   on, so a live end-to-end run of the tool path is still owed: see
 //!   `opencode_live.rs` for the pattern that check should follow.
 
 use artemis_host::chat::adapters::{self, HarnessAdapter};
@@ -128,7 +128,7 @@ fn every_adapter_stamps_its_events_with_the_session_and_turn() {
     }
 }
 
-/// Junk on stdout is normal — a warning, a progress line, a half-written frame
+/// Junk on stdout is normal: a warning, a progress line, a half-written frame
 /// from a killed process. None of it may take the turn down.
 #[test]
 fn every_adapter_survives_rubbish_on_stdout() {

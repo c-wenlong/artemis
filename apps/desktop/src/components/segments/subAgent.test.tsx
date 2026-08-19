@@ -11,7 +11,7 @@ import { SubAgentSegment } from "./SubAgentSegment";
  *
  * The thing being avoided is a main thread that fills with someone else's
  * mechanics. A delegated run of thirty calls belongs behind a name, with the
- * detail one click away — not inlined between the prose the user asked for.
+ * detail one click away, not inlined between the prose the user asked for.
  */
 
 const tool = (
@@ -59,7 +59,7 @@ describe("SubAgentSegment", () => {
    * where the detail lives.
    */
   /**
-   * The chip still summarises which tools ran — that is the point of a summary.
+   * The chip still summarises which tools ran, that is the point of a summary.
    * What must not be in the main thread is the *detail*: the per-call rows with
    * their arguments and output.
    */

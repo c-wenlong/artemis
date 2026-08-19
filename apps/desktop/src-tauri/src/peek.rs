@@ -7,7 +7,7 @@
 //! whole: a generated file in a real workspace can be tens of megabytes, and
 //! pulling all of it across the IPC boundary to show seven lines would be
 //! absurd. Everything else here is about files that are not what a reader
-//! expects — binary, enormous, or deleted since the agent mentioned them.
+//! expects: binary, enormous, or deleted since the agent mentioned them.
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
@@ -28,7 +28,7 @@ pub struct FileWindow {
     /// Lines in the whole file, so the reader knows where the window sits.
     pub total_lines: u32,
     /// The cited line, when the file actually has one. `None` when the
-    /// citation named no line, or named one past the end — a stale citation
+    /// citation named no line, or named one past the end: a stale citation
     /// should not highlight an unrelated line as though it were the claim.
     pub focus_line: Option<u32>,
     pub path: String,

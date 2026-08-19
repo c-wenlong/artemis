@@ -5,7 +5,7 @@
 //! version, carrying **cumulative** text per part rather than deltas.
 //!
 //! Written before the parser existed. The load-bearing case is
-//! `cumulative_text_becomes_deltas` — get that wrong and the UI renders every
+//! `cumulative_text_becomes_deltas`: get that wrong and the UI renders every
 //! token repeated.
 
 use artemis_host::chat::parser::OpenCodeParser;
@@ -195,7 +195,7 @@ fn captures_the_first_error_message() {
 }
 
 /// Captured from a real `opencode run --format json --thinking` invocation
-/// rather than written from the docs — the envelope wraps the content in
+/// rather than written from the docs: the envelope wraps the content in
 /// `part`, and `step_start` / `step_finish` frames carry no content at all.
 #[test]
 fn handles_the_real_opencode_envelope() {
@@ -269,7 +269,7 @@ mod live_apply_patch {
             .collect()
     }
 
-    /// `opencode run --format json` reports each tool once, already finished —
+    /// `opencode run --format json` reports each tool once, already finished:
     /// there is no separate started frame to pair with. So the transcript has
     /// to be buildable from completions alone.
     #[test]
@@ -296,7 +296,7 @@ mod live_apply_patch {
     }
 
     /// The completion is the only frame this transport sends, so it has to
-    /// carry the input too — otherwise the transcript can name the tool but not
+    /// carry the input too: otherwise the transcript can name the tool but not
     /// say what it ran.
     #[test]
     fn tool_input_survives_the_state_wrapper() {
@@ -392,8 +392,8 @@ mod live_apply_patch {
 /// have missed:
 ///
 /// - **The sub-agent is one tool call, not a nested stream.** The child agent's
-///   own tool calls belong to a *separate session* — `session.parent_id` points
-///   back — and never appear in the parent's `run --format json` output. So the
+///   own tool calls belong to a *separate session*: `session.parent_id` points
+///   back, and never appear in the parent's `run --format json` output. So the
 ///   `task` call is the whole of what a transcript can show, and the panel shows
 ///   what came back rather than how it was reached.
 /// - **`state.metadata.sessionId` is the child session id**, which resolved to a
@@ -518,7 +518,7 @@ fn refuses_to_invent_a_name_for_an_unnamed_task() {
 ///
 /// Transcribing a shape by hand is how you end up testing your reading of it.
 /// This one is real: every key and nesting level is opencode's, with only the
-/// free text replaced — and it carries `state.title` and `state.time`, which the
+/// free text replaced, and it carries `state.title` and `state.time`, which the
 /// hand-written case above does not, because reading a truncated row is how you
 /// miss a field.
 #[test]

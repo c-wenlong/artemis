@@ -59,7 +59,7 @@ describe("buildTimeline", () => {
   });
 
   /**
-   * Reasoning is promoted out of activity groups — Traycer's rule; groups carry
+   * Reasoning is promoted out of activity groups: Traycer's rule; groups carry
    * only operational work. It splits an adjacent run because rendering it
    * between two halves of one group would misrepresent the sequence.
    */

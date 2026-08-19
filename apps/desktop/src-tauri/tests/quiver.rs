@@ -350,7 +350,7 @@ fn a_server_registered_nowhere_is_not_reported_as_reconciled() {
 ///
 /// Ignored by default: it depends on Quiver being installed, and its numbers
 /// are specific to whoever runs it. It exists because a fixture only proves the
-/// parser handles the shape it was cut from — this proves the shape is still
+/// parser handles the shape it was cut from: this proves the shape is still
 /// what the real file has.
 ///
 /// ```text
@@ -424,7 +424,7 @@ fn degrades_to_native_when_quiver_is_broken() {
     let native_only = artemis_host::inventory::harnesses(false, false);
     assert!(!native_only.is_empty(), "nothing to compare against");
 
-    // Corrupt every file Artemis reads, in a copy — never the real directory.
+    // Corrupt every file Artemis reads, in a copy: never the real directory.
     let broken = std::env::temp_dir().join("artemis-quiver-corrupt-all");
     let _ = std::fs::remove_dir_all(&broken);
     std::fs::create_dir_all(&broken).unwrap();

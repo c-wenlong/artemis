@@ -4,7 +4,7 @@
  * `full` shows every tool call; `output` shows the answer and folds the
  * mechanics behind the turn header. Which is right depends on whether you are
  * debugging the agent or reading its conclusion, so it is a setting rather than
- * a default — and it doubles as a lever over how much of a long tool run stays
+ * a default, and it doubles as a lever over how much of a long tool run stays
  * in view.
  */
 export type TranscriptVerbosity = "full" | "output";
@@ -14,8 +14,8 @@ export interface RuntimeSettings {
   opencodeExecutablePath?: string;
   /**
    * Root directory scanned for projects and workspace config mentions.
-   * Explicit because the previous implicit root — whatever sat above the app
-   * directory — made the inventory scan unbounded and slow to first paint.
+   * Explicit because the previous implicit root: whatever sat above the app
+   * directory: made the inventory scan unbounded and slow to first paint.
    */
   scanRoot?: string;
   /**

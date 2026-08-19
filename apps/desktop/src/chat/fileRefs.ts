@@ -5,7 +5,7 @@
  * things in English that look like one. "Node.js", "e.g." and "version 1.5" all
  * fit `word.word`, and chipping them would make the transcript worse, not
  * better. So a bare token is never enough on its own: a reference is only
- * chipped when something corroborates it —
+ * chipped when something corroborates it:
  *
  *   - a line suffix, `AGENTS.md (line 7)` or `reduce.ts:42`
  *   - a path separator, `home/AGENTS.md`

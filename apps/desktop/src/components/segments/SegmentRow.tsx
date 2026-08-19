@@ -4,7 +4,7 @@ import "./SegmentRow.css";
 interface SegmentRowProps {
   header: ReactNode;
   children?: ReactNode;
-  /** Always visible beneath the row — a streaming heartbeat, typically. */
+  /** Always visible beneath the row: a streaming heartbeat, typically. */
   footer?: ReactNode;
   tone?: "default" | "destructive";
   className?: string;

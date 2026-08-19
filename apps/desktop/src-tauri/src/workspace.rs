@@ -1,7 +1,7 @@
 //! Projects, workspaces, sessions, and review snapshots.
 //!
 //! The TypeScript host returned a single hardcoded project pointing at one
-//! developer's home directory. Projects are discovered here instead — still
+//! developer's home directory. Projects are discovered here instead: still
 //! shallow (M5 owns worktrees and lifecycle), but real.
 
 use std::fs;
@@ -21,7 +21,7 @@ const MAX_PROJECTS: usize = 60;
 /// path segment on every platform**. It previously replaced only `/`, spaces and
 /// `.`, which leaves a Windows path nearly intact: `C:\Users\you\repo` became the
 /// id `c-users-you-repo`, still drive-qualified. `join` does not append a
-/// drive-qualified path — it replaces what it is joined to — so the worktrees
+/// drive-qualified path (it replaces what it is joined to) so the worktrees
 /// root was discarded and worktrees were created *inside the repository*, where
 /// the comparison feature would later delete them as losers.
 ///
@@ -287,7 +287,7 @@ pub fn delete_workspace(workspace_id: &str, force: bool) -> Result<(), String> {
     Err(format!("Unknown workspace: {workspace_id}"))
 }
 
-/// Sessions are not persisted yet — M7 adds the store, M1 the event log.
+/// Sessions are not persisted yet: M7 adds the store, M1 the event log.
 /// Past sessions for a workspace, imported from Quiver's history.
 ///
 /// Artemis records its own conversations in its event log; this is everything
@@ -340,12 +340,12 @@ mod tests {
     /// A project id becomes a directory name under the worktrees root, so it has
     /// to be **one path segment on every platform**.
     ///
-    /// It was built by replacing `/`, spaces and `.` — which leaves a Windows
+    /// It was built by replacing `/`, spaces and `.`, which leaves a Windows
     /// path almost intact. `C:\Users\you\repo` became the id `c-users-you-repo`,
     /// still drive-qualified, and `join` on Windows does not append a
     /// drive-qualified path, it replaces what it is joined to. So the worktrees
     /// root was discarded and every worktree was created **inside the
-    /// repository** — where the comparison feature would later delete it as a
+    /// repository**: where the comparison feature would later delete it as a
     /// loser, from inside the user's own checkout.
     ///
     /// Found by CI on Windows. It is the same shape as the path-traversal bug in

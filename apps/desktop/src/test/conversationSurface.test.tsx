@@ -82,7 +82,7 @@ function turn(
  *
  * Pasted rather than typed. `user.type` simulates every keystroke, so the
  * 40-line prompt in the truncation test cost several hundred of them, each with
- * its own React render — 645ms here and over the 5s limit on a Windows runner,
+ * its own React render: 645ms here and over the 5s limit on a Windows runner,
  * where it was the one test in 325 that failed. Nothing in this file asserts
  * anything about typing; pasting a long prompt is also what a person does.
  */

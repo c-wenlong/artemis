@@ -338,7 +338,7 @@ fn undo_reverses_a_real_edit() {
 /// Codex, end to end through the same run loop.
 ///
 /// The adapter is checked against a recorded capture in `tests/adapters.rs`;
-/// this checks the parts a capture cannot — that the argv is right, that the
+/// this checks the parts a capture cannot, that the argv is right, that the
 /// prompt reaches a harness which reads it from stdin, and that the events come
 /// back through `run_turn` rather than only through the parser.
 ///

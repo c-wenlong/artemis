@@ -67,7 +67,7 @@ function summarise(blocks: ToolBlock[]): string {
 }
 
 function describe(blocks: ToolBlock[], isActive: boolean, failures: number): string {
-  // Past tense once finished — Superset's register. A transcript reads as a
+  // Past tense once finished: Superset's register. A transcript reads as a
   // record of what happened, not a status board.
   const verb = isActive ? "Running" : "Ran";
   const base = `${verb} ${blocks.length} tools`;
@@ -99,7 +99,7 @@ function toGroup(blocks: ToolBlock[]): ActivityGroup {
  * Two rules from that source are worth stating:
  *
  * - **Reasoning is promoted out.** Groups carry only operational work. Since
- *   reasoning renders inline, it also splits an adjacent run — folding across it
+ *   reasoning renders inline, it also splits an adjacent run: folding across it
  *   would put the group's second half before reasoning that preceded it.
  * - **A run of one is not a group.** Same information, one more layer to open.
  */
@@ -110,7 +110,7 @@ const TONES = 6;
  * A stable accent per agent, from its id.
  *
  * Hashed rather than assigned by order of appearance so that the same agent
- * keeps its colour wherever it appears in a transcript — including after a
+ * keeps its colour wherever it appears in a transcript: including after a
  * reload, where order of appearance would be recomputed from a different
  * starting point. Collisions past `TONES` agents are accepted: the name is what
  * identifies the agent, and the colour only has to make a fan-out scannable.

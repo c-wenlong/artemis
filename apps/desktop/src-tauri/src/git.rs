@@ -30,7 +30,7 @@ fn git(args: &[&str], cwd: &Path) -> Option<String> {
     captured.ok().then_some(captured.stdout)
 }
 
-/// Run git, keeping stderr on failure — worktree errors are the ones a user has
+/// Run git, keeping stderr on failure: worktree errors are the ones a user has
 /// to read and act on ("branch already checked out", "contains modified files").
 fn git_checked(args: &[&str], cwd: &Path, timeout: Duration) -> Result<String, String> {
     let captured = run(
@@ -92,7 +92,7 @@ fn kind_from_status(code: &str) -> ChangeKind {
     }
 }
 
-/// Changed files with real line counts. Untracked files report zero additions —
+/// Changed files with real line counts. Untracked files report zero additions:
 /// `git diff` does not see them and counting lines by hand would be a guess
 /// about what the eventual diff looks like.
 pub fn changed_files(cwd: &Path) -> Vec<ChangedFile> {
@@ -164,7 +164,7 @@ pub fn base_branch(cwd: &Path) -> String {
 #[derive(Debug, Clone)]
 pub struct Worktree {
     pub path: PathBuf,
-    /// `None` when detached — a detached worktree has no branch, and naming one
+    /// `None` when detached: a detached worktree has no branch, and naming one
     /// anyway would be a guess.
     pub branch: Option<String>,
     pub is_main: bool,
@@ -345,7 +345,7 @@ pub fn prune_worktrees(repo: &Path) {
 /// The paths inside the patch are rebuilt rather than trusted. They arrive from
 /// a model's tool call, opencode writes them as absolute, and `git apply` will
 /// happily follow `../..` out of the workspace. So `relative` is validated and
-/// the headers are regenerated from it — whatever the patch claims is ignored.
+/// the headers are regenerated from it: whatever the patch claims is ignored.
 pub fn revert_patch(workspace: &Path, relative: &str, patch: &str) -> Result<(), String> {
     if patch.trim().is_empty() {
         return Err("There is no patch to reverse.".to_string());
@@ -383,7 +383,7 @@ fn creates_the_file(patch: &str) -> bool {
     let mut hunks = 0;
     for line in patch.lines().filter(|line| line.starts_with("@@")) {
         hunks += 1;
-        // "@@ -0,0 +1,3 @@" — the original side is the part after '-'.
+        // "@@ -0,0 +1,3 @@": the original side is the part after '-'.
         let Some(original) = line.split_whitespace().nth(1) else {
             return false;
         };

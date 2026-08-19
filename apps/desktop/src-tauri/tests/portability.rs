@@ -72,7 +72,7 @@ fn a_posix_path_still_splits_on_colons() {
 #[test]
 fn an_empty_path_entry_is_not_the_current_directory() {
     // A trailing separator yields an empty entry, which as a PathBuf means
-    // "here" — and resolving harnesses out of the working directory is how a
+    // "here", and resolving harnesses out of the working directory is how a
     // repository gets to choose which binary runs.
     let parsed: Vec<PathBuf> = scanner::split_path_env("").collect();
     assert!(parsed.iter().all(|entry| !entry.as_os_str().is_empty()));
@@ -155,7 +155,7 @@ fn the_home_directory_is_found_on_either_platform() {
 }
 
 /// The extra bin directories are POSIX conventions. They must not be *harmful*
-/// elsewhere — a non-existent directory is skipped, not an error.
+/// elsewhere: a non-existent directory is skipped, not an error.
 #[test]
 fn nonexistent_extra_directories_are_simply_skipped() {
     let dirs = scanner::search_dirs();

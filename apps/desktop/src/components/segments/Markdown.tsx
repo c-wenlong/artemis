@@ -7,7 +7,7 @@ import "./Markdown.css";
 /**
  * Markdown for assistant prose.
  *
- * Model output is untrusted input — it arrives from a harness that will happily
+ * Model output is untrusted input: it arrives from a harness that will happily
  * relay whatever the model wrote. `react-markdown` does not render raw HTML
  * unless `rehype-raw` is added, and it is deliberately not added: embedded
  * markup renders as text.

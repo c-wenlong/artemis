@@ -184,7 +184,7 @@ export function createHttpHostClient(basePath = "/api/artemis"): ArtemisHostClie
 
     /**
      * Reads a log the Rust host recorded. Streaming still requires Tauri, but
-     * a finished turn can be rendered here — which is what makes the browser
+     * a finished turn can be rendered here, which is what makes the browser
      * preview usable for looking at the transcript.
      */
     replayChatSession(sessionId: string): Promise<RuntimeEvent[]> {

@@ -54,7 +54,7 @@ async function converse(text: string, options: FakeHostOptions = {}) {
   const log = screen.getByRole("log", { name: /conversation/i });
   // Wait for the turn to finish, not merely for the chip to appear. Markdown
   // is re-parsed as text streams in, so a node grabbed mid-stream is replaced
-  // before a click can land on it — which is a race in the test, not the app:
+  // before a click can land on it, which is a race in the test, not the app:
   // a reader clicks a settled transcript.
   await within(log).findByTestId("turn-header");
   await within(log).findByTestId("file-chip");
@@ -147,7 +147,7 @@ describe("a citation you can follow", () => {
   });
 
   /**
-   * A stale citation — the line was removed by a later edit. The window still
+   * A stale citation: the line was removed by a later edit. The window still
    * opens so the file can be read, but nothing is highlighted as the claim.
    */
   it("highlights nothing when the cited line is gone", async () => {

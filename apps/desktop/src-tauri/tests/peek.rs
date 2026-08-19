@@ -62,7 +62,7 @@ fn clamps_at_the_end_of_the_file() {
     assert_eq!(window.start_line + window.lines.len() as u32 - 1, 10);
 }
 
-/// A citation with no line number is still worth opening — it just starts at
+/// A citation with no line number is still worth opening: it just starts at
 /// the top rather than nowhere.
 #[test]
 fn a_citation_without_a_line_opens_the_top() {
@@ -93,7 +93,7 @@ fn a_line_past_the_end_lands_on_the_last_one() {
 /// A path from a model is refused by **both** platforms' rules, whichever one
 /// is running.
 ///
-/// `/etc/passwd` is not absolute on Windows — it has no drive letter — so
+/// `/etc/passwd` is not absolute on Windows (it has no drive letter) so
 /// `is_absolute()` let it through, and `join` there does not append a rooted
 /// path, it *replaces* the root: `C:\workspace` + `/etc/passwd` is `C:\etc\passwd`.
 /// It escaped, and only failed the test because that file happens not to exist
@@ -166,7 +166,7 @@ fn a_very_long_file_still_returns_only_the_window() {
     assert_eq!(window.total_lines, 200_000);
 }
 
-/// One enormous line — a minified bundle, say — should not arrive whole.
+/// One enormous line (a minified bundle, say) should not arrive whole.
 #[test]
 fn a_single_enormous_line_is_truncated() {
     let dir = workspace("long_line");

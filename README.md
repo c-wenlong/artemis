@@ -4,8 +4,8 @@ A desktop app for running AI coding agents and actually reading what they did.
 
 Agents are good and their output is unreadable. A terminal gives you a scrolling
 wall in which the answer, the reasoning, forty tool calls and the file edits all
-look the same. Artemis renders a turn as structured blocks — the answer first,
-the mechanics behind a header, the edits as a diff you can undo — and it does
+look the same. Artemis renders a turn as structured blocks: the answer first,
+the mechanics behind a header, the edits as a diff you can undo, and it does
 that for several agents at once, in isolated git worktrees, so you can compare
 their answers and keep one.
 
@@ -15,7 +15,7 @@ Local-first. Nothing is sent anywhere except by the agent you launched.
 
 - **Node 22+** and **pnpm**
 - A **Rust toolchain** (for the desktop host)
-- On Linux, Tauri's system dependencies — see
+- On Linux, Tauri's system dependencies: see
   [the Tauri prerequisites](https://tauri.app/start/prerequisites/); the exact
   apt list is in `.github/workflows/ci.yml`
 - At least one agent on your `PATH`: [opencode](https://opencode.ai),
@@ -29,7 +29,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev:web` runs the interface alone in a browser — faster for UI work, but
+`pnpm dev:web` runs the interface alone in a browser: faster for UI work, but
 it cannot stream a turn, open a terminal or read a file, because all of that
 lives in the Rust host. It says so where it matters rather than failing quietly.
 
@@ -56,7 +56,7 @@ into its place.*
 
 **Shows what changed, and takes it back.** Every turn ends with what it edited
 and by how much. Opening a file shows its diff; **Undo** reverse-applies that
-one file's patch — so an unrelated edit of yours in the same file survives,
+one file's patch, so an unrelated edit of yours in the same file survives,
 which restoring from git would not. If the file has moved on since, the undo is
 refused with a reason rather than forced.
 
@@ -70,11 +70,11 @@ side and keep one; the rest are discarded.
 ![The Compare harnesses dialog: one prompt field, and a checklist of Claude
 Code, Codex CLI and OpenCode with their versions.](docs/images/compare.png)
 
-*Only harnesses Artemis can parse are offered here — the rest run in the
+*Only harnesses Artemis can parse are offered here: the rest run in the
 terminal dock instead.*
 
 **Speaks three protocols.** opencode, Codex and Claude Code each stream a
-different JSON dialect. A harness Artemis cannot parse is not broken — it runs
+different JSON dialect. A harness Artemis cannot parse is not broken: it runs
 for real in the terminal dock instead of being shown half-rendered.
 
 **Forks a conversation.** Branch at any turn into a new session carrying
@@ -106,25 +106,25 @@ down rather than implied:
 
 ## Documentation
 
-- [MILESTONES.md](MILESTONES.md) — the real roadmap. What is done, what is
+- [MILESTONES.md](MILESTONES.md): the real roadmap. What is done, what is
   deliberately not being built, and what is blocked on something external.
 - [HANDOFF.md](HANDOFF.md): the state of play in one page. What landed most
   recently, what is next, and what is blocked on a machine nobody has.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the Rust host and the
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the Rust host and the
   webview fit together.
-- [CONTRIBUTING.md](CONTRIBUTING.md) — how to run the checks, and what a change
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to run the checks, and what a change
   is expected to look like.
-- [docs/RELEASING.md](docs/RELEASING.md) — what CI does, and which credentials
+- [docs/RELEASING.md](docs/RELEASING.md): what CI does, and which credentials
   the rest needs.
-- [docs/QUIVER_SCHEMA.md](docs/QUIVER_SCHEMA.md) — the on-disk shapes Artemis
+- [docs/QUIVER_SCHEMA.md](docs/QUIVER_SCHEMA.md): the on-disk shapes Artemis
   reads from Quiver.
-- [SECURITY.md](SECURITY.md) — the threat model, what is enforced and tested,
+- [SECURITY.md](SECURITY.md): the threat model, what is enforced and tested,
   and how to report a vulnerability.
 
 ## A note on how this was built
 
 Every harness adapter was written from a **captured live run**, never from
-documentation — and every time the two were compared, the documentation was
+documentation, and every time the two were compared, the documentation was
 wrong. opencode nests tool data under `state` and sends each call once, already
 finished. Codex reads its prompt from stdin and hangs forever without it. Claude
 reports tool output as a user-role message.

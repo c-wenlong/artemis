@@ -7,7 +7,7 @@ import { createFakeHost, type FakeHostOptions } from "./fakeHost";
 
 const SESSION = "chat-ws-artemis";
 
-/** A turn with a tool call and an answer — enough to have both to hide. */
+/** A turn with a tool call and an answer: enough to have both to hide. */
 function turn(turnId: string): RuntimeEvent[][] {
   const base = { sessionId: SESSION, turnId };
   return [

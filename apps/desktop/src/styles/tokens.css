@@ -1,7 +1,7 @@
 /*
  * Artemis design tokens.
  *
- * The only file in the app permitted to contain a colour literal — enforced by
+ * The only file in the app permitted to contain a colour literal: enforced by
  * src/test/tokens.test.ts. Everything else composes these.
  *
  * The register is Cursor Web's: light, calm, low-chrome, warm neutrals rather
@@ -64,7 +64,7 @@
   /*
    * Citations. A file reference is the one thing in prose that names something
    * outside the conversation, so it gets its own warm tint rather than the
-   * accent — the accent is for controls, and a chip is not a control yet.
+   * accent: the accent is for controls, and a chip is not a control yet.
    */
   --citation-text: #9a5b3d;
   --citation-surface: #f6efe9;
@@ -116,7 +116,7 @@
  *
  * Scoped to `:not([data-theme])` so it only applies when nothing has chosen.
  * index.html pins light, so the OS preference never silently overrides the
- * product's direction — it applies to embedded or test contexts that do not set
+ * product's direction: it applies to embedded or test contexts that do not set
  * the attribute.
  */
 @media (prefers-color-scheme: dark) {

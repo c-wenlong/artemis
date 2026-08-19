@@ -3,7 +3,7 @@
 //! What this can and cannot do is worth being precise about, because the
 //! difference is invisible from the settings panel:
 //!
-//! - **Can**: change the icon of the *running* app — the dock, Cmd-Tab, the
+//! - **Can**: change the icon of the *running* app: the dock, Cmd-Tab, the
 //!   window menu. Applied immediately and re-applied on the next launch.
 //! - **Cannot**: change the bundled icon, which is what Finder shows and what
 //!   appears in the dock before the app has started. That is baked into the
@@ -93,7 +93,7 @@ pub fn resolve_id(stored: Option<&str>) -> &str {
 /// Set the dock icon of the running application.
 ///
 /// macOS only. The image has to be handed to AppKit on the main thread, so the
-/// caller is responsible for arriving there — see `set_app_icon` in `lib.rs`.
+/// caller is responsible for arriving there: see `set_app_icon` in `lib.rs`.
 #[cfg(target_os = "macos")]
 pub fn apply_to_running_app(png: &[u8]) -> Result<(), String> {
     use objc2::{AllocAnyThread, MainThreadMarker};

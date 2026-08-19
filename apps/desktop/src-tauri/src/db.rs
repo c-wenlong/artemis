@@ -1,7 +1,7 @@
 //! Persisted state.
 //!
-//! Deliberately narrow. Projects and workspaces are *derived* — from the
-//! filesystem and from `git worktree list` — and storing them would create a
+//! Deliberately narrow. Projects and workspaces are *derived*: from the
+//! filesystem and from `git worktree list`, and storing them would create a
 //! second answer that drifts from the first. What genuinely cannot be
 //! recomputed is here:
 //!
@@ -53,7 +53,7 @@ fn status_from_text(text: &str) -> ChatSessionStatus {
     }
 }
 
-/// Trimmed, with whitespace-only treated as absent — "no model chosen" and
+/// Trimmed, with whitespace-only treated as absent: "no model chosen" and
 /// "the model is spaces" are not different states.
 fn clean(value: Option<&str>) -> Option<String> {
     value

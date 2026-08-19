@@ -11,7 +11,7 @@
 }
 
 /*
- * The user's message echoes the input it came from — a bordered box, not a
+ * The user's message echoes the input it came from: a bordered box, not a
  * chat bubble. Cursor Web's treatment: it reads as "here is what you asked"
  * rather than as one side of an instant-message thread.
  */

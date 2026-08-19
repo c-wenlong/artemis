@@ -1,4 +1,4 @@
-/* No border, no background — hierarchy belongs to the parent segment. */
+/* No border, no background: hierarchy belongs to the parent segment. */
 .segment-row {
   font-size: var(--text-ui-sm);
 }

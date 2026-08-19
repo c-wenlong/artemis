@@ -59,7 +59,7 @@ describe("activity group in the transcript", () => {
 
     await user.click(screen.getAllByRole("button")[0]!);
     const group = screen.getByTestId("activity-group");
-    // One card — the group itself. The calls inside are rows.
+    // One card: the group itself. The calls inside are rows.
     expect(within(group).getAllByTestId("segment-card")).toHaveLength(1);
     expect(within(group).getAllByTestId("segment-row")).toHaveLength(2);
   });

@@ -15,7 +15,7 @@ interface TerminalViewProps {
  *
  * Deliberately thin: xterm owns rendering and escape-sequence parsing, the host
  * owns the process, and this only carries bytes between them. The one piece of
- * real logic is the reconnect — subscribing returns the backlog, which is
+ * real logic is the reconnect: subscribing returns the backlog, which is
  * written in a single call rather than replayed chunk by chunk.
  */
 export function TerminalView({ host, terminalId }: TerminalViewProps) {

@@ -34,7 +34,7 @@ pub struct ChatStore {
 /// The protocol a session's harness speaks.
 ///
 /// `harness_kind` is recorded on the session when known; otherwise the id is
-/// the best signal, and an unrecognised one is `Custom` — which has no adapter
+/// the best signal, and an unrecognised one is `Custom`, which has no adapter
 /// and belongs in the terminal dock.
 fn harness_kind_of(session: &ChatSession) -> HarnessKind {
     session
@@ -146,7 +146,7 @@ impl ChatStore {
             .unwrap_or(false)
     }
 
-    /// Everything previously recorded for a session — the replay path.
+    /// Everything previously recorded for a session: the replay path.
     pub fn replay(session_id: &str) -> Vec<RuntimeEvent> {
         EventLog::for_session(session_id).read()
     }
@@ -158,7 +158,7 @@ impl ChatStore {
     /// than a branch, with both sides appending to one server-side
     /// conversation. So the fork reads back identically and the *next* turn
     /// starts a fresh opencode session, which the model has no memory of. That
-    /// is a real limitation, not an oversight — closing it needs opencode to
+    /// is a real limitation, not an oversight: closing it needs opencode to
     /// support seeding a session from a transcript.
     pub fn fork_session(&self, session_id: &str, through_turn_id: &str) -> Option<ChatSession> {
         self.fork_session_in(&log::sessions_dir(), session_id, through_turn_id)

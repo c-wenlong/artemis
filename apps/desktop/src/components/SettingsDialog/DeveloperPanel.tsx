@@ -65,7 +65,7 @@ export function DeveloperPanel({
       <p className="settings-hint" data-testid="verbosity-note">
         This is also a context lever. A long run of tool calls is the bulk of
         what a transcript holds, and folding it away keeps the conversation
-        readable without losing it — the turn header still opens any turn.
+        readable without losing it: the turn header still opens any turn.
       </p>
     </section>
 
@@ -87,7 +87,7 @@ export function DeveloperPanel({
       </label>
 
       <p className="settings-hint" data-testid="quiver-note">
-        Quiver&rsquo;s files are already read — the harness registry and your
+        Quiver&rsquo;s files are already read: the harness registry and your
         session history come from them and cost nothing. This is only about
         running its <code className="mono">swe</code> command, which is a
         subprocess, so it stays off until you ask for it.

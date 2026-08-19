@@ -28,7 +28,7 @@ export interface ChatController {
  * Owns one chat session per workspace and folds its event stream into a
  * transcript.
  *
- * The session is created lazily on first send — creating one on mount would
+ * The session is created lazily on first send: creating one on mount would
  * spawn a session for every workspace the user merely clicked through. On
  * mount it replays whatever the host recorded, so reopening shows the turn that
  * ran rather than an empty pane.
@@ -48,7 +48,7 @@ export function useChat({
   // session and rebuild from whatever it recorded.
   //
   // The session is resolved here rather than lazily on first send because the
-  // event log is keyed by session id — replaying under any other key (the
+  // event log is keyed by session id: replaying under any other key (the
   // workspace id, say) silently finds nothing. Creating a session is an
   // in-memory lookup that starts no process, and it is idempotent per
   // workspace, so doing it on selection costs nothing.

@@ -102,7 +102,7 @@ pub fn run(command: &str, args: &[&str], options: RunOptions<'_>) -> Option<Capt
     })
 }
 
-/// First line of stdout, trimmed and capped — the shape `--version` probes want.
+/// First line of stdout, trimmed and capped: the shape `--version` probes want.
 pub fn first_line(command: &str, args: &[&str], timeout: Duration) -> Option<String> {
     let captured = run(
         command,

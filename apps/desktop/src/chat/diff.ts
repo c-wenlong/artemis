@@ -23,7 +23,7 @@ export interface DiffHunk {
   lines: DiffLine[];
 }
 
-/** "@@ -1,3 +1,4 @@" — the two starting line numbers are what we need. */
+/** "@@ -1,3 +1,4 @@": the two starting line numbers are what we need. */
 const HUNK = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
 
 export function parseUnifiedDiff(patch: string): DiffHunk[] {
@@ -42,7 +42,7 @@ export function parseUnifiedDiff(patch: string): DiffHunk[] {
       continue;
     }
 
-    // Everything before the first hunk is the preamble — `Index:`, the rule of
+    // Everything before the first hunk is the preamble: `Index:`, the rule of
     // equals signs, and the `---`/`+++` pair. None of it is content, and the
     // paths in it are absolute and machine-specific.
     if (!current) continue;

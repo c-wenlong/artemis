@@ -51,7 +51,7 @@ function isMainCheckout(project: ProjectRef, workspace: WorkspaceSummary): boole
 /**
  * Left rail: projects resolved down to the workspaces you actually open.
  *
- * A project heading appears only when it holds more than one workspace —
+ * A project heading appears only when it holds more than one workspace:
  * "artemis › artemis" is noise, not hierarchy. The add control lives on the
  * group row either way.
  */

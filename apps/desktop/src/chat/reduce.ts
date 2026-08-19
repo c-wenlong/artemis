@@ -10,7 +10,7 @@ import type {
  *
  * The event log is the source of truth; this is a projection of it. Because the
  * fold is incremental and order-preserving, the same function serves the live
- * stream and the replay of a recorded log — which is what makes reopening a
+ * stream and the replay of a recorded log, which is what makes reopening a
  * session show exactly what streamed.
  */
 export type TurnStatus = "running" | "completed" | "failed";
@@ -88,7 +88,7 @@ function withAssistant(
  * Real opencode emits `tool_call.started` without a matching completion often
  * enough that this is the normal case, not an edge one. Left alone the
  * transcript shows a spinner and a climbing heartbeat on a turn that finished
- * — so the call is resolved to whatever happened to the turn that owned it:
+ *, so the call is resolved to whatever happened to the turn that owned it:
  * completed if it completed, failed if it failed or was stopped.
  */
 function resolveDanglingCalls(

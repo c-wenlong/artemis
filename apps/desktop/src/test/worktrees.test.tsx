@@ -139,7 +139,7 @@ describe("deleting a worktree", () => {
 
   /**
    * The host refuses a dirty worktree. The UI must relay that refusal and make
-   * discarding a second, deliberate choice — never retry with force on its own.
+   * discarding a second, deliberate choice: never retry with force on its own.
    */
   it("relays a refusal and requires a second, explicit choice to discard", async () => {
     const host = withWorktree();

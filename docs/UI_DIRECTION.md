@@ -7,8 +7,8 @@ Artemis prototype.
 ## The thesis
 
 Artemis is not a terminal launcher with a GUI bolted on. Its reason to exist is
-**rendering the agent's work as structured UI** — typed blocks with their own
-affordances — instead of dumping a PTY into a pane. Superset does both and leans
+**rendering the agent's work as structured UI**: typed blocks with their own
+affordances: instead of dumping a PTY into a pane. Superset does both and leans
 host/workspace. Traycer commits hardest to the rendered-message model. Artemis
 should take Traycer's rendering model and Superset's shell.
 
@@ -26,10 +26,10 @@ The prototype reads as a settings screen, not a cockpit:
   *is* the app; everything else is chrome around it.
 - **The message surface is an empty placeholder.** The one differentiating
   surface is the least developed thing in the build.
-- **Inventory is presented as inventory** — a two-column list of harnesses and
+- **Inventory is presented as inventory**: a two-column list of harnesses and
   skills with "Ready" pills. It's a report, not a control surface.
 
-## Superset — what to take
+## Superset: what to take
 
 From the running app:
 
@@ -54,7 +54,7 @@ Committed and installed to device             ›
 ```
 
 Past-tense, human-readable, chevron to expand. The transcript reads as an
-engineer's write-up with the mechanics folded away — not a log.
+engineer's write-up with the mechanics folded away, not a log.
 
 **Composer as a status bar.** Above the input: repo · branch · live diffstat
 (`+3,414 −122`) · `Create PR`. Below it: model (`Opus 5 · Fast`), effort
@@ -64,7 +64,7 @@ you never leave the conversation to see state or ship.
 **Terminal is a dock, not the主 surface.** Right-side panel, tabbed, closable.
 Present for when you need it, never the thing you read.
 
-## Traycer — the architecture to copy
+## Traycer: the architecture to copy
 
 Traycer's `clients/gui-app/src/components/chat/` is the most direct blueprint
 available, and it's on disk. The model is **typed segments**.
@@ -88,13 +88,13 @@ Two shared primitives carry all of them (`segments/segment-card.tsx`,
 `segments/segment-row.tsx`), and the design rules inside them are worth adopting
 verbatim:
 
-- **`SegmentCard`** — bordered chip→card for top-level segments. Three tones
+- **`SegmentCard`**: bordered chip→card for top-level segments. Three tones
   only: `default` (`border-border/40 bg-muted/30`), `destructive`, `primary`.
-- **`SegmentRow`** — no border, no background, for *nested* activity. Hierarchy
+- **`SegmentRow`**: no border, no background, for *nested* activity. Hierarchy
   comes from the parent, not from stacking more boxes.
 - **The entire header is the click target.** No separate disclosure button.
 - **`expandable: false`** for segments whose header already says everything.
-  A tool call whose summary captures the whole input gets no chevron — the
+  A tool call whose summary captures the whole input gets no chevron: the
   chevron-width spacer keeps it aligned with its siblings.
 - **Sticky headers go opaque when open** (`bg-background`), because a
   translucent sticky header lets scrolled content bleed through it.
@@ -104,19 +104,19 @@ And `chat-activity-groups.ts` does the grouping that produces Superset's
 file-change, subagent, approval) collapse into one `ActivityGroupModel` with a
 `label`, a `summary`, and an `activeStartedAt` that drives an elapsed heartbeat
 on the collapsed header. **Reasoning is deliberately promoted out of the group**
-and rendered inline — activity groups carry only operational work.
+and rendered inline: activity groups carry only operational work.
 
 Note also `working-verb.ts`, `context-usage-chip.tsx`, and
-`scroll-to-bottom-chip.tsx` — small touches that make a streaming surface feel
+`scroll-to-bottom-chip.tsx`: small touches that make a streaming surface feel
 alive.
 
-## Cursor Web — the opposite philosophy
+## Cursor Web: the opposite philosophy
 
 From Mobbin's Cursor Web set (293 screens). Cursor is worth studying precisely
 because it *disagrees* with Traycer about what to show.
 
 **It hides the mechanics entirely.** In the agent conversation view there are no
-tool cards, no collapsed activity groups, no reasoning block — none of Traycer's
+tool cards, no collapsed activity groups, no reasoning block: none of Traycer's
 nineteen segment types. There is the prompt, then prose. Superset folds the
 mechanics away behind a chevron; Cursor omits them.
 
@@ -131,11 +131,11 @@ carries a monospace reference immediately after it:
 •  Missing CSS asset also returns fallback HTML 200 OK (bug candidate #1). terminal:3-10
 ```
 
-Note `terminal:3-11` — even shell output is a citable range. The answer is
+Note `terminal:3-11`: even shell output is a citable range. The answer is
 auditable inline without expanding anything. This is a genuinely different bet
 from Traycer's: **trust through evidence rather than trust through transparency.**
 
-**Multi-model tabs.** The turn header is three cards — `Codex 5.3 High`,
+**Multi-model tabs.** The turn header is three cards: `Codex 5.3 High`,
 `GPT-5.4 High`, `Composer 1.5`, each reading `Task completed`. Same prompt, three
 models, switch between the answers. For Artemis, which already has a
 multi-harness catalog, this is the most directly transferable idea in the whole
@@ -154,7 +154,7 @@ full-width box that echoes the input it came from, not a chat bubble; the turn
 closes with a quiet `Worked for 27s`; the content column stays narrow and
 centered with generous whitespace.
 
-Cursor Web is **light**, low-chrome, and calm — worth noting, since Superset and
+Cursor Web is **light**, low-chrome, and calm: worth noting, since Superset and
 Traycer are both near-black. Dark is not the only credible answer here.
 
 ### The tension to resolve
@@ -167,7 +167,7 @@ Cursor's citations.** Collapsed past-tense activity summaries keep the transcrip
 readable while leaving the mechanics one click away, and `file:line` chips make
 the prose verifiable without expanding anything. Traycer's full segment
 vocabulary is the right *architecture* to build on even if you render a quieter
-subset of it — the renderers can exist and stay collapsed.
+subset of it: the renderers can exist and stay collapsed.
 
 ## What this means for Artemis
 
@@ -182,12 +182,12 @@ Concretely, in priority order:
 1. **Widen `ChatBlock`.** Four kinds today (`text`, `reasoning`, `tool_call`,
    `error`). The high-value additions, in order: `file_change`, `todo`/`plan`,
    `command` (split from generic `tool_call`), `artifact`.
-2. **Build the two primitives first** — `SegmentCard` and `SegmentRow` — then
+2. **Build the two primitives first** (`SegmentCard` and `SegmentRow`) then
    write renderers against them. Every block kind gets a renderer; no block kind
    renders as raw text.
 3. **Add activity grouping** over consecutive tool/command blocks, with a
    past-tense summary line and an elapsed heartbeat while active.
-4. **Stream.** `sendChatMessage` is currently request/response — it returns
+4. **Stream.** `sendChatMessage` is currently request/response: it returns
    `ChatTurnResult` with the whole turn. The `RuntimeEvent` types exist to be
    streamed; the renderer needs deltas to feel like the references. This likely
    forces the host out of Vite middleware (SSE or WebSocket), which is on the
@@ -195,17 +195,17 @@ Concretely, in priority order:
 5. **Re-shell around the conversation.** Collapse the five sections: rail
    (projects → workspaces with status dots) + conversation + optional terminal
    dock. Review becomes a segment type and a diffstat in the composer bar, not a
-   destination. Settings becomes a modal. Inventory moves into the launcher —
+   destination. Settings becomes a modal. Inventory moves into the launcher:
    you pick a harness where you start a run, not in a catalog screen.
 6. **Add `file:line` citation chips** to the markdown renderer, resolving to the
    workspace. Cheap to build, and it's what makes a hidden-mechanics transcript
    trustworthy. Needs harnesses to emit ranges, or a post-hoc linkifier over
    paths mentioned in prose.
-7. **Multi-harness comparison.** One prompt, N harnesses, tabbed results —
-   Cursor's model-tabs pattern. Artemis already has the catalog and the launcher
+7. **Multi-harness comparison.** One prompt, N harnesses, tabbed results,
+   following Cursor's model-tabs pattern. Artemis already has the catalog and the launcher
    to support this; no other reference here can do it across *vendors*.
 8. **Commit to a palette.** Superset and Traycer are near-black; Cursor Web is
-   light and calm. Either works — what kills the current prototype is having
+   light and calm. Either works: what kills the current prototype is having
    neither. If dark: near-black base, one step up for cards, one more for
    popovers, color reserved for state (running, needs-attention, error, diff
    add/remove).

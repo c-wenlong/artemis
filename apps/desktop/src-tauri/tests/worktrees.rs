@@ -2,8 +2,8 @@
 //!
 //! These drive the actual binary in throwaway repositories rather than mocking
 //! it. Worktrees are the one place Artemis can destroy work that is not
-//! recoverable from anywhere else, so the behaviour that matters — refusing to
-//! delete uncommitted changes, cleaning up after a failed create — has to be
+//! recoverable from anywhere else, so the behaviour that matters: refusing to
+//! delete uncommitted changes, cleaning up after a failed create: has to be
 //! tested against git's real semantics, not an approximation of them.
 
 use std::path::{Path, PathBuf};
@@ -198,7 +198,7 @@ fn prunes_a_worktree_whose_directory_vanished() {
     );
 }
 
-/// Worktrees made outside Artemis are still Artemis workspaces — adoption is
+/// Worktrees made outside Artemis are still Artemis workspaces: adoption is
 /// reading git's own list rather than keeping a registry that can drift.
 #[test]
 fn adopts_a_worktree_created_outside_artemis() {

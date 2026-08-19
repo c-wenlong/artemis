@@ -8,7 +8,7 @@ What is automated, what is not, and why.
 
 **`check`** runs on macOS, Linux and Windows for every push and pull request:
 typecheck, front-end tests, `cargo fmt --check`, `cargo clippy -D warnings`,
-`cargo test`. The matrix is not ceremony — the scanner shipped three bugs that
+`cargo test`. The matrix is not ceremony: the scanner shipped three bugs that
 were invisible on macOS and would each independently have made Artemis find *no
 harnesses at all* on Windows. See `tests/portability.rs`.
 
@@ -48,7 +48,7 @@ Once you have them, Tauri wants these in the environment at bundle time:
 
 They belong in repository secrets, and the `build` job needs them wired in
 before its macOS artifact is distributable. **Until then the macOS build is
-local-use only** — which is what today's `Artemis.app` is.
+local-use only**, which is what today's `Artemis.app` is.
 
 ### Windows signing
 
@@ -60,7 +60,7 @@ for anything public.
 
 Tauri's updater needs three things this repository does not have:
 
-1. A **signing keypair** — `pnpm exec tauri signer generate`. The private key is
+1. A **signing keypair**: `pnpm exec tauri signer generate`. The private key is
    a secret; the public key goes in `tauri.conf.json`.
 2. An **endpoint** serving an update manifest, which means somewhere to host it.
 3. A **version scheme**. `tauri.conf.json` currently says `0.0.0`, so no build
@@ -72,7 +72,7 @@ than no updater.
 
 ## Cross-platform, verified and unverified
 
-The scanner's platform assumptions are fixed and tested — `PATH` splitting via
+The scanner's platform assumptions are fixed and tested: `PATH` splitting via
 `std::env::split_paths`, `PATHEXT` extensions on Windows, both path separators
 recognised.
 
@@ -99,5 +99,5 @@ be "no harnesses at all".
 2. Push; confirm `check` is green on all three platforms.
 3. Run the `CI` workflow manually with `bundle: true`.
 4. Download the artifacts. Without signing, macOS users need
-   `xattr -dr com.apple.quarantine Artemis.app` — which is not something to ask
+   `xattr -dr com.apple.quarantine Artemis.app`, which is not something to ask
    of strangers, so see the signing section first.

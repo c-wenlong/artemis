@@ -13,7 +13,7 @@
 //! Two things make it pleasanter than opencode's. Items carry a stable `id`, so
 //! start and finish pair without guessing. And an edit is its own
 //! `file_change` item rather than something to be inferred from a tool's
-//! arguments — though it names the files without diffing them, so there is
+//! arguments, though it names the files without diffing them, so there is
 //! nothing to count and nothing to reverse.
 
 use std::collections::HashSet;
@@ -42,7 +42,7 @@ impl CodexAdapter {
 
     /// Codex reports absolute paths; the transcript wants workspace-relative
     /// ones. Without the workspace root here, the best available answer is the
-    /// tail — which is what a reader recognises anyway.
+    /// tail, which is what a reader recognises anyway.
     fn file_changes(item: &Value) -> Option<Vec<FileChange>> {
         let changes = item.get("changes")?.as_array()?;
         let mapped: Vec<FileChange> = changes
@@ -143,7 +143,7 @@ impl HarnessAdapter for CodexAdapter {
                     .and_then(Value::as_str)
                     .unwrap_or("Codex reported an error")
                     .to_string();
-                // Codex uses `error` items for advisories too — the capture this
+                // Codex uses `error` items for advisories too: the capture this
                 // was written from opens with a note about skill descriptions
                 // being shortened. Recording it as *the* turn error would fail a
                 // turn that went on to succeed, so it renders and nothing more.

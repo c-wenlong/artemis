@@ -4,7 +4,7 @@
  * Traycer's `working-verb.ts` does the same thing, and the reason is worth
  * stating: a fixed "Working…" on every turn reads as a spinner, while a verb
  * that changes per turn makes it obvious the app is tracking *this* run rather
- * than showing a generic placeholder. It must not change mid-turn — text that
+ * than showing a generic placeholder. It must not change mid-turn: text that
  * churns while you read it is worse than text that says nothing.
  */
 const VERBS = [

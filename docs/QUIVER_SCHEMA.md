@@ -8,7 +8,7 @@ drift breaks a test rather than a user's inventory.
 Read from a live install on 2026-08-11. Every field is treated as optional in
 code regardless of what is written here: this is a hand-editable file set.
 
-## `~/.config/swe/tools.json` — the harness registry
+## `~/.config/swe/tools.json`: the harness registry
 
 An **object keyed by tool id**, not a list. 29 entries on the machine this was
 read from.
@@ -25,11 +25,11 @@ read from.
 }
 ```
 
-Artemis uses `aliases`, `description`, and `version` — and only where its own
+Artemis uses `aliases`, `description`, and `version`, and only where its own
 scan found nothing. The scan decides what exists and what version answered;
 this file is curated by hand and can name a binary that has been uninstalled.
 
-## `~/.config/swe/session_cache.json` — parsed history
+## `~/.config/swe/session_cache.json`: parsed history
 
 **The reason to integrate at all.** 731 sessions across 19 harnesses: amp,
 antigravity, claude, cline, codex, continue, copilot, crush, droid, forge,
@@ -52,7 +52,7 @@ freebuff, gemini, grok, hermes, kimi, mimo, opencode, pi, tau.
 ```
 
 - `timestamp` is **milliseconds** since the epoch, as a float.
-- `session_id` is the harness's own id — what makes a row resumable. Artemis
+- `session_id` is the harness's own id: what makes a row resumable. Artemis
   drops rows without one; history that cannot be reopened is not what this file
   is read for.
 - `tool_name` is the registry id (`opencode`); `agent` is the display name
@@ -63,7 +63,7 @@ freebuff, gemini, grok, hermes, kimi, mimo, opencode, pi, tau.
 ## `~/.config/swe/providers.json`
 
 Object keyed by provider id. Credential-free metadata: `name`, `description`,
-`url`, `key_filename`, `env_vars`, `aliases`. Not yet consumed — Artemis's own
+`url`, `key_filename`, `env_vars`, `aliases`. Not yet consumed: Artemis's own
 provider scan covers what the inventory needs.
 
 ## `~/.config/swe/rate_limits_cache.json`
@@ -73,10 +73,10 @@ reset_at, plan_type, … } } }`. Not yet consumed.
 
 ## `~/.config/swe/skill_links.json`
 
-`{ updated, links: [ { label, path, target, kind } ] }` — the harness symlink
+`{ updated, links: [ { label, path, target, kind } ] }`: the harness symlink
 layout. Not yet consumed; Artemis scans the skill roots itself.
 
-## `swe mcp discover --json` — the one thing that needs a subprocess
+## `swe mcp discover --json`: the one thing that needs a subprocess
 
 ```json
 [
@@ -90,12 +90,12 @@ layout. Not yet consumed; Artemis scans the skill roots itself.
 ]
 ```
 
-`tools` is the cross-tool reconciliation — every harness the server is
+`tools` is the cross-tool reconciliation: every harness the server is
 registered in. Artemis has no native equivalent, because that registration
 lives in each harness's own config in its own format.
 
-Off unless `quiverCliEnabled` is set. Any failure — missing binary, non-zero
-exit, timeout, unparseable output — means an empty list, never an error.
+Off unless `quiverCliEnabled` is set. Any failure: missing binary, non-zero
+exit, timeout, unparseable output: means an empty list, never an error.
 
 ## Corrections to `QUIVER_INTEGRATION.md`
 

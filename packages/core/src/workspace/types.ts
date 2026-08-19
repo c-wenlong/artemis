@@ -38,7 +38,7 @@ export interface WorkspaceRuntime {
   createWorkspace(projectId: string, branch: string): Promise<WorkspaceSummary>;
   /**
    * Remove a worktree. Rejects when it holds uncommitted work unless `force`
-   * is set — discarding someone's changes has to be asked for, never inferred.
+   * is set: discarding someone's changes has to be asked for, never inferred.
    */
   deleteWorkspace(workspaceId: string, force: boolean): Promise<void>;
   getLaunchPreset(workspaceId: string): Promise<LaunchPreset | null>;

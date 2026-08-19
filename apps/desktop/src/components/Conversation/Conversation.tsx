@@ -17,7 +17,7 @@ interface ConversationProps {
   /** How much of a finished turn to render. */
   verbosity?: TranscriptVerbosity;
   /**
-   * Set when the chosen harness has no adapter. It is not broken — Artemis
+   * Set when the chosen harness has no adapter. It is not broken: Artemis
    * simply cannot parse it into segments, and a terminal runs it properly.
    */
   onOpenInTerminal?(): void;
@@ -25,7 +25,7 @@ interface ConversationProps {
 }
 
 /**
- * The reading surface. A narrow, centred column — Cursor Web's proportions —
+ * The reading surface. A narrow, centred column: Cursor Web's proportions,
  * because this is prose first and a control panel second.
  *
  * M3 fills it with typed segment renderers; M2 establishes the column, the

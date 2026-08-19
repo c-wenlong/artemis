@@ -5,7 +5,7 @@ interface AppShellProps {
   rail: ReactNode;
   conversation: ReactNode;
   composer: ReactNode;
-  /** Right dock — the terminal, once M6 lands. */
+  /** Right dock: the terminal, once M6 lands. */
   dock?: ReactNode;
 }
 

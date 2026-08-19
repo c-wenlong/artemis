@@ -239,7 +239,7 @@ interface EditSummaryCardProps {
  * What the turn changed on disk, and the two things you can do about it.
  *
  * Undo reverse-applies that one file's patch, so an unrelated edit of the
- * user's in the same file survives — which restoring from git would not. The
+ * user's in the same file survives, which restoring from git would not. The
  * host refuses when the file has moved on since, and that refusal is shown
  * rather than swallowed: it is the property that makes the button safe.
  */

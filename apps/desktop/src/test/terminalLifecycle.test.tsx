@@ -9,7 +9,7 @@ const unmounted: string[] = [];
 
 /**
  * Records mount and unmount so the tests below can assert what the dock does to
- * terminal views when tabs change — which is the difference between a PTY that
+ * terminal views when tabs change, which is the difference between a PTY that
  * survives and one that gets torn down under you.
  */
 vi.mock("../components/Terminal/TerminalView", async () => {
@@ -66,7 +66,7 @@ describe("what the dock does to terminal views", () => {
 
   /**
    * Hiding the dock unmounts the view, which detaches the subscriber. The
-   * process keeps running host-side — that is exactly the reload case, and it
+   * process keeps running host-side, that is exactly the reload case, and it
    * must not close anything.
    */
   it("unmounts the view when hidden but never closes the terminal", async () => {

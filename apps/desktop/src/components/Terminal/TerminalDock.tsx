@@ -14,7 +14,7 @@ interface TerminalDockProps {
 }
 
 /**
- * Tabbed terminals beside the conversation — Superset's arrangement, and the
+ * Tabbed terminals beside the conversation: Superset's arrangement, and the
  * reason it works is that the terminal is a dock rather than the main surface.
  * It is where harnesses without a streaming adapter run, and where you go when
  * you want to type a command yourself.

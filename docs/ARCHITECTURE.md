@@ -4,7 +4,7 @@ Artemis is a desktop app that runs coding agents and renders what they do as a
 readable transcript instead of a wall of terminal output.
 
 Two halves: a **Rust host** that owns everything touching the machine, and a
-**React webview** that owns everything the user reads. They meet at one place —
+**React webview** that owns everything the user reads. They meet at one place:
 `@artemis/core`, a set of TypeScript types the Rust side mirrors exactly.
 
 ```
@@ -45,7 +45,7 @@ build instead of silently rendering an empty panel.
 2. `ChatStore::send_message` resolves the harness, builds its argv through the
    adapter layer, and spawns it in the workspace's worktree.
 3. Output is read line by line. A **`HarnessAdapter`** turns each line into
-   `RuntimeEvent`s — the only shape the rest of the app knows.
+   `RuntimeEvent`s: the only shape the rest of the app knows.
 4. Events are appended to a JSONL **event log** and pushed to the webview in
    batches over a Tauri channel. Batched because a fast model emits a line per
    token, and one IPC message each would cost a render each.
@@ -70,7 +70,7 @@ because documentation was wrong every time it was checked:
   the Messages API models it.
 
 `tests/adapters.rs` runs the same conformance over all three against their own
-fixtures. A harness with no adapter is not broken — `supports_streaming` is
+fixtures. A harness with no adapter is not broken: `supports_streaming` is
 false and the UI routes it to the terminal dock, which runs the real tool.
 
 ## State, and where it lives
@@ -108,15 +108,15 @@ model and are rebuilt from a vetted relative path before use.
 
 ## Design system
 
-`src/styles/tokens.css` is the only file allowed to contain a colour literal —
+`src/styles/tokens.css` is the only file allowed to contain a colour literal,
 enforced by `src/test/tokens.test.ts`, which fails the build on any other. Light
 and dark ship together.
 
 ## Testing
 
-- **Rust** — real git repositories in temp directories, real processes, real
+- **Rust**: real git repositories in temp directories, real processes, real
   files. Anything that can destroy work is tested against the real thing.
-- **Front end** — vitest and Testing Library, driven through `App` with a fake
+- **Front end**: vitest and Testing Library, driven through `App` with a fake
   host that mirrors the real client exactly.
 - **Ignored tests** run actual agents and cost money. They exist because
   fixtures only prove the parser handles the shape it was cut from.

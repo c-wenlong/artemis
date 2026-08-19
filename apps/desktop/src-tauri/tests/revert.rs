@@ -89,7 +89,7 @@ fn reverse_applying_removes_the_line_the_agent_added() {
 /// where `git checkout -- file` would have discarded them.
 ///
 /// "Elsewhere" means outside the hunk's context. An edit *inside* it is a
-/// genuine conflict and gets refused — see the drift test below. That is the
+/// genuine conflict and gets refused: see the drift test below. That is the
 /// right way round: silently reverting across a changed context is how an undo
 /// eats work it did not write.
 #[test]

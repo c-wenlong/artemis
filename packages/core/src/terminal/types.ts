@@ -2,7 +2,7 @@
  * Terminal sessions.
  *
  * The PTY lives in the host process, not the window: a webview reload drops the
- * subscriber, not the terminal. That is why `listTerminals` exists — on reload
+ * subscriber, not the terminal. That is why `listTerminals` exists: on reload
  * the UI adopts what is already running rather than starting over.
  */
 export interface TerminalSpec {
@@ -33,7 +33,7 @@ export interface TerminalRuntime {
    * Attach a listener; resolves with everything buffered so far.
    *
    * The backlog comes back from the call rather than through the listener so it
-   * can be written to the emulator in one go — replaying a hundred kilobytes
+   * can be written to the emulator in one go: replaying a hundred kilobytes
    * chunk by chunk makes a reconnect visibly crawl.
    */
   subscribeTerminal(

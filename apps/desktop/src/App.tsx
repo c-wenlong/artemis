@@ -112,7 +112,7 @@ export function App({ host }: AppProps = {}) {
     data.workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ?? null;
 
   /**
-   * Open the file a citation names. Only wired when a workspace is selected —
+   * Open the file a citation names. Only wired when a workspace is selected:
    * a relative path means nothing without one, so the chips stay plain text
    * until there is somewhere to resolve them against.
    */

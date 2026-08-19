@@ -6,7 +6,7 @@ import { Markdown } from "../components/segments/Markdown";
  * Model output is untrusted input.
  *
  * It arrives from a harness that relays whatever the model wrote, and the model
- * has just read the user's repository — which may itself contain text planted
+ * has just read the user's repository, which may itself contain text planted
  * to be read. Anything the renderer does with that string is done on behalf of
  * an attacker who got a prompt injected.
  *
@@ -36,7 +36,7 @@ describe("rendering untrusted model output", () => {
 
   /**
    * The exfiltration case. A model that has read something sensitive can put it
-   * in a URL and have the transcript fetch it simply by being displayed — no
+   * in a URL and have the transcript fetch it simply by being displayed: no
    * click required. Nothing in a rendered answer should reach the network.
    */
   it("never loads a remote image", () => {

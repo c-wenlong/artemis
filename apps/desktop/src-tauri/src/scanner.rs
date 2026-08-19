@@ -95,7 +95,7 @@ pub fn split_path_env(value: &str) -> impl Iterator<Item = PathBuf> + '_ {
 /// The names a command might actually have on disk.
 ///
 /// On Unix that is the command itself. On Windows runnability lives in the
-/// extension, and nothing on `PATH` is called plain `opencode` — so every
+/// extension, and nothing on `PATH` is called plain `opencode`, so every
 /// entry in `PATHEXT` is tried, in the order Windows would try them.
 pub fn executable_names(command: &str) -> impl Iterator<Item = String> {
     // `mut` is only reached under cfg(windows); on Unix there is one name.
@@ -214,7 +214,7 @@ fn read_version(command_path: &str, version_args: &[&str]) -> Option<String> {
 }
 
 /// Walk the workspace looking for config files that name a known harness.
-/// Bounded on every axis — this runs on the first-paint path.
+/// Bounded on every axis: this runs on the first-paint path.
 fn scan_workspace_mentions(root: &Path) -> Vec<Mention> {
     let mut mentions = Vec::new();
     let mut stack: Vec<(PathBuf, usize)> = vec![(root.to_path_buf(), 0)];
@@ -427,7 +427,7 @@ fn scan_unknown_executables(dirs: &[PathBuf], include_versions: bool) -> Vec<Har
                 workspace_mentions: Some(Vec::new()),
                 last_used_at: None,
                 // An executable found by name alone is Custom, so it has no
-                // adapter — the dock is where it belongs.
+                // adapter: the dock is where it belongs.
                 supports_streaming: false,
             });
         }

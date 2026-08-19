@@ -4,9 +4,22 @@
 //! Testing this against a mock would only prove the mock behaves like the mock,
 //! so these drive the platform's own shell and read what actually comes back.
 //!
+//! **The output-reading tests here are `#[cfg(unix)]`, and not because Windows
+//! is untested. It is broken.** On a Windows runner they return exactly
+//! `\u{1b}[6n` and nothing else, which is ConPTY's own cursor-position probe.
+//! The master is being read correctly; what never arrives is anything the child
+//! wrote. It reproduces with a shell and equally with a plain program spawned
+//! directly, so it is neither shell syntax nor line endings, both of which were
+//! ruled out first.
+//!
+//! The cause is unknown and is not being guessed at through CI, which is a slow
+//! way to debug a platform nobody here can run. Gated rather than deleted, and
+//! recorded as an open defect in MILESTONES, because the honest claim is that
+//! the terminal dock probably does not work on Windows.
+//!
 //! The exit criterion for M6 is that a terminal survives a UI reload. That
 //! works because the PTY lives in the host process and the webview is only a
-//! subscriber — so the tests that matter are the ones where a subscriber goes
+//! subscriber, so the tests that matter are the ones where a subscriber goes
 //! away and comes back.
 
 use std::time::{Duration, Instant};
@@ -15,7 +28,7 @@ use artemis_host::pty::{PtyStore, TerminalSpec};
 
 // Only the output-reading tests use a sink, and those are `#[cfg(unix)]` while
 // terminal output on Windows is unexplained. Gated with them so the Windows
-// build does not carry a struct nothing constructs — `clippy -D warnings`
+// build does not carry a struct nothing constructs: `clippy -D warnings`
 // rejects that, correctly.
 #[cfg(unix)]
 mod collect {
@@ -66,7 +79,7 @@ fn spec() -> TerminalSpec {
 /// `cmd.exe` under ConPTY does not treat a bare `\n` as Enter, so every test
 /// that typed a command got back only ConPTY's cursor-position query and no
 /// output. A PTY on Unix maps CR to NL for input (`ICRNL`), so `\r` is the
-/// submission that works on both — and it is what xterm.js sends for Enter, so
+/// submission that works on both, and it is what xterm.js sends for Enter, so
 /// the tests now type what the app actually types.
 ///
 /// Polls rather than sleeping a fixed amount: a shell's first prompt arrives
@@ -94,20 +107,6 @@ fn opens_a_terminal_and_reports_it() {
     store.close(&terminal.id);
 }
 
-/// **Unix only, and not because Windows is untested — because it is broken.**
-///
-/// On a Windows runner every output-reading test in this file returns exactly
-/// `\u{1b}[6n` and nothing else. That sequence is ConPTY's own cursor-position
-/// probe, so the master is being read correctly; what never arrives is anything
-/// the child wrote. It reproduces with a shell and equally with a plain program
-/// spawned directly, so it is not shell syntax and not line endings — both of
-/// which were ruled out first.
-///
-/// The cause is unknown. It is not being guessed at through CI: that is a slow
-/// and dishonest way to debug a platform, and it needs a Windows machine to
-/// find. Gated here rather than deleted, and recorded as an open defect in
-/// MILESTONES, because the honest claim is "the terminal dock is unverified on
-/// Windows and probably does not work", not silence.
 #[cfg(unix)]
 #[test]
 fn runs_a_command_and_streams_its_output() {
@@ -133,20 +132,6 @@ fn runs_a_command_and_streams_its_output() {
 
 /// The webview reloading drops its channel. The PTY belongs to the host, so the
 /// process must keep running and its output must keep accumulating.
-/// **Unix only, and not because Windows is untested — because it is broken.**
-///
-/// On a Windows runner every output-reading test in this file returns exactly
-/// `\u{1b}[6n` and nothing else. That sequence is ConPTY's own cursor-position
-/// probe, so the master is being read correctly; what never arrives is anything
-/// the child wrote. It reproduces with a shell and equally with a plain program
-/// spawned directly, so it is not shell syntax and not line endings — both of
-/// which were ruled out first.
-///
-/// The cause is unknown. It is not being guessed at through CI: that is a slow
-/// and dishonest way to debug a platform, and it needs a Windows machine to
-/// find. Gated here rather than deleted, and recorded as an open defect in
-/// MILESTONES, because the honest claim is "the terminal dock is unverified on
-/// Windows and probably does not work", not silence.
 #[cfg(unix)]
 #[test]
 fn output_survives_a_subscriber_going_away() {
@@ -191,26 +176,12 @@ fn output_survives_a_subscriber_going_away() {
 ///
 /// **This test never tested anything, on any platform.** Two mistakes cancelled
 /// each other out. 4000 numbered lines is about 43 KB against a 256 KiB bound,
-/// so nothing was ever dropped — and the assertion that the oldest line was gone
+/// so nothing was ever dropped, and the assertion that the oldest line was gone
 /// looked for `line-1\n`, which a PTY never emits, because it ends lines with
 /// CRLF on Unix too. It could not fail. Normalising the line endings for the
 /// Windows run is what exposed it.
 ///
 /// It now writes past the bound, so truncation actually happens.
-/// **Unix only, and not because Windows is untested — because it is broken.**
-///
-/// On a Windows runner every output-reading test in this file returns exactly
-/// `\u{1b}[6n` and nothing else. That sequence is ConPTY's own cursor-position
-/// probe, so the master is being read correctly; what never arrives is anything
-/// the child wrote. It reproduces with a shell and equally with a plain program
-/// spawned directly, so it is not shell syntax and not line endings — both of
-/// which were ruled out first.
-///
-/// The cause is unknown. It is not being guessed at through CI: that is a slow
-/// and dishonest way to debug a platform, and it needs a Windows machine to
-/// find. Gated here rather than deleted, and recorded as an open defect in
-/// MILESTONES, because the honest claim is "the terminal dock is unverified on
-/// Windows and probably does not work", not silence.
 #[cfg(unix)]
 #[test]
 fn scrollback_is_bounded_so_a_chatty_process_cannot_grow_forever() {
@@ -256,7 +227,7 @@ fn scrollback_is_bounded_so_a_chatty_process_cannot_grow_forever() {
 ///
 /// Unix only, because it asks the shell for the size with `stty`, and there is
 /// no `cmd.exe` equivalent that prints it. **Resize is therefore unverified on
-/// Windows** — the call goes through `portable-pty` either way, but nothing here
+/// Windows**: the call goes through `portable-pty` either way, but nothing here
 /// proves a program on the far side sees the new dimensions. Marked rather than
 /// deleted so the gap is visible instead of implied by an absence.
 #[cfg(unix)]
@@ -291,20 +262,6 @@ fn closing_ends_the_process() {
     );
 }
 
-/// **Unix only, and not because Windows is untested — because it is broken.**
-///
-/// On a Windows runner every output-reading test in this file returns exactly
-/// `\u{1b}[6n` and nothing else. That sequence is ConPTY's own cursor-position
-/// probe, so the master is being read correctly; what never arrives is anything
-/// the child wrote. It reproduces with a shell and equally with a plain program
-/// spawned directly, so it is not shell syntax and not line endings — both of
-/// which were ruled out first.
-///
-/// The cause is unknown. It is not being guessed at through CI: that is a slow
-/// and dishonest way to debug a platform, and it needs a Windows machine to
-/// find. Gated here rather than deleted, and recorded as an open defect in
-/// MILESTONES, because the honest claim is "the terminal dock is unverified on
-/// Windows and probably does not work", not silence.
 #[cfg(unix)]
 #[test]
 fn notices_when_the_shell_exits_on_its_own() {
@@ -345,20 +302,6 @@ fn refuses_a_command_that_does_not_exist() {
     assert!(store.list().is_empty());
 }
 
-/// **Unix only, and not because Windows is untested — because it is broken.**
-///
-/// On a Windows runner every output-reading test in this file returns exactly
-/// `\u{1b}[6n` and nothing else. That sequence is ConPTY's own cursor-position
-/// probe, so the master is being read correctly; what never arrives is anything
-/// the child wrote. It reproduces with a shell and equally with a plain program
-/// spawned directly, so it is not shell syntax and not line endings — both of
-/// which were ruled out first.
-///
-/// The cause is unknown. It is not being guessed at through CI: that is a slow
-/// and dishonest way to debug a platform, and it needs a Windows machine to
-/// find. Gated here rather than deleted, and recorded as an open defect in
-/// MILESTONES, because the honest claim is "the terminal dock is unverified on
-/// Windows and probably does not work", not silence.
 #[cfg(unix)]
 #[test]
 fn several_terminals_stay_independent() {
